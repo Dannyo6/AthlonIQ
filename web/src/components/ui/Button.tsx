@@ -14,7 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-athloniq-cyan/50 disabled:opacity-50 disabled:pointer-events-none active:scale-95";
+    "inline-flex items-center justify-center font-medium transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-athloniq-lime/40 disabled:opacity-50 disabled:pointer-events-none active:scale-95";
 
   const sizeStyles = {
     sm: "px-3 py-1.5 text-xs gap-1.5",
@@ -24,12 +24,12 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      "bg-gradient-to-r from-athloniq-cyan to-cyan-400 text-slate-950 font-semibold shadow-glow hover:shadow-cyan-500/40 hover:brightness-105",
+      "bg-athloniq-lime hover:bg-athloniq-lime-hover text-slate-950 font-bold shadow-glow-lime hover:brightness-105 active:scale-[0.98]",
     secondary:
-      "bg-athloniq-surface hover:bg-slate-700/80 text-white border border-slate-700/60",
+      "bg-[#181D2A] hover:bg-[#202738] text-white border border-[#1E2330] hover:border-slate-700",
     outline:
-      "border border-slate-700 hover:border-athloniq-cyan hover:text-athloniq-cyan text-slate-300 bg-transparent",
-    ghost: "text-slate-400 hover:text-white hover:bg-athloniq-surface/50",
+      "border border-[#1E2330] hover:border-athloniq-lime hover:text-athloniq-lime text-slate-300 bg-transparent",
+    ghost: "text-slate-400 hover:text-white hover:bg-[#181D2A]/60",
     danger:
       "bg-athloniq-rose/20 text-rose-300 border border-rose-500/30 hover:bg-athloniq-rose/30",
   }[variant];

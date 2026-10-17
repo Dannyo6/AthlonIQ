@@ -6,28 +6,33 @@ export default {
     extend: {
       colors: {
         athloniq: {
-          dark: "#080C14",
-          card: "#0F172A",
-          surface: "#1E293B",
-          border: "#334155",
-          cyan: {
-            DEFAULT: "#00F0FF",
-            glow: "#00F0FF40",
-            hover: "#38BDF8",
+          dark: "#090A0F",
+          card: "#12151E",
+          surface: "#181D2A",
+          border: "#1E2330",
+          lime: {
+            DEFAULT: "#BEF264",
+            hover: "#A3E635",
+            glow: "rgba(190, 242, 100, 0.25)",
+            muted: "rgba(190, 242, 100, 0.12)",
           },
           emerald: {
             DEFAULT: "#10B981",
-            glow: "#10B98140",
+            glow: "rgba(16, 185, 129, 0.25)",
+            muted: "rgba(16, 185, 129, 0.12)",
           },
           violet: {
             DEFAULT: "#8B5CF6",
-            glow: "#8B5CF640",
+            glow: "rgba(139, 92, 246, 0.25)",
+            muted: "rgba(139, 92, 246, 0.12)",
           },
           amber: {
             DEFAULT: "#F59E0B",
+            muted: "rgba(245, 158, 11, 0.12)",
           },
           rose: {
             DEFAULT: "#F43F5E",
+            muted: "rgba(244, 63, 94, 0.12)",
           },
         },
       },
@@ -36,9 +41,10 @@ export default {
         mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       boxShadow: {
-        glow: "0 0 25px -5px rgba(0, 240, 255, 0.3)",
-        "glow-emerald": "0 0 25px -5px rgba(16, 185, 129, 0.3)",
-        "glow-violet": "0 0 25px -5px rgba(139, 92, 246, 0.3)",
+        "glow-lime": "0 0 24px -4px rgba(190, 242, 100, 0.28)",
+        "glow-emerald": "0 0 24px -4px rgba(16, 185, 129, 0.25)",
+        "glow-violet": "0 0 24px -4px rgba(139, 92, 246, 0.25)",
+        surface: "0 4px 20px -2px rgba(0, 0, 0, 0.6)",
       },
     },
   },

@@ -20,10 +20,12 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
-    # Supabase (optional for dev scaffolding, required in production)
+    # Supabase & Auth
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""
+    DEV_AUTH_BYPASS: bool = False
 
     # AI Configuration
     GEMINI_API_KEY: str = ""

@@ -1,17 +1,16 @@
-import { useState } from "react";
-import { DailyReadiness } from "@/types";
+/**
+ * Hook to access and record daily athlete recovery check-in and rules-based readiness.
+ * Zero fabricated wearable metrics (no mock HRV, nocturnal pulse, or sleep stages).
+ */
+
+import { useAthloniqState } from "./useAthloniqState";
 
 export function useReadiness() {
-  const [readiness] = useState<DailyReadiness>({
-    date: new Date().toISOString().split("T")[0],
-    readinessScore: 88,
-    sleepDurationHours: 7.8,
-    sleepQualityScore: 91,
-    hrvRmssdMs: 58,
-    restingHeartRate: 48,
-    sorenessScore: 2,
-    status: "optimal",
-  });
+  const { todayCheckIn, readiness, submitCheckIn } = useAthloniqState();
 
-  return { readiness };
+  return {
+    todayCheckIn,
+    readiness,
+    submitCheckIn,
+  };
 }

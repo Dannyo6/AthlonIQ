@@ -1,4 +1,4 @@
-"""Health check and core domain unit tests."""
+"""Health check, security auth, and core deterministic domain unit tests."""
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -7,8 +7,10 @@ from app.main import app
 from app.domain.performance import (
     calculate_one_rep_max_epley,
     calculate_one_rep_max_brzycki,
-    calculate_readiness_score,
-    calculate_macro_split,
+    calculate_bmi,
+    calculate_protein_reference,
+    calculate_initial_energy_estimate,
+    calculate_rules_readiness,
 )
 
 
@@ -56,60 +58,147 @@ async def test_root_info_endpoint() -> None:
 
 def test_calculate_one_rep_max_epley() -> None:
     """Test 1RM estimation via Epley formula."""
-    # 100kg for 10 reps -> 100 * (1 + 10/30) = 133.3kg
     est_1rm = calculate_one_rep_max_epley(100.0, 10)
     assert est_1rm == 133.3
-
-    # 1 rep returns exact weight
     assert calculate_one_rep_max_epley(140.0, 1) == 140.0
-
-    # 0 or negative reps returns 0.0
     assert calculate_one_rep_max_epley(100.0, 0) == 0.0
 
 
 def test_calculate_one_rep_max_brzycki() -> None:
     """Test 1RM estimation via Brzycki formula."""
-    # 100kg for 5 reps -> 100 / (1.0278 - 0.0278 * 5) = 100 / 0.8888 = 112.5kg
     est_1rm = calculate_one_rep_max_brzycki(100.0, 5)
     assert est_1rm == 112.5
-
     assert calculate_one_rep_max_brzycki(100.0, 1) == 100.0
 
 
-def test_calculate_readiness_score() -> None:
-    """Test composite readiness score calculation."""
-    # High recovery athlete: 8 hours sleep, 85 quality, HRV 55ms (baseline 50), soreness 2/10
-    score_high = calculate_readiness_score(
-        sleep_quality_score=85,
-        sleep_duration_hours=8.0,
-        hrv_rmssd_ms=55.0,
-        hrv_baseline_ms=50.0,
-        soreness_score=2,
-    )
-    assert 80 <= score_high <= 100
-
-    # Fatigued athlete: 4.5 hours sleep, 40 quality, HRV 28ms (baseline 50), soreness 8/10
-    score_low = calculate_readiness_score(
-        sleep_quality_score=40,
-        sleep_duration_hours=4.5,
-        hrv_rmssd_ms=28.0,
-        hrv_baseline_ms=50.0,
-        soreness_score=8,
-    )
-    assert score_low < 50
+def test_calculate_bmi_deterministic() -> None:
+    """Test deterministic BMI: 55.0 kg / 173.0 cm must yield exactly 18.4."""
+    result = calculate_bmi(weight_kg=55.0, height_cm=173.0)
+    assert result["bmi"] == 18.4
+    assert result["category"] == "underweight"
+    assert result["provenance"] == "calculated_estimate"
+    assert "disclaimer" in result
+    assert "screening metric only" in result["disclaimer"].lower()
 
 
-def test_calculate_macro_split() -> None:
-    """Test macro distribution calculation."""
-    # 80kg athlete, 2600 kcal target, 2.0g/kg protein, 25% fat
-    macros = calculate_macro_split(
-        weight_kg=80.0,
-        target_calories=2600,
-        protein_per_kg=2.0,
-        fat_pct_of_calories=0.25,
+def test_calculate_protein_reference_range() -> None:
+    """Test evidence-based protein range (1.6-2.2 g/kg): 55.0 kg -> 88-121 g."""
+    result = calculate_protein_reference(weight_kg=55.0)
+    assert result["protein_min_g"] == 88
+    assert result["protein_max_g"] == 121
+    assert result["protein_target_g"] == 110
+    assert result["provenance"] == "provisional_default"
+
+    # User confirmed override within range
+    custom = calculate_protein_reference(weight_kg=55.0, custom_target_g=115)
+    assert custom["protein_target_g"] == 115
+    assert custom["provenance"] == "user_confirmed"
+
+
+def test_calculate_initial_energy_estimate_onboarding_gate() -> None:
+    """Test that energy targets remain None until onboarding biometrics and sleep are completed."""
+    # Before onboarding completion
+    pre = calculate_initial_energy_estimate(
+        weight_kg=55.0,
+        height_cm=173.0,
+        age=20,
+        onboarding_completed=False,
+        sleep_baseline_hours=None,
+        experience_level=None,
     )
-    assert macros["calories"] == 2600
-    assert macros["protein_g"] == 160  # 80 * 2.0
-    assert macros["fat_g"] == 72  # (2600 * 0.25) / 9 = 72.2 -> 72
-    # Carbs: (2600 - (160*4 + 72*9)) / 4 = (2600 - 640 - 648) / 4 = 1312 / 4 = 328g
-    assert macros["carbs_g"] == 328
+    assert pre["estimated_kcal"] is None
+    assert pre["provenance"] == "awaiting_onboarding"
+    assert pre["macros"] is None
+
+    # After onboarding completion with baselines confirmed
+    post = calculate_initial_energy_estimate(
+        weight_kg=55.0,
+        height_cm=173.0,
+        age=20,
+        sex=None,  # Unknown sex
+        onboarding_completed=True,
+        sleep_baseline_hours=7.5,
+        experience_level="beginner",
+        weekly_badminton_sessions=2,
+        weekly_running_sessions=1,
+    )
+    assert post["estimated_kcal"] is not None
+    assert post["estimated_kcal"] > 1800
+    assert post["provenance"] == "calculated_estimate"
+    assert post["sex_assumed"] is True
+    assert post["surplus_kcal"] == 250
+    assert post["macros"]["protein_g"] == 110
+    assert post["macros"]["fat_g"] > 0
+    assert post["macros"]["carbs_g"] > 0
+
+
+def test_calculate_rules_readiness() -> None:
+    """Test transparent rules-based readiness score and triggers."""
+    # Optimal recovery inputs
+    prime = calculate_rules_readiness(
+        sleep_hours=8.5,
+        sleep_quality=5,
+        soreness=1,
+        fatigue=1,
+        stress=1,
+    )
+    assert prime["readiness_score"] >= 80
+    assert prime["status"] == "Prime"
+    assert len(prime["triggers"]) >= 4
+
+    # Compromised / exhausted inputs
+    recover = calculate_rules_readiness(
+        sleep_hours=4.5,
+        sleep_quality=1,
+        soreness=5,
+        fatigue=5,
+        stress=5,
+    )
+    assert recover["readiness_score"] < 55
+    assert recover["status"] == "Recover"
+    assert any("deficit" in t.lower() or "warning" in t.lower() for t in recover["triggers"])
+
+
+@pytest.mark.asyncio
+async def test_auth_security_gating() -> None:
+    """Verify that protected endpoints return 401 Unauthorized without valid Bearer token."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        # 1. Unauthenticated requests must fail with 401
+        res1 = await client.post(
+            "/api/v1/coaching/targets-preview",
+            json={"weight_kg": 55.0, "height_cm": 173.0},
+        )
+        assert res1.status_code == 401
+
+        res2 = await client.post(
+            "/api/v1/coaching/readiness",
+            json={
+                "sleep_hours": 7.5,
+                "sleep_quality": 4,
+                "soreness": 2,
+                "fatigue": 2,
+            },
+        )
+        assert res2.status_code == 401
+
+        # 2. Authenticated test request with Bearer token passes
+        headers = {"Authorization": "Bearer test-token-athlete-test"}
+        auth_res = await client.post(
+            "/api/v1/coaching/targets-preview",
+            json={
+                "weight_kg": 55.0,
+                "height_cm": 173.0,
+                "age": 20,
+                "onboarding_completed": True,
+                "sleep_baseline_hours": 7.5,
+                "experience_level": "beginner",
+            },
+            headers=headers,
+        )
+        assert auth_res.status_code == 200
+        data = auth_res.json()
+        assert data["success"] is True
+        assert data["data"]["bmi_info"]["bmi"] == 18.4
+        assert data["data"]["protein_info"]["protein_target_g"] == 110

@@ -1,5 +1,6 @@
 /**
  * AthlonIQ Brand & Theme Design System Configuration
+ * Strict Dark Graphite & Electric Lime Palette
  */
 
 export const BRAND_CONFIG = {
@@ -7,14 +8,14 @@ export const BRAND_CONFIG = {
   tagline: "Personal AI Performance & Physique OS",
   shortDesc: "Autonomous cybernetic loop synthesizing training, nutrition, biometrics, and recovery.",
   version: "0.1.0",
-  releasePhase: "Phase 0 (Foundation)",
+  releasePhase: "Phase 1 (Core Identity, Onboarding & Deterministic OS)",
   theme: {
-    darkBg: "#080C14",
-    cardBg: "#0F172A",
-    surfaceBg: "#1E293B",
-    borderColor: "#334155",
+    darkBg: "#090A0F",
+    cardBg: "#12151E",
+    surfaceBg: "#181D2A",
+    borderColor: "#1E2330",
     colors: {
-      cyan: "#00F0FF",
+      lime: "#BEF264",
       emerald: "#10B981",
       violet: "#8B5CF6",
       amber: "#F59E0B",
@@ -22,13 +23,13 @@ export const BRAND_CONFIG = {
     },
   },
   navItems: [
-    { id: "dashboard", label: "Command Center", icon: "LayoutDashboard" },
-    { id: "workouts", label: "Workouts & Strain", icon: "Dumbbell" },
-    { id: "nutrition", label: "Nutrition & Macros", icon: "Utensils" },
-    { id: "recovery", label: "Recovery & HRV", icon: "Moon" },
+    { id: "dashboard", label: "Today Dashboard", icon: "LayoutDashboard" },
+    { id: "nutrition", label: "Nutrition & Energy", icon: "Utensils" },
+    { id: "workouts", label: "Training & Equipment", icon: "Dumbbell" },
+    { id: "recovery", label: "Recovery & Readiness", icon: "Moon" },
     { id: "progress", label: "Physique Analytics", icon: "TrendingUp" },
     { id: "coach", label: "AI Performance Coach", icon: "Bot" },
-    { id: "profile", label: "Athlete Profile", icon: "User" },
+    { id: "profile", label: "Profile & Setup", icon: "User" },
   ],
   links: {
     docs: "/docs/ARCHITECTURE.md",

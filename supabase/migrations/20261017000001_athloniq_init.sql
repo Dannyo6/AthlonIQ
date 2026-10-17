@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- AthlonIQ — Initial Database Schema Migration
 -- Migration: 20261017000001_athloniq_init.sql
--- Description: Core tables, RLS policies, indexes, and triggers for AthlonIQ OS
+-- Description: Core tables, RLS policies, indexes, and triggers for AthlonIQ OS (Phase 1)
 -- ==============================================================================
 
 -- Enable required extensions
@@ -18,20 +18,40 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ------------------------------------------------------------------------------
--- 1. Profiles (Athlete Identity & Baselines)
+-- 1. Profiles (Athlete Identity, Biometrics & Onboarding Baselines)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
-    date_of_birth DATE,
-    gender TEXT CHECK (gender IN ('male', 'female', 'other')),
-    height_cm NUMERIC(5, 2) CHECK (height_cm > 0),
-    experience_level TEXT DEFAULT 'intermediate' CHECK (experience_level IN ('beginner', 'intermediate', 'advanced', 'elite')),
-    primary_goal TEXT DEFAULT 'hypertrophy' CHECK (primary_goal IN ('hypertrophy', 'strength', 'fat_loss', 'recomposition', 'endurance')),
-    target_weight_kg NUMERIC(5, 2) CHECK (target_weight_kg > 0),
-    activity_multiplier NUMERIC(3, 2) DEFAULT 1.375 CHECK (activity_multiplier >= 1.0 AND activity_multiplier <= 2.5),
+    
+    -- Deterministic initial defaults
+    age INTEGER DEFAULT 20 NOT NULL CHECK (age > 0 AND age < 130),
+    height_cm NUMERIC(5, 2) DEFAULT 173.0 NOT NULL CHECK (height_cm > 0),
+    weight_kg NUMERIC(5, 2) DEFAULT 55.0 NOT NULL CHECK (weight_kg > 0),
+    dietary_pattern TEXT DEFAULT 'nonvegetarian' NOT NULL CHECK (dietary_pattern IN ('nonvegetarian', 'vegetarian', 'vegan', 'pescatarian', 'eggetarian', 'keto', 'other')),
+    primary_goal TEXT DEFAULT 'lean_bulk' NOT NULL CHECK (primary_goal IN ('lean_bulk', 'hypertrophy', 'strength', 'fat_loss', 'recomposition', 'endurance', 'maintenance')),
+    training_scope TEXT[] DEFAULT ARRAY['gym', 'calisthenics', 'badminton', 'running'] NOT NULL,
+    training_days_per_week INTEGER DEFAULT 5 NOT NULL CHECK (training_days_per_week BETWEEN 1 AND 7),
+    training_environment TEXT DEFAULT 'home_gym' NOT NULL CHECK (training_environment IN ('home_gym', 'commercial_gym', 'calisthenics_park', 'hybrid')),
+    calorie_tracking_habit TEXT DEFAULT 'rough_estimates' NOT NULL CHECK (calorie_tracking_habit IN ('weighing_foods', 'rough_estimates', 'visual_portions', 'mindful_eating', 'none')),
+
+    -- Known unknowns MUST default to NULL
+    sex TEXT CHECK (sex IN ('male', 'female', 'other')),
+    waist_cm NUMERIC(5, 2) CHECK (waist_cm > 0),
+    experience_level TEXT CHECK (experience_level IN ('beginner', 'intermediate', 'advanced', 'elite')),
+    current_split TEXT CHECK (current_split IN ('ppl', 'upper_lower', 'full_body', 'bro_split', 'custom', 'need_recommendation')),
+    weekly_badminton_sessions INTEGER CHECK (weekly_badminton_sessions >= 0),
+    weekly_running_sessions INTEGER CHECK (weekly_running_sessions >= 0),
+    sleep_baseline_hours NUMERIC(3, 1) CHECK (sleep_baseline_hours > 0 AND sleep_baseline_hours <= 16),
+    exercise_limitations TEXT,
+
+    -- Onboarding flags & state
+    onboarding_step INTEGER DEFAULT 1 NOT NULL CHECK (onboarding_step BETWEEN 1 AND 5),
+    onboarding_completed BOOLEAN DEFAULT FALSE NOT NULL,
+    equipment_confirmed BOOLEAN DEFAULT FALSE NOT NULL,
+
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -54,8 +74,137 @@ CREATE POLICY "Athletes can insert their own profile"
     ON public.profiles FOR INSERT
     WITH CHECK (auth.uid() = id);
 
+CREATE POLICY "Athletes can delete their own profile"
+    ON public.profiles FOR DELETE
+    USING (auth.uid() = id);
+
 -- ------------------------------------------------------------------------------
--- 2. Athlete Physique & Biometric Metrics (Time-series)
+-- 2. User Equipment (Home Gym & Gear Verification)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.user_equipment (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    item_key TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    max_load_kg NUMERIC(6, 2),
+    min_increment_kg NUMERIC(4, 2) DEFAULT 1.25,
+    is_available BOOLEAN DEFAULT TRUE NOT NULL,
+    is_confirmed BOOLEAN DEFAULT FALSE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE (user_id, item_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_equipment_user ON public.user_equipment(user_id);
+
+CREATE TRIGGER trg_user_equipment_updated_at
+    BEFORE UPDATE ON public.user_equipment
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.user_equipment ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Athletes can view their equipment"
+    ON public.user_equipment FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can insert their equipment"
+    ON public.user_equipment FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can update their equipment"
+    ON public.user_equipment FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can delete their equipment"
+    ON public.user_equipment FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- ------------------------------------------------------------------------------
+-- 3. User Goals & Macro Targets (Deterministic & Provenance-Tracked)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.user_goals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE,
+    protein_min_g INTEGER DEFAULT 88 NOT NULL CHECK (protein_min_g > 0),
+    protein_max_g INTEGER DEFAULT 121 NOT NULL CHECK (protein_max_g >= protein_min_g),
+    protein_target_g INTEGER DEFAULT 110 NOT NULL CHECK (protein_target_g >= protein_min_g AND protein_target_g <= protein_max_g),
+    protein_provenance TEXT DEFAULT 'provisional_default' NOT NULL,
+    
+    -- Calorie targets remain NULL until onboarding energy inputs are complete
+    calorie_target_kcal INTEGER CHECK (calorie_target_kcal > 500 AND calorie_target_kcal < 8000),
+    calorie_provenance TEXT DEFAULT 'awaiting_onboarding' NOT NULL,
+    
+    carbs_target_g INTEGER CHECK (carbs_target_g >= 0),
+    fat_target_g INTEGER CHECK (fat_target_g >= 0),
+    water_target_ml INTEGER DEFAULT 3500 NOT NULL CHECK (water_target_ml > 0),
+    
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE TRIGGER trg_user_goals_updated_at
+    BEFORE UPDATE ON public.user_goals
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.user_goals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Athletes can view their goals"
+    ON public.user_goals FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can insert their goals"
+    ON public.user_goals FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can update their goals"
+    ON public.user_goals FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can delete their goals"
+    ON public.user_goals FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- ------------------------------------------------------------------------------
+-- 4. User Preferences (Units, Timezone, Notification Windows)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE,
+    weight_unit TEXT DEFAULT 'kg' NOT NULL CHECK (weight_unit IN ('kg', 'lbs')),
+    distance_unit TEXT DEFAULT 'km' NOT NULL CHECK (distance_unit IN ('km', 'miles')),
+    timezone TEXT DEFAULT 'Asia/Kolkata' NOT NULL,
+    notifications_enabled BOOLEAN DEFAULT FALSE NOT NULL,
+    quiet_hours_start TIME DEFAULT '22:30' NOT NULL,
+    quiet_hours_end TIME DEFAULT '07:00' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE TRIGGER trg_user_preferences_updated_at
+    BEFORE UPDATE ON public.user_preferences
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Athletes can view their preferences"
+    ON public.user_preferences FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can insert their preferences"
+    ON public.user_preferences FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can update their preferences"
+    ON public.user_preferences FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Athletes can delete their preferences"
+    ON public.user_preferences FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- ------------------------------------------------------------------------------
+-- 5. Athlete Physique & Biometrics (Time-series)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.athlete_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,13 +227,13 @@ CREATE INDEX IF NOT EXISTS idx_athlete_metrics_user_time
 
 ALTER TABLE public.athlete_metrics ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Athletes can manage their own biometric metrics"
+CREATE POLICY "Athletes can manage their biometric metrics"
     ON public.athlete_metrics FOR ALL
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
 
 -- ------------------------------------------------------------------------------
--- 3. Exercise Library (Reference Catalog)
+-- 6. Exercise Library (Reference Catalog)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.exercises (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -93,7 +242,7 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     primary_muscle TEXT NOT NULL,
     secondary_muscles TEXT[] DEFAULT '{}',
     instructions TEXT,
-    is_custom BOOLEAN DEFAULT FALSE,
+    is_custom BOOLEAN DEFAULT FALSE NOT NULL,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -108,8 +257,16 @@ CREATE POLICY "Users can create custom exercises"
     ON public.exercises FOR INSERT
     WITH CHECK (auth.uid() = user_id AND is_custom = TRUE);
 
+CREATE POLICY "Users can update their custom exercises"
+    ON public.exercises FOR UPDATE
+    USING (auth.uid() = user_id AND is_custom = TRUE);
+
+CREATE POLICY "Users can delete their custom exercises"
+    ON public.exercises FOR DELETE
+    USING (auth.uid() = user_id AND is_custom = TRUE);
+
 -- ------------------------------------------------------------------------------
--- 4. Workouts & Sessions
+-- 7. Workouts & Sessions
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.workouts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -180,16 +337,16 @@ CREATE POLICY "Athletes can manage exercise sets"
     ));
 
 -- ------------------------------------------------------------------------------
--- 5. Nutrition Logs & Meals
+-- 8. Nutrition Logs & Meals
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.nutrition_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     log_date DATE NOT NULL,
-    target_calories INTEGER NOT NULL DEFAULT 2500,
-    target_protein_g INTEGER NOT NULL DEFAULT 180,
-    target_carbs_g INTEGER NOT NULL DEFAULT 275,
-    target_fat_g INTEGER NOT NULL DEFAULT 70,
+    target_calories INTEGER,
+    target_protein_g INTEGER NOT NULL DEFAULT 110,
+    target_carbs_g INTEGER,
+    target_fat_g INTEGER,
     total_calories INTEGER DEFAULT 0,
     total_protein_g INTEGER DEFAULT 0,
     total_carbs_g INTEGER DEFAULT 0,
@@ -229,18 +386,20 @@ CREATE POLICY "Athletes can manage their meals"
     WITH CHECK (EXISTS (SELECT 1 FROM public.nutrition_logs nl WHERE nl.id = nutrition_log_id AND nl.user_id = auth.uid()));
 
 -- ------------------------------------------------------------------------------
--- 6. Recovery & Biometrics
+-- 9. Recovery & Subjective Check-in Logs (Deterministic Rules Engine)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.recovery_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     log_date DATE NOT NULL,
-    sleep_duration_minutes INTEGER CHECK (sleep_duration_minutes >= 0),
-    sleep_quality_score INTEGER CHECK (sleep_quality_score BETWEEN 0 AND 100),
-    resting_heart_rate INTEGER CHECK (resting_heart_rate > 30 AND resting_heart_rate < 200),
-    hrv_rmssd_ms NUMERIC(5, 1) CHECK (hrv_rmssd_ms >= 0),
-    soreness_score INTEGER CHECK (soreness_score BETWEEN 1 AND 10),
-    readiness_score INTEGER CHECK (readiness_score BETWEEN 0 AND 100),
+    sleep_duration_hours NUMERIC(3, 1) NOT NULL CHECK (sleep_duration_hours >= 0 AND sleep_duration_hours <= 24),
+    sleep_quality INTEGER NOT NULL CHECK (sleep_quality BETWEEN 1 AND 5),
+    soreness INTEGER NOT NULL CHECK (soreness BETWEEN 1 AND 5),
+    fatigue INTEGER NOT NULL CHECK (fatigue BETWEEN 1 AND 5),
+    stress INTEGER CHECK (stress BETWEEN 1 AND 5),
+    readiness_score INTEGER NOT NULL CHECK (readiness_score BETWEEN 0 AND 100),
+    readiness_status TEXT NOT NULL CHECK (readiness_status IN ('Prime', 'Moderate', 'Recover')),
+    triggers JSONB DEFAULT '[]'::jsonb,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     UNIQUE (user_id, log_date)
@@ -256,7 +415,7 @@ CREATE POLICY "Athletes can manage their recovery logs"
     WITH CHECK (auth.uid() = user_id);
 
 -- ------------------------------------------------------------------------------
--- 7. AI Performance Coach Sessions & Messages
+-- 10. AI Performance Coach Sessions & Messages
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.coach_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -291,3 +450,121 @@ CREATE POLICY "Athletes can manage their coach messages"
     ON public.coach_messages FOR ALL
     USING (EXISTS (SELECT 1 FROM public.coach_sessions cs WHERE cs.id = session_id AND cs.user_id = auth.uid()))
     WITH CHECK (EXISTS (SELECT 1 FROM public.coach_sessions cs WHERE cs.id = session_id AND cs.user_id = auth.uid()));
+
+-- ------------------------------------------------------------------------------
+-- 11. Automated Athlete Provisioning Trigger (On Signup)
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.handle_new_athlete_signup()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 1. Initialize Profile with deterministic Phase 1 baselines
+    INSERT INTO public.profiles (
+        id,
+        email,
+        full_name,
+        age,
+        height_cm,
+        weight_kg,
+        dietary_pattern,
+        primary_goal,
+        training_scope,
+        training_days_per_week,
+        training_environment,
+        calorie_tracking_habit,
+        onboarding_step,
+        onboarding_completed,
+        equipment_confirmed,
+        sex,
+        waist_cm,
+        experience_level,
+        current_split,
+        weekly_badminton_sessions,
+        weekly_running_sessions,
+        sleep_baseline_hours,
+        exercise_limitations
+    ) VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', 'Athlete'),
+        20,
+        173.0,
+        55.0,
+        'nonvegetarian',
+        'lean_bulk',
+        ARRAY['gym', 'calisthenics', 'badminton', 'running'],
+        5,
+        'home_gym',
+        'rough_estimates',
+        1,
+        FALSE,
+        FALSE,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    );
+
+    -- 2. Seed unconfirmed historical home gym items
+    INSERT INTO public.user_equipment (user_id, item_key, item_name, max_load_kg, min_increment_kg, is_available, is_confirmed)
+    VALUES
+        (NEW.id, 'bench', 'Bench', 150.0, 2.5, TRUE, FALSE),
+        (NEW.id, 'squat_rack', 'Squat/Power Rack', 200.0, 2.5, TRUE, FALSE),
+        (NEW.id, 'dips_station', 'Dips Station', NULL, NULL, TRUE, FALSE),
+        (NEW.id, 'lat_pulldown_station', 'Lat Pulldown Station', 100.0, 5.0, TRUE, FALSE),
+        (NEW.id, 'free_weights_70kg', 'Free Weights up to 70 kg', 70.0, 1.25, TRUE, FALSE);
+
+    -- 3. Seed provisional goals (protein 88-121g, calories awaiting onboarding)
+    INSERT INTO public.user_goals (
+        user_id,
+        protein_min_g,
+        protein_max_g,
+        protein_target_g,
+        protein_provenance,
+        calorie_target_kcal,
+        calorie_provenance,
+        carbs_target_g,
+        fat_target_g
+    ) VALUES (
+        NEW.id,
+        88,
+        121,
+        110,
+        'provisional_default',
+        NULL,
+        'awaiting_onboarding',
+        NULL,
+        NULL
+    );
+
+    -- 4. Seed user preferences
+    INSERT INTO public.user_preferences (
+        user_id,
+        weight_unit,
+        distance_unit,
+        timezone,
+        notifications_enabled,
+        quiet_hours_start,
+        quiet_hours_end
+    ) VALUES (
+        NEW.id,
+        'kg',
+        'km',
+        'Asia/Kolkata',
+        FALSE,
+        '22:30',
+        '07:00'
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Bind trigger to auth.users table
+DROP TRIGGER IF EXISTS trg_on_auth_user_created ON auth.users;
+CREATE TRIGGER trg_on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_athlete_signup();

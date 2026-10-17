@@ -1,28 +1,134 @@
 /**
- * Core Domain Type Definitions for AthlonIQ OS
+ * AthlonIQ Core Domain Types & Data Contracts
+ * Enforces auditable provenance, deterministic biometrics, and equipment verification.
  */
 
-export interface AthleteProfile {
+export type ValueProvenance =
+  | "provisional_default"
+  | "calculated_estimate"
+  | "user_confirmed"
+  | "ai_estimated"
+  | "awaiting_onboarding"
+  | "unconfirmed_equipment";
+
+export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
-  tier: "beginner" | "intermediate" | "advanced" | "elite";
-  primaryGoal: "hypertrophy" | "strength" | "fat_loss" | "recomposition" | "endurance";
-  weightKg: number;
-  heightCm: number;
+  age: number; // default 20
+  heightCm: number; // default 173.0
+  weightKg: number; // default 55.0
+  dietaryPattern:
+    | "nonvegetarian"
+    | "vegetarian"
+    | "vegan"
+    | "pescatarian"
+    | "eggetarian"
+    | "keto"
+    | "other";
+  primaryGoal:
+    | "lean_bulk"
+    | "hypertrophy"
+    | "strength"
+    | "fat_loss"
+    | "recomposition"
+    | "endurance"
+    | "maintenance";
+  trainingScope: string[]; // ["gym", "calisthenics", "badminton", "running"]
+  trainingDaysPerWeek: number; // default 5
+  trainingEnvironment: "home_gym" | "commercial_gym" | "calisthenics_park" | "hybrid";
+  calorieTrackingHabit:
+    | "weighing_foods"
+    | "rough_estimates"
+    | "visual_portions"
+    | "mindful_eating"
+    | "none";
+
+  // Known unknowns (MUST default to null until explicitly provided)
+  sex: "male" | "female" | "other" | null;
+  waistCm: number | null;
+  experienceLevel: "beginner" | "intermediate" | "advanced" | "elite" | null;
+  currentSplit:
+    | "ppl"
+    | "upper_lower"
+    | "full_body"
+    | "bro_split"
+    | "custom"
+    | "need_recommendation"
+    | null;
+  weeklyBadmintonSessions: number | null;
+  weeklyRunningSessions: number | null;
+  sleepBaselineHours: number | null;
+  exerciseLimitations: string | null;
+
+  // Onboarding & confirmation flags
+  onboardingStep: number; // 1 to 5
+  onboardingCompleted: boolean;
+  equipmentConfirmed: boolean;
+}
+
+export interface EquipmentItem {
+  id: string;
+  itemKey: string;
+  itemName: string;
+  maxLoadKg: number | null;
+  minIncrementKg: number | null;
+  isAvailable: boolean;
+  isConfirmed: boolean;
+  notes?: string | null;
+}
+
+export interface UserGoals {
+  proteinMinG: number; // 88
+  proteinMaxG: number; // 121
+  proteinTargetG: number; // 110
+  proteinProvenance: ValueProvenance; // "provisional_default"
+  calorieTargetKcal: number | null; // null awaiting onboarding
+  calorieProvenance: ValueProvenance; // "awaiting_onboarding"
+  carbsTargetG: number | null;
+  fatTargetG: number | null;
+  waterTargetMl: number; // 3500
+}
+
+export interface UserPreferences {
+  weightUnit: "kg" | "lbs";
+  distanceUnit: "km" | "miles";
+  timezone: string;
+  notificationsEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+}
+
+export interface RecoveryCheckIn {
+  date: string;
+  sleepHours: number;
+  sleepQuality: number; // 1 - 5
+  soreness: number; // 1 - 5
+  fatigue: number; // 1 - 5
+  stress: number | null; // 1 - 5
+  notes?: string;
+}
+
+export interface ReadinessResult {
+  readinessScore: number; // 0 - 100
+  status: "Prime" | "Moderate" | "Recover";
+  guidance: string;
+  triggers: string[];
+  provenance: ValueProvenance;
+}
+
+// Legacy view models maintained for compatibility
+export interface AthleteProfile extends UserProfile {
+  tier?: "beginner" | "intermediate" | "advanced" | "elite";
   bodyFatPct?: number;
   targetWeightKg?: number;
 }
 
-export interface DailyReadiness {
+export interface DailyReadiness extends ReadinessResult {
   date: string;
-  readinessScore: number; // 0-100
   sleepDurationHours: number;
-  sleepQualityScore: number; // 0-100
-  hrvRmssdMs: number;
-  restingHeartRate: number;
-  sorenessScore: number; // 1-10
-  status: "optimal" | "moderate" | "fatigued";
+  sleepQualityScore: number;
+  sorenessScore: number;
 }
 
 export interface MacroTarget {
@@ -50,7 +156,7 @@ export interface WorkoutSummary {
 
 export interface CoachMessage {
   id: string;
-  role: "athlete" | "coach";
+  role: "athlete" | "coach" | "system";
   content: string;
   timestamp: string;
   actionRecommendation?: {
