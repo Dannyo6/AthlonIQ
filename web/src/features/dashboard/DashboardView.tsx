@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
-import { calculateBmi } from "@/lib/calculations";
+import {
+  calculateBmi,
+  calculateDailyNutritionTotals,
+  calculateWeightTrend,
+} from "@/lib/calculations";
 import {
   Flame,
   Dumbbell,
@@ -28,6 +32,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     todayCheckIn,
     readiness,
     submitCheckIn,
+    foodEntries,
+    getFoodEntriesForDate,
+    workoutSessions,
+    bodyMetrics,
   } = useAthloniqState();
 
   const [checkInOpen, setCheckInOpen] = useState(false);
@@ -36,7 +44,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const [sorenessInput, setSorenessInput] = useState(todayCheckIn.soreness);
   const [fatigueInput, setFatigueInput] = useState(todayCheckIn.fatigue);
 
-  const bmi = calculateBmi(profile.weightKg, profile.heightCm);
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayFood = useMemo(
+    () => getFoodEntriesForDate(today),
+    [getFoodEntriesForDate, today, foodEntries]
+  );
+  const dailyNutrition = useMemo(
+    () => calculateDailyNutritionTotals(todayFood),
+    [todayFood]
+  );
+
+  const todayWorkouts = useMemo(
+    () => workoutSessions.filter((s) => s.loggedDate === today),
+    [workoutSessions, today]
+  );
+
+  const weightTrend = useMemo(() => {
+    const points = bodyMetrics.map((m) => ({
+      loggedDate: m.loggedDate,
+      weightKg: m.weightKg,
+    }));
+    return calculateWeightTrend(points);
+  }, [bodyMetrics]);
+
+  const latestWeight = useMemo(() => {
+    if (bodyMetrics.length === 0) return null;
+    return [...bodyMetrics].sort((a, b) => b.loggedDate.localeCompare(a.loggedDate))[0];
+  }, [bodyMetrics]);
+
+  const bmi = calculateBmi(
+    latestWeight ? latestWeight.weightKg : profile.weightKg,
+    profile.heightCm
+  );
   const unconfirmedEquipmentCount = equipment.filter((i) => !i.isConfirmed).length;
 
   const handleSaveCheckIn = () => {
@@ -257,14 +296,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
           <div className="space-y-4">
             <div>
-              <span className="text-xs text-slate-400 font-medium">Daily Caloric Target</span>
-              <div className="mt-1 flex items-baseline gap-2">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-slate-400 font-medium">Daily Caloric Intake</span>
+                <span className="font-mono text-slate-400 text-[11px] tabular-nums">
+                  {goals.calorieTargetKcal !== null
+                    ? dailyNutrition.confirmedTotals.caloriesKcal >= goals.calorieTargetKcal
+                      ? "Target met"
+                      : `${goals.calorieTargetKcal - dailyNutrition.confirmedTotals.caloriesKcal} kcal remaining`
+                    : "Calibrating..."}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
                 {goals.calorieTargetKcal !== null ? (
                   <>
                     <span className="text-3xl font-extrabold text-white font-mono tabular-nums">
-                      {goals.calorieTargetKcal}
+                      {dailyNutrition.confirmedTotals.caloriesKcal}
                     </span>
-                    <span className="text-xs text-slate-400 font-mono">kcal/day</span>
+                    <span className="text-xs text-slate-400 font-mono">/ {goals.calorieTargetKcal} kcal</span>
                   </>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -274,11 +322,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   </div>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {goals.calorieTargetKcal !== null
-                  ? "Calibrated with Mifflin-St Jeor + 250 kcal lean-bulk surplus."
-                  : "Caloric estimation is mathematically gated until energy inputs are verified."}
-              </p>
+              {goals.calorieTargetKcal !== null && (
+                <div className="w-full bg-[#181D2A] rounded-full h-1.5 mt-2 overflow-hidden border border-[#1E2330]">
+                  <div
+                    className="bg-athloniq-lime h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (dailyNutrition.confirmedTotals.caloriesKcal / goals.calorieTargetKcal) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
@@ -288,9 +344,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-white font-mono tabular-nums">
-                  0 / {goals.proteinTargetG}
+                  {dailyNutrition.confirmedTotals.proteinG} / {goals.proteinTargetG}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">g</span>
+              </div>
+              <div className="w-full bg-[#12151E] rounded-full h-1.5 overflow-hidden border border-[#1E2330]">
+                <div
+                  className="bg-athloniq-lime h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (dailyNutrition.confirmedTotals.proteinG / goals.proteinTargetG) * 100
+                    )}%`,
+                  }}
+                />
               </div>
               <div className="text-[11px] text-slate-400">
                 Range: {goals.proteinMinG}–{goals.proteinMaxG} g (1.6–2.2 g/kg of {profile.weightKg} kg)
@@ -315,15 +382,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <Scale className="h-5 w-5 text-athloniq-lime" />
               <h3 className="font-bold text-white text-base">Biometrics & Screening</h3>
             </div>
-            <ProvenanceBadge provenance="calculated_estimate" />
+            <ProvenanceBadge provenance={latestWeight ? "user_confirmed" : "calculated_estimate"} />
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
-                <span className="text-[11px] text-slate-400">Body Weight</span>
+                <span className="text-[11px] text-slate-400">
+                  {latestWeight ? `Weight (${latestWeight.loggedDate})` : "Body Weight"}
+                </span>
                 <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                  {profile.weightKg.toFixed(1)}
+                  {(latestWeight ? latestWeight.weightKg : profile.weightKg).toFixed(1)}
                   <span className="text-xs text-slate-400 ml-1">kg</span>
                 </div>
               </div>
@@ -351,9 +420,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <div className="rounded-xl bg-[#181D2A]/60 border border-[#1E2330] p-3 text-xs text-slate-400 flex items-center justify-between">
               <span>Weight Trend:</span>
               <span className="font-mono text-slate-300 text-[11px]">
-                Log 3 weigh-ins to unlock 7-day rolling trend
+                {weightTrend.status === "ok" ? (
+                  <span className="text-athloniq-lime font-bold">
+                    7d Avg: {weightTrend.rolling7dKg?.toFixed(2)} kg ({weightTrend.weeklyDeltaKg && weightTrend.weeklyDeltaKg >= 0 ? "+" : ""}{weightTrend.weeklyDeltaKg?.toFixed(2)} kg)
+                  </span>
+                ) : (
+                  `${bodyMetrics.length}/3 weigh-ins logged`
+                )}
               </span>
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => onNavigate("progress")}
+            >
+              Open Progress Analytics <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
         </Card>
 
@@ -374,27 +458,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-1.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-400">Weekly Frequency</span>
-                <span className="font-mono font-bold text-athloniq-lime">
-                  {profile.trainingDaysPerWeek} Days / Week
-                </span>
-              </div>
-              <div className="text-xs text-slate-300 font-semibold pt-1">
-                Training Scope:
-              </div>
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {profile.trainingScope.map((scope, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 rounded bg-[#12151E] border border-[#1E2330] text-[10px] font-mono text-slate-300 uppercase"
-                  >
-                    {scope}
+            {todayWorkouts.length > 0 ? (
+              <div className="p-3.5 rounded-xl bg-athloniq-lime/10 border border-athloniq-lime/30 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-athloniq-lime uppercase tracking-wider">
+                    Today's Session Completed
                   </span>
-                ))}
+                  <Badge variant="lime">LOGGED</Badge>
+                </div>
+                <div className="text-sm font-bold text-white">{todayWorkouts[0].title}</div>
+                <div className="text-xs text-slate-400 font-mono tabular-nums">
+                  {todayWorkouts[0].sets.filter((s) => s.isCompleted).length} sets completed •{" "}
+                  {todayWorkouts[0].sets
+                    .filter((s) => s.isCompleted && !s.isBodyweight)
+                    .reduce((sum, s) => sum + s.reps * s.loadKg, 0)
+                    .toLocaleString()}{" "}
+                  kg volume
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Weekly Frequency</span>
+                  <span className="font-mono font-bold text-athloniq-lime">
+                    {profile.trainingDaysPerWeek} Days / Week
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 font-semibold pt-1">
+                  Training Scope:
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {profile.trainingScope.map((scope, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 rounded bg-[#12151E] border border-[#1E2330] text-[10px] font-mono text-slate-300 uppercase"
+                    >
+                      {scope}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
               <div className="flex items-center justify-between text-xs">

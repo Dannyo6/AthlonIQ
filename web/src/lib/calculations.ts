@@ -1,9 +1,26 @@
 /**
  * AthlonIQ Deterministic Domain Calculations (Client-side mirror of backend)
+ * Phase 1: BMI, protein reference, energy estimate, readiness
+ * Phase 2: Food catalog search, nutrition totals, running pace, progression, weight trend
+ *
  * Enforces mathematically rigorous, auditable formulas. Zero hallucinated numbers.
  */
 
-import { ReadinessResult, UserProfile, ValueProvenance } from "@/types";
+import {
+  ReadinessResult,
+  UserProfile,
+  ValueProvenance,
+  FoodCatalogItem,
+  FoodEntry,
+  DailyNutritionSummary,
+  DailyMacroTotals,
+  ProgressionSuggestion,
+  WeightTrendResult,
+} from "@/types";
+
+// =============================================================================
+// Phase 1: BMI
+// =============================================================================
 
 export interface BmiResult {
   bmi: number;
@@ -39,6 +56,10 @@ export function calculateBmi(weightKg: number, heightCm: number): BmiResult {
   };
 }
 
+// =============================================================================
+// Phase 1: Protein Reference
+// =============================================================================
+
 export interface ProteinReference {
   proteinMinG: number;
   proteinMaxG: number;
@@ -73,6 +94,10 @@ export function calculateProteinReference(
     rationale: "Evidence-based resistance training range (1.6–2.2 g/kg/day) for muscle protein synthesis and lean bulk accrual.",
   };
 }
+
+// =============================================================================
+// Phase 1: Energy Estimate (Mifflin-St Jeor)
+// =============================================================================
 
 export interface EnergyEstimateResult {
   estimatedKcal: number | null;
@@ -176,6 +201,10 @@ export function calculateEnergyEstimate(
     }`,
   };
 }
+
+// =============================================================================
+// Phase 1: Rules-Based Readiness
+// =============================================================================
 
 export function calculateRulesReadiness(
   sleepHours: number,
@@ -298,5 +327,266 @@ export function calculateRulesReadiness(
     guidance,
     triggers,
     provenance: "calculated_estimate",
+  };
+}
+
+// =============================================================================
+// Phase 2: Indian & Athletic Food Reference Catalog (client-side mirror)
+// =============================================================================
+
+export const INDIAN_FOOD_CATALOG: FoodCatalogItem[] = [
+  // Staples / Carbs
+  { id: "rice-steamed", name: "Cooked Steamed Rice", category: "staple", serving_label: "1 katori (150g)", serving_weight_g: 150, calories_kcal: 195, protein_g: 4.0, carbs_g: 43.0, fat_g: 0.5, provenance: "verified_reference" },
+  { id: "roti-wheat", name: "Whole Wheat Roti", category: "staple", serving_label: "1 medium (40g)", serving_weight_g: 40, calories_kcal: 104, protein_g: 3.5, carbs_g: 20.0, fat_g: 1.5, provenance: "verified_reference" },
+  { id: "idli", name: "Idli", category: "staple", serving_label: "2 pieces (120g)", serving_weight_g: 120, calories_kcal: 132, protein_g: 4.0, carbs_g: 28.0, fat_g: 0.5, provenance: "verified_reference" },
+  { id: "dosa-plain", name: "Plain Dosa", category: "staple", serving_label: "1 medium (100g)", serving_weight_g: 100, calories_kcal: 168, protein_g: 3.5, carbs_g: 26.0, fat_g: 5.5, provenance: "verified_reference" },
+  { id: "dosa-masala", name: "Masala Dosa", category: "staple", serving_label: "1 standard (180g)", serving_weight_g: 180, calories_kcal: 302, protein_g: 6.0, carbs_g: 45.0, fat_g: 10.0, provenance: "verified_reference" },
+  { id: "oats-rolled", name: "Rolled Oats", category: "staple", serving_label: "50g raw", serving_weight_g: 50, calories_kcal: 190, protein_g: 6.5, carbs_g: 33.5, fat_g: 3.5, provenance: "verified_reference" },
+  { id: "banana", name: "Banana", category: "fruit", serving_label: "1 medium (118g)", serving_weight_g: 118, calories_kcal: 105, protein_g: 1.3, carbs_g: 27.0, fat_g: 0.4, provenance: "verified_reference" },
+  // Protein — Non-Veg
+  { id: "egg-whole-boiled", name: "Whole Boiled Egg", category: "protein", serving_label: "1 large (50g)", serving_weight_g: 50, calories_kcal: 78, protein_g: 6.3, carbs_g: 0.6, fat_g: 5.3, provenance: "verified_reference" },
+  { id: "egg-whites", name: "Egg Whites", category: "protein", serving_label: "3 large whites (100g)", serving_weight_g: 100, calories_kcal: 52, protein_g: 10.9, carbs_g: 0.7, fat_g: 0.2, provenance: "verified_reference" },
+  { id: "egg-bhurji", name: "Egg Bhurji / Omelette", category: "protein", serving_label: "2 eggs + 1 tsp oil (120g)", serving_weight_g: 120, calories_kcal: 196, protein_g: 12.6, carbs_g: 1.5, fat_g: 15.5, provenance: "verified_reference" },
+  { id: "chicken-breast-cooked", name: "Grilled Chicken Breast", category: "protein", serving_label: "150g cooked", serving_weight_g: 150, calories_kcal: 247, protein_g: 46.5, carbs_g: 0.0, fat_g: 5.5, provenance: "verified_reference" },
+  { id: "chicken-curry", name: "Chicken Curry (Home-Style)", category: "protein", serving_label: "1 bowl (200g)", serving_weight_g: 200, calories_kcal: 290, protein_g: 28.0, carbs_g: 6.0, fat_g: 17.0, provenance: "verified_reference" },
+  { id: "fish-rohu-cooked", name: "Grilled Fish (Rohu / Surmai)", category: "protein", serving_label: "150g cooked", serving_weight_g: 150, calories_kcal: 193, protein_g: 31.5, carbs_g: 0.0, fat_g: 7.0, provenance: "verified_reference" },
+  // Protein — Veg
+  { id: "paneer-raw", name: "Paneer (Raw / Cubed)", category: "protein", serving_label: "100g", serving_weight_g: 100, calories_kcal: 265, protein_g: 18.3, carbs_g: 1.2, fat_g: 20.8, provenance: "verified_reference" },
+  { id: "paneer-bhurji", name: "Paneer Bhurji", category: "protein", serving_label: "150g", serving_weight_g: 150, calories_kcal: 340, protein_g: 22.0, carbs_g: 4.5, fat_g: 26.0, provenance: "verified_reference" },
+  { id: "dal-tadka", name: "Toor / Moong Dal Tadka", category: "protein", serving_label: "1 katori (150g)", serving_weight_g: 150, calories_kcal: 150, protein_g: 9.0, carbs_g: 23.0, fat_g: 3.5, provenance: "verified_reference" },
+  { id: "whey-protein", name: "Whey Protein (Isolate / Concentrate)", category: "supplement", serving_label: "1 scoop (30g)", serving_weight_g: 30, calories_kcal: 120, protein_g: 24.0, carbs_g: 3.0, fat_g: 1.5, provenance: "verified_reference" },
+  { id: "curd-dahi", name: "Curd / Dahi", category: "protein", serving_label: "1 katori (150g)", serving_weight_g: 150, calories_kcal: 84, protein_g: 7.5, carbs_g: 6.0, fat_g: 3.0, provenance: "verified_reference" },
+  { id: "toned-milk", name: "Toned Milk", category: "dairy", serving_label: "250ml glass", serving_weight_g: 250, calories_kcal: 120, protein_g: 8.8, carbs_g: 12.0, fat_g: 3.0, provenance: "verified_reference" },
+  // Fats / Oils / Snacks
+  { id: "peanut-butter", name: "Peanut Butter", category: "fats", serving_label: "1 tbsp (16g)", serving_weight_g: 16, calories_kcal: 94, protein_g: 4.0, carbs_g: 3.5, fat_g: 8.0, provenance: "verified_reference" },
+  { id: "roasted-chana", name: "Roasted Chana / Peanuts", category: "snack", serving_label: "30g", serving_weight_g: 30, calories_kcal: 113, protein_g: 5.5, carbs_g: 14.0, fat_g: 3.5, provenance: "verified_reference" },
+  { id: "ghee-tsp", name: "Ghee", category: "fats", serving_label: "1 tsp (5g)", serving_weight_g: 5, calories_kcal: 45, protein_g: 0.0, carbs_g: 0.0, fat_g: 5.0, provenance: "verified_reference" },
+  { id: "cooking-oil-tbsp", name: "Cooking Oil", category: "fats", serving_label: "1 tbsp (14g)", serving_weight_g: 14, calories_kcal: 124, protein_g: 0.0, carbs_g: 0.0, fat_g: 14.0, provenance: "verified_reference" },
+];
+
+export function searchFoodCatalog(query?: string, category?: string): FoodCatalogItem[] {
+  let results = INDIAN_FOOD_CATALOG;
+  if (category) {
+    results = results.filter((f) => f.category.toLowerCase() === category.toLowerCase());
+  }
+  if (query && query.trim()) {
+    const q = query.trim().toLowerCase();
+    results = results.filter(
+      (f) => f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q)
+    );
+  }
+  return results;
+}
+
+// =============================================================================
+// Phase 2: Daily Nutrition Totals (confirmed vs unconfirmed guardrail)
+// =============================================================================
+
+function blankTotals(): DailyMacroTotals {
+  return { caloriesKcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 };
+}
+
+/**
+ * CRITICAL GUARDRAIL: is_confirmed=false entries are NEVER included in
+ * confirmedTotals. They are tracked separately as unconfirmedEstimates.
+ */
+export function calculateDailyNutritionTotals(entries: FoodEntry[]): DailyNutritionSummary {
+  const confirmed = blankTotals();
+  const unconfirmed = blankTotals();
+
+  for (const entry of entries) {
+    const q = Math.max(0, entry.quantity);
+    const cal = Math.round(entry.caloriesKcal * q * 10) / 10;
+    const pro = Math.round(entry.proteinG * q * 10) / 10;
+    const cho = Math.round(entry.carbsG * q * 10) / 10;
+    const fat = Math.round(entry.fatG * q * 10) / 10;
+
+    const bucket = entry.isConfirmed ? confirmed : unconfirmed;
+    bucket.caloriesKcal = Math.round((bucket.caloriesKcal + cal) * 10) / 10;
+    bucket.proteinG = Math.round((bucket.proteinG + pro) * 10) / 10;
+    bucket.carbsG = Math.round((bucket.carbsG + cho) * 10) / 10;
+    bucket.fatG = Math.round((bucket.fatG + fat) * 10) / 10;
+    bucket.entryCount += 1;
+  }
+
+  return { confirmedTotals: confirmed, unconfirmedEstimates: unconfirmed };
+}
+
+// =============================================================================
+// Phase 2: Running Pace Calculator
+// =============================================================================
+
+export interface PaceResult {
+  distanceKm: number;
+  durationMinutes: number;
+  paceDecimal: number;
+  paceFormatted: string; // "MM:SS /km"
+}
+
+export function calculateRunningPace(distanceKm: number, durationMinutes: number): PaceResult {
+  if (distanceKm <= 0) throw new Error("distanceKm must be strictly positive");
+  if (durationMinutes <= 0) throw new Error("durationMinutes must be strictly positive");
+
+  const paceDecimal = Math.round((durationMinutes / distanceKm) * 100) / 100;
+  const minutesPart = Math.floor(paceDecimal);
+  let secondsPart = Math.round((paceDecimal - minutesPart) * 60);
+  // Guard floating-point spill
+  if (secondsPart === 60) {
+    return {
+      distanceKm,
+      durationMinutes,
+      paceDecimal,
+      paceFormatted: `${minutesPart + 1}:00 /km`,
+    };
+  }
+  const paceFormatted = `${minutesPart}:${String(secondsPart).padStart(2, "0")} /km`;
+  return { distanceKm, durationMinutes, paceDecimal, paceFormatted };
+}
+
+// =============================================================================
+// Phase 2: Progression Suggestion (client-side rules engine)
+// =============================================================================
+
+export interface PreviousSetInput {
+  reps: number;
+  loadKg: number;
+  rpe?: number | null;
+  isBodyweight?: boolean;
+}
+
+export function evaluateProgressionSuggestion(
+  exerciseName: string,
+  previousSets: PreviousSetInput[],
+  equipmentMaxLoadKg: number,
+  equipmentMinIncrementKg: number,
+  equipmentConfirmed: boolean,
+  readinessStatus: "Prime" | "Moderate" | "Recover",
+  targetRepsMax: number
+): ProgressionSuggestion {
+  if (!equipmentConfirmed) {
+    return {
+      exerciseName,
+      action: "confirm_equipment_first",
+      explanation: `Confirm your home gym equipment in Profile → Equipment before load progressions can be prescribed for '${exerciseName}'.`,
+      requiresUserConfirmation: true,
+      provenance: "rules_based_progression",
+    };
+  }
+
+  if (readinessStatus === "Recover") {
+    return {
+      exerciseName,
+      action: "maintain_or_deload",
+      explanation: `Recovery deficit detected. Hold current load for '${exerciseName}' or reduce by 5–10%.`,
+      requiresUserConfirmation: true,
+      provenance: "rules_based_progression",
+    };
+  }
+
+  const rpeValues = previousSets.map((s) => s.rpe).filter((r): r is number => r != null);
+  const avgRpe = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : 0;
+
+  if (avgRpe >= 9.5) {
+    return {
+      exerciseName,
+      action: "maintain_or_deload",
+      explanation: `Average RPE ${avgRpe.toFixed(1)} >= 9.5. Maintain or deload to manage fatigue.`,
+      requiresUserConfirmation: true,
+      provenance: "rules_based_progression",
+    };
+  }
+
+  if (previousSets.length === 0) {
+    return {
+      exerciseName,
+      action: "maintain",
+      explanation: "No previous set data. Log sets to enable progression tracking.",
+      requiresUserConfirmation: true,
+      provenance: "rules_based_progression",
+    };
+  }
+
+  const lastSet = previousSets[previousSets.length - 1];
+  const currentLoad = lastSet.loadKg;
+  const isBodyweight = lastSet.isBodyweight ?? false;
+  const allHitTarget = previousSets.every((s) => s.reps >= targetRepsMax);
+
+  if (allHitTarget && avgRpe <= 8.5) {
+    if (isBodyweight || currentLoad >= equipmentMaxLoadKg) {
+      return {
+        exerciseName,
+        action: "increase_reps_or_tempo",
+        explanation: `All sets hit ≥ ${targetRepsMax} reps. ${isBodyweight ? "Bodyweight movement" : `At ${equipmentMaxLoadKg} kg home cap`}. Add +1–2 reps or use a 3s eccentric.`,
+        newRepsSuggestion: "+1 to +2 reps or 3s eccentric",
+        requiresUserConfirmation: true,
+        provenance: "rules_based_progression",
+      };
+    } else {
+      const newLoad = Math.min(
+        Math.round((currentLoad + equipmentMinIncrementKg) * 100) / 100,
+        equipmentMaxLoadKg
+      );
+      return {
+        exerciseName,
+        action: "increase_load",
+        explanation: `All sets hit ≥ ${targetRepsMax} reps with avg RPE ${avgRpe.toFixed(1)}. Suggested: ${currentLoad} kg → ${newLoad} kg (+${equipmentMinIncrementKg} kg).`,
+        newLoadKg: newLoad,
+        requiresUserConfirmation: true,
+        provenance: "rules_based_progression",
+      };
+    }
+  }
+
+  return {
+    exerciseName,
+    action: "maintain",
+    explanation: `Not all sets reached ${targetRepsMax} reps. Continue at current load (avg RPE: ${avgRpe.toFixed(1)}).`,
+    requiresUserConfirmation: true,
+    provenance: "rules_based_progression",
+  };
+}
+
+// =============================================================================
+// Phase 2: Weight Trend (7-day rolling average)
+// =============================================================================
+
+export interface WeightPointInput {
+  loggedDate: string; // ISO "YYYY-MM-DD"
+  weightKg: number;
+}
+
+export function calculateWeightTrend(entries: WeightPointInput[]): WeightTrendResult {
+  if (entries.length < 3) {
+    return {
+      status: "insufficient_data",
+      rolling7dKg: null,
+      weeklyDeltaKg: null,
+      explanation: `At least 3 weigh-ins are required to establish a reliable rolling weight trend. Currently ${entries.length} of 3 minimum. Single-day fluctuations reflect water retention, glycogen loading, and bowel content — not tissue change.`,
+      entries: [],
+    };
+  }
+
+  const sorted = [...entries].sort((a, b) => a.loggedDate.localeCompare(b.loggedDate));
+  const weights = sorted.map((e) => e.weightKg);
+
+  const rollingAvgs: number[] = sorted.map((_, i) => {
+    const start = Math.max(0, i - 6);
+    const window = weights.slice(start, i + 1);
+    return Math.round((window.reduce((a, b) => a + b, 0) / window.length) * 100) / 100;
+  });
+
+  const latestRolling = rollingAvgs[rollingAvgs.length - 1];
+  const weeklyDelta = Math.round((latestRolling - rollingAvgs[0]) * 100) / 100;
+
+  return {
+    status: "ok",
+    rolling7dKg: latestRolling,
+    weeklyDeltaKg: weeklyDelta,
+    explanation: `7-day rolling average: ${latestRolling.toFixed(2)} kg. Trend since first entry: ${weeklyDelta >= 0 ? "+" : ""}${weeklyDelta.toFixed(2)} kg.`,
+    entries: sorted.map((e, i) => ({
+      logged_date: e.loggedDate,
+      weight_kg: e.weightKg,
+      rolling_7d_kg: rollingAvgs[i],
+    })),
   };
 }

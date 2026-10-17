@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import {
   UserProfile,
   EquipmentItem,
@@ -6,6 +6,10 @@ import {
   UserPreferences,
   RecoveryCheckIn,
   ReadinessResult,
+  FoodEntry,
+  WorkoutSession,
+  ActivitySession,
+  BodyMetric,
 } from "@/types";
 import {
   calculateRulesReadiness,
@@ -14,6 +18,10 @@ import {
 } from "@/lib/calculations";
 
 const STORAGE_KEY = "athloniq_state_v1";
+
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
 
 const DEFAULT_PROFILE: UserProfile = {
   id: "athlete-001",
@@ -120,7 +128,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 const DEFAULT_CHECKIN: RecoveryCheckIn = {
-  date: new Date().toISOString().split("T")[0],
+  date: todayISO(),
   sleepHours: 7.5,
   sleepQuality: 4,
   soreness: 2,
@@ -128,7 +136,12 @@ const DEFAULT_CHECKIN: RecoveryCheckIn = {
   stress: null,
 };
 
+// =============================================================================
+// Phase 2 Context Interface
+// =============================================================================
+
 interface AthloniqContextType {
+  // Phase 1 state
   profile: UserProfile;
   equipment: EquipmentItem[];
   goals: UserGoals;
@@ -143,60 +156,83 @@ interface AthloniqContextType {
   submitCheckIn: (checkIn: Partial<RecoveryCheckIn>) => void;
   completeOnboarding: (finalData: Partial<UserProfile>) => void;
   resetToDefaults: () => void;
+
+  // Phase 2: Nutrition
+  foodEntries: FoodEntry[];
+  addFoodEntry: (entry: Omit<FoodEntry, "id">) => void;
+  updateFoodEntry: (id: string, updates: Partial<FoodEntry>) => void;
+  deleteFoodEntry: (id: string) => void;
+  getFoodEntriesForDate: (date: string) => FoodEntry[];
+
+  // Phase 2: Workouts
+  workoutSessions: WorkoutSession[];
+  addWorkoutSession: (session: Omit<WorkoutSession, "id">) => void;
+  updateWorkoutSession: (id: string, updates: Partial<WorkoutSession>) => void;
+  deleteWorkoutSession: (id: string) => void;
+  getTodayWorkout: () => WorkoutSession | undefined;
+
+  // Phase 2: Activities
+  activitySessions: ActivitySession[];
+  addActivitySession: (session: Omit<ActivitySession, "id">) => void;
+  updateActivitySession: (id: string, updates: Partial<ActivitySession>) => void;
+  deleteActivitySession: (id: string) => void;
+  getActivitiesForDate: (date: string) => ActivitySession[];
+  getWeeklyActivities: () => ActivitySession[];
+
+  // Phase 2: Body Metrics
+  bodyMetrics: BodyMetric[];
+  addBodyMetric: (metric: Omit<BodyMetric, "id">) => void;
+  updateBodyMetric: (id: string, updates: Partial<BodyMetric>) => void;
+  deleteBodyMetric: (id: string) => void;
+  getLatestWeight: () => BodyMetric | undefined;
 }
 
 const AthloniqContext = createContext<AthloniqContextType | null>(null);
 
-export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  // Load persisted state or default
-  const [profile, setProfile] = useState<UserProfile>(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_profile`);
-      return stored ? JSON.parse(stored) : DEFAULT_PROFILE;
-    } catch {
-      return DEFAULT_PROFILE;
-    }
-  });
+// ---------------------------------------------------------------------------
+// Persistence helpers
+// ---------------------------------------------------------------------------
 
-  const [equipment, setEquipment] = useState<EquipmentItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_equipment`);
-      return stored ? JSON.parse(stored) : DEFAULT_EQUIPMENT;
-    } catch {
-      return DEFAULT_EQUIPMENT;
-    }
-  });
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const stored = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+    return stored ? (JSON.parse(stored) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-  const [goals, setGoals] = useState<UserGoals>(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_goals`);
-      return stored ? JSON.parse(stored) : DEFAULT_GOALS;
-    } catch {
-      return DEFAULT_GOALS;
-    }
-  });
+function saveToStorage<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(`${STORAGE_KEY}_${key}`, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`AthlonIQ: failed to persist '${key}':`, e);
+  }
+}
 
-  const [preferences, setPreferences] = useState<UserPreferences>(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_preferences`);
-      return stored ? JSON.parse(stored) : DEFAULT_PREFERENCES;
-    } catch {
-      return DEFAULT_PREFERENCES;
-    }
-  });
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
-  const [todayCheckIn, setTodayCheckIn] = useState<RecoveryCheckIn>(() => {
-    try {
-      const stored = localStorage.getItem(`${STORAGE_KEY}_checkin`);
-      return stored ? JSON.parse(stored) : DEFAULT_CHECKIN;
-    } catch {
-      return DEFAULT_CHECKIN;
-    }
-  });
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
 
-  // Calculate readiness deterministically from checkIn
+export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Phase 1 state
+  const [profile, setProfile] = useState<UserProfile>(() => loadFromStorage("profile", DEFAULT_PROFILE));
+  const [equipment, setEquipment] = useState<EquipmentItem[]>(() => loadFromStorage("equipment", DEFAULT_EQUIPMENT));
+  const [goals, setGoals] = useState<UserGoals>(() => loadFromStorage("goals", DEFAULT_GOALS));
+  const [preferences, setPreferences] = useState<UserPreferences>(() => loadFromStorage("preferences", DEFAULT_PREFERENCES));
+  const [todayCheckIn, setTodayCheckIn] = useState<RecoveryCheckIn>(() => loadFromStorage("checkin", DEFAULT_CHECKIN));
+
+  // Phase 2 state
+  const [foodEntries, setFoodEntries] = useState<FoodEntry[]>(() => loadFromStorage("food_entries", []));
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>(() => loadFromStorage("workout_sessions", []));
+  const [activitySessions, setActivitySessions] = useState<ActivitySession[]>(() => loadFromStorage("activity_sessions", []));
+  const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>(() => loadFromStorage("body_metrics", []));
+
+  // Deterministic readiness calculation
   const readiness = calculateRulesReadiness(
     todayCheckIn.sleepHours,
     todayCheckIn.sleepQuality,
@@ -205,24 +241,26 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({
     todayCheckIn.stress
   );
 
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(`${STORAGE_KEY}_profile`, JSON.stringify(profile));
-      localStorage.setItem(`${STORAGE_KEY}_equipment`, JSON.stringify(equipment));
-      localStorage.setItem(`${STORAGE_KEY}_goals`, JSON.stringify(goals));
-      localStorage.setItem(`${STORAGE_KEY}_preferences`, JSON.stringify(preferences));
-      localStorage.setItem(`${STORAGE_KEY}_checkin`, JSON.stringify(todayCheckIn));
-    } catch (e) {
-      console.warn("Error persisting AthlonIQ state to localStorage:", e);
-    }
-  }, [profile, equipment, goals, preferences, todayCheckIn]);
+  // Sync all Phase 1 state to localStorage
+  useEffect(() => { saveToStorage("profile", profile); }, [profile]);
+  useEffect(() => { saveToStorage("equipment", equipment); }, [equipment]);
+  useEffect(() => { saveToStorage("goals", goals); }, [goals]);
+  useEffect(() => { saveToStorage("preferences", preferences); }, [preferences]);
+  useEffect(() => { saveToStorage("checkin", todayCheckIn); }, [todayCheckIn]);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  // Sync all Phase 2 state to localStorage
+  useEffect(() => { saveToStorage("food_entries", foodEntries); }, [foodEntries]);
+  useEffect(() => { saveToStorage("workout_sessions", workoutSessions); }, [workoutSessions]);
+  useEffect(() => { saveToStorage("activity_sessions", activitySessions); }, [activitySessions]);
+  useEffect(() => { saveToStorage("body_metrics", bodyMetrics); }, [bodyMetrics]);
+
+  // ==========================================================================
+  // Phase 1 Actions
+  // ==========================================================================
+
+  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile((prev) => {
       const updated = { ...prev, ...updates };
-
-      // Re-evaluate protein targets if weight changed
       if (updates.weightKg && updates.weightKg !== prev.weightKg) {
         const pRef = calculateProteinReference(updates.weightKg);
         setGoals((g) => ({
@@ -233,57 +271,49 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({
           proteinProvenance: pRef.provenance,
         }));
       }
-
       return updated;
     });
-  };
+  }, []);
 
-  const updateEquipmentItem = (id: string, updates: Partial<EquipmentItem>) => {
+  const updateEquipmentItem = useCallback((id: string, updates: Partial<EquipmentItem>) => {
     setEquipment((prev) => {
-      const next = prev.map((item) =>
-        item.id === id ? { ...item, ...updates } : item
-      );
+      const next = prev.map((item) => (item.id === id ? { ...item, ...updates } : item));
       const allConfirmed = next.every((item) => item.isConfirmed);
-      if (allConfirmed !== profile.equipmentConfirmed) {
-        setProfile((p) => ({ ...p, equipmentConfirmed: allConfirmed }));
-      }
+      setProfile((p) => ({ ...p, equipmentConfirmed: allConfirmed }));
       return next;
     });
-  };
+  }, []);
 
-  const confirmEquipment = (confirmedItems: EquipmentItem[]) => {
+  const confirmEquipment = useCallback((confirmedItems: EquipmentItem[]) => {
     setEquipment(confirmedItems);
     const allConfirmed = confirmedItems.length > 0 && confirmedItems.every((i) => i.isConfirmed);
     setProfile((p) => ({ ...p, equipmentConfirmed: allConfirmed }));
-  };
+  }, []);
 
-  const updateGoals = (updates: Partial<UserGoals>) => {
+  const updateGoals = useCallback((updates: Partial<UserGoals>) => {
     setGoals((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const updatePreferences = (updates: Partial<UserPreferences>) => {
+  const updatePreferences = useCallback((updates: Partial<UserPreferences>) => {
     setPreferences((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const submitCheckIn = (checkIn: Partial<RecoveryCheckIn>) => {
+  const submitCheckIn = useCallback((checkIn: Partial<RecoveryCheckIn>) => {
     setTodayCheckIn((prev) => ({
       ...prev,
       ...checkIn,
-      date: new Date().toISOString().split("T")[0],
+      date: todayISO(),
     }));
-  };
+  }, []);
 
-  const completeOnboarding = (finalData: Partial<UserProfile>) => {
+  const completeOnboarding = useCallback((finalData: Partial<UserProfile>) => {
     const mergedProfile: UserProfile = {
       ...profile,
       ...finalData,
       onboardingCompleted: true,
       onboardingStep: 5,
     };
-
     setProfile(mergedProfile);
-
-    // Compute deterministic energy and macro estimate
     const energyEst = calculateEnergyEstimate(mergedProfile);
     if (energyEst.estimatedKcal && energyEst.macros) {
       setGoals((prev) => ({
@@ -296,20 +326,120 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({
         fatTargetG: energyEst.macros!.fatG,
       }));
     }
-  };
+  }, [profile]);
 
-  const resetToDefaults = () => {
+  const resetToDefaults = useCallback(() => {
     setProfile(DEFAULT_PROFILE);
     setEquipment(DEFAULT_EQUIPMENT);
     setGoals(DEFAULT_GOALS);
     setPreferences(DEFAULT_PREFERENCES);
     setTodayCheckIn(DEFAULT_CHECKIN);
+    setFoodEntries([]);
+    setWorkoutSessions([]);
+    setActivitySessions([]);
+    setBodyMetrics([]);
     localStorage.clear();
-  };
+  }, []);
+
+  // ==========================================================================
+  // Phase 2: Nutrition Actions
+  // ==========================================================================
+
+  const addFoodEntry = useCallback((entry: Omit<FoodEntry, "id">) => {
+    const newEntry: FoodEntry = { ...entry, id: generateId() };
+    setFoodEntries((prev) => [...prev, newEntry]);
+  }, []);
+
+  const updateFoodEntry = useCallback((id: string, updates: Partial<FoodEntry>) => {
+    setFoodEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+  }, []);
+
+  const deleteFoodEntry = useCallback((id: string) => {
+    setFoodEntries((prev) => prev.filter((e) => e.id !== id));
+  }, []);
+
+  const getFoodEntriesForDate = useCallback(
+    (date: string) => foodEntries.filter((e) => e.loggedDate === date),
+    [foodEntries]
+  );
+
+  // ==========================================================================
+  // Phase 2: Workout Actions
+  // ==========================================================================
+
+  const addWorkoutSession = useCallback((session: Omit<WorkoutSession, "id">) => {
+    const newSession: WorkoutSession = { ...session, id: generateId() };
+    setWorkoutSessions((prev) => [...prev, newSession]);
+  }, []);
+
+  const updateWorkoutSession = useCallback((id: string, updates: Partial<WorkoutSession>) => {
+    setWorkoutSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  }, []);
+
+  const deleteWorkoutSession = useCallback((id: string) => {
+    setWorkoutSessions((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const getTodayWorkout = useCallback(
+    () => workoutSessions.find((s) => s.loggedDate === todayISO()),
+    [workoutSessions]
+  );
+
+  // ==========================================================================
+  // Phase 2: Activity Actions
+  // ==========================================================================
+
+  const addActivitySession = useCallback((session: Omit<ActivitySession, "id">) => {
+    const newSession: ActivitySession = { ...session, id: generateId() };
+    setActivitySessions((prev) => [...prev, newSession]);
+  }, []);
+
+  const updateActivitySession = useCallback((id: string, updates: Partial<ActivitySession>) => {
+    setActivitySessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  }, []);
+
+  const deleteActivitySession = useCallback((id: string) => {
+    setActivitySessions((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const getActivitiesForDate = useCallback(
+    (date: string) => activitySessions.filter((s) => s.loggedDate === date),
+    [activitySessions]
+  );
+
+  const getWeeklyActivities = useCallback(() => {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7);
+    return activitySessions.filter((s) => new Date(s.loggedDate) >= weekAgo);
+  }, [activitySessions]);
+
+  // ==========================================================================
+  // Phase 2: Body Metrics Actions
+  // ==========================================================================
+
+  const addBodyMetric = useCallback((metric: Omit<BodyMetric, "id">) => {
+    const newMetric: BodyMetric = { ...metric, id: generateId() };
+    setBodyMetrics((prev) => [...prev, newMetric]);
+  }, []);
+
+  const updateBodyMetric = useCallback((id: string, updates: Partial<BodyMetric>) => {
+    setBodyMetrics((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
+  }, []);
+
+  const deleteBodyMetric = useCallback((id: string) => {
+    setBodyMetrics((prev) => prev.filter((m) => m.id !== id));
+  }, []);
+
+  const getLatestWeight = useCallback((): BodyMetric | undefined => {
+    if (bodyMetrics.length === 0) return undefined;
+    return [...bodyMetrics].sort((a, b) => b.loggedDate.localeCompare(a.loggedDate))[0];
+  }, [bodyMetrics]);
 
   return (
     <AthloniqContext.Provider
       value={{
+        // Phase 1
         profile,
         equipment,
         goals,
@@ -324,6 +454,31 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({
         submitCheckIn,
         completeOnboarding,
         resetToDefaults,
+        // Phase 2: Nutrition
+        foodEntries,
+        addFoodEntry,
+        updateFoodEntry,
+        deleteFoodEntry,
+        getFoodEntriesForDate,
+        // Phase 2: Workouts
+        workoutSessions,
+        addWorkoutSession,
+        updateWorkoutSession,
+        deleteWorkoutSession,
+        getTodayWorkout,
+        // Phase 2: Activities
+        activitySessions,
+        addActivitySession,
+        updateActivitySession,
+        deleteActivitySession,
+        getActivitiesForDate,
+        getWeeklyActivities,
+        // Phase 2: Body Metrics
+        bodyMetrics,
+        addBodyMetric,
+        updateBodyMetric,
+        deleteBodyMetric,
+        getLatestWeight,
       }}
     >
       {children}
