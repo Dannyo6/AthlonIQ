@@ -50,3 +50,32 @@ export async function submitReadinessCheckIn(payload: any, token?: string) {
     return null;
   }
 }
+
+export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
+  const formData = new FormData();
+  formData.append("file", imageFile);
+
+  const res = await fetch(`${API_BASE_URL}/vision/analyze-meal`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Vision analysis failed with status ${res.status}`;
+    try {
+      const errorJson = await res.json();
+      if (errorJson?.detail) {
+        errorDetail = errorJson.detail;
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  const json = await res.json();
+  return json.data; // MealAnalysisResponse
+}

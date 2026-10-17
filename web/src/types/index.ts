@@ -210,7 +210,34 @@ export interface FoodEntry {
   provenance: FoodProvenance;
   /** CRITICAL: FALSE = unconfirmed estimate; MUST NEVER pollute confirmed daily totals */
   isConfirmed: boolean;
+  is_confirmed?: boolean;
+  confidence?: "high" | "medium" | "low";
   notes?: string;
+}
+
+export interface CandidateFoodItem {
+  id: string;
+  catalog_id?: string | null;
+  food_name: string;
+  matched_catalog_name?: string | null;
+  estimated_serving: string;
+  serving_label: string;
+  quantity: number;
+  calories_kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  confidence: "high" | "medium" | "low";
+  provenance: FoodProvenance;
+  is_confirmed: boolean;
+  isConfirmed?: boolean;
+}
+
+export interface MealAnalysisResponse {
+  candidates: CandidateFoodItem[];
+  detected_item_count: number;
+  provenance: "ai_estimated";
+  notes?: string | null;
 }
 
 export interface DailyMacroTotals {

@@ -346,7 +346,15 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // ==========================================================================
 
   const addFoodEntry = useCallback((entry: Omit<FoodEntry, "id">) => {
-    const newEntry: FoodEntry = { ...entry, id: generateId() };
+    const isConf = entry.is_confirmed !== undefined
+      ? Boolean(entry.is_confirmed)
+      : (entry.isConfirmed !== undefined ? Boolean(entry.isConfirmed) : true);
+    const newEntry: FoodEntry = {
+      ...entry,
+      id: generateId(),
+      isConfirmed: isConf,
+      is_confirmed: isConf,
+    };
     setFoodEntries((prev) => [...prev, newEntry]);
   }, []);
 

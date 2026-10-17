@@ -401,7 +401,13 @@ export function calculateDailyNutritionTotals(entries: FoodEntry[]): DailyNutrit
     const cho = Math.round(entry.carbsG * q * 10) / 10;
     const fat = Math.round(entry.fatG * q * 10) / 10;
 
-    const bucket = entry.isConfirmed ? confirmed : unconfirmed;
+    // Strict guardrail check: if either is_confirmed is false or isConfirmed is false,
+    // the entry is unconfirmed and NEVER added to confirmedTotals.
+    const isEntryConfirmed = entry.is_confirmed !== undefined
+      ? Boolean(entry.is_confirmed)
+      : Boolean(entry.isConfirmed);
+
+    const bucket = isEntryConfirmed ? confirmed : unconfirmed;
     bucket.caloriesKcal = Math.round((bucket.caloriesKcal + cal) * 10) / 10;
     bucket.proteinG = Math.round((bucket.proteinG + pro) * 10) / 10;
     bucket.carbsG = Math.round((bucket.carbsG + cho) * 10) / 10;

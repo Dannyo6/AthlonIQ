@@ -22,7 +22,9 @@ import {
   Copy,
   Trash2,
   CheckCircle2,
+  Camera,
 } from "lucide-react";
+import { MealPhotoUploader } from "./components/MealPhotoUploader";
 
 const MEAL_SLOTS: { id: MealSlot; label: string }[] = [
   { id: "breakfast", label: "Breakfast" },
@@ -59,6 +61,7 @@ export const NutritionView: React.FC = () => {
   const [customQty, setCustomQty] = useState("");
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   // Custom food form state
   const [customName, setCustomName] = useState("");
@@ -177,6 +180,14 @@ export const NutritionView: React.FC = () => {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
           />
+          <Button
+            variant="secondary"
+            onClick={() => setShowPhotoModal(true)}
+            className="border-purple-500/40 text-purple-300 hover:border-purple-400 hover:text-white bg-purple-500/10 gap-1.5"
+          >
+            <Camera className="h-4 w-4 text-purple-400" />
+            <span className="hidden sm:inline">Analyze Photo</span>
+          </Button>
           <Button variant="primary" onClick={() => setShowAddPanel(!showAddPanel)}>
             <Plus className="h-4 w-4" /> Log Meal
           </Button>
@@ -231,19 +242,30 @@ export const NutritionView: React.FC = () => {
             ))}
           </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search Indian & athletic foods (rice, roti, dal, chicken, paneer...)"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSelectedFood(null);
-              }}
-              className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none placeholder-slate-500"
-            />
+          {/* Search Bar & Analyze Photo Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search Indian & athletic foods (rice, roti, dal, chicken, paneer...)"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedFood(null);
+                }}
+                className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none placeholder-slate-500"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowPhotoModal(true)}
+              className="border-purple-500/40 text-purple-300 hover:border-purple-400 hover:text-white bg-purple-500/10 shrink-0 gap-2"
+            >
+              <Camera className="h-4 w-4 text-purple-400" />
+              Analyze Photo
+            </Button>
           </div>
 
           {/* Search Results */}
@@ -528,6 +550,14 @@ export const NutritionView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AthlonIQ Vision Modal */}
+      <MealPhotoUploader
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        selectedDate={selectedDate}
+        selectedSlot={selectedSlot}
+      />
     </div>
   );
 };
