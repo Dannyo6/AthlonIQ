@@ -164,6 +164,76 @@ export interface WorkoutSummary {
   perceivedRpe: number;
 }
 
+export interface ProposedCoachAction {
+  type: "log_meal" | "update_protein_target" | "apply_progression" | string;
+  summary: string;
+  payload: Record<string, any>;
+  status?: "pending" | "applied" | "dismissed";
+}
+
+export interface EpistemicCoachMessage {
+  id: string;
+  sender: "athlete" | "coach";
+  text: string;
+  timestamp: string;
+  toolsUsed?: string[];
+  factsFromTools?: string[];
+  appCalculations?: string[];
+  recommendations?: string[];
+  missingOrUncertain?: string[];
+  proposedAction?: ProposedCoachAction | null;
+}
+
+export interface WeeklyReviewReport {
+  week_start_date: string;
+  week_end_date: string;
+  generated_at: string;
+  nutrition_consistency: {
+    days_logging_food: number;
+    days_in_period: number;
+    logging_consistency_pct: number;
+    protein_target_band: string;
+    current_protein_target_g: number;
+    latest_confirmed_protein_g: number;
+    is_protein_goal_met_today: boolean;
+    top_protein_staples: Record<string, number>;
+    summary: string;
+  };
+  weight_trend_review: {
+    status: string;
+    weigh_in_count: number;
+    latest_weight_kg?: number | null;
+    rolling_7d_kg?: number | null;
+    weekly_delta_kg?: number | null;
+    explanation: string;
+    disclaimer: string;
+  };
+  training_and_sports_load: {
+    gym_sessions_completed: number;
+    gym_sessions_target: number;
+    gym_consistency_pct: number;
+    gym_total_sets: number;
+    gym_total_volume_kg: number;
+    running_sessions: number;
+    running_total_km: number;
+    badminton_sessions: number;
+    badminton_total_min: number;
+    calisthenics_sessions: number;
+    summary: string;
+  };
+  recovery_patterns: {
+    average_sleep_hours: number;
+    average_sleep_quality: number;
+    average_soreness: number;
+    average_fatigue: number;
+    readiness_distribution: Record<string, number>;
+    latest_readiness_score: number;
+    latest_status: string;
+    summary: string;
+  };
+  next_week_priorities: string[];
+}
+
 export interface CoachMessage {
   id: string;
   role: "athlete" | "coach" | "system";

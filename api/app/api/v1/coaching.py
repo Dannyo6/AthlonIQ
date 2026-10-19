@@ -1,5 +1,6 @@
 """Coaching and deterministic performance intelligence endpoints."""
 
+from typing import List
 from fastapi import APIRouter, Depends
 from app.core.security import AuthenticatedUser, get_current_user
 from app.domain.performance import (
@@ -8,16 +9,31 @@ from app.domain.performance import (
     calculate_initial_energy_estimate,
     calculate_rules_readiness,
 )
+from app.domain.coach_tools import (
+    TOOL_METADATA_LIST,
+    CoachToolMetadata,
+    WeeklyReviewReport,
+    UserCoachingContext,
+    generate_weekly_review,
+)
+from app.services.coach_adapter import coach_service
 from app.schemas.common import APIResponse
 from app.schemas.coaching import (
     TargetsPreviewRequest,
     TargetsPreviewResponse,
     ReadinessCheckInRequest,
     ReadinessCheckInResponse,
+    CoachChatRequest,
+    CoachTurnResponse,
+    WeeklyReviewRequest,
 )
 
 router = APIRouter(prefix="/coaching", tags=["coaching"])
 
+
+# =============================================================================
+# Phase 1 & 2 Deterministic Biometric & Readiness Endpoints
+# =============================================================================
 
 @router.post("/targets-preview", response_model=APIResponse[TargetsPreviewResponse])
 async def preview_athlete_targets(
@@ -85,4 +101,62 @@ async def assess_athlete_readiness(
         success=True,
         message="Readiness assessed successfully",
         data=data,
+    )
+
+
+# =============================================================================
+# Phase 4 AI Coach & Weekly Review Endpoints
+# =============================================================================
+
+@router.post("/chat", response_model=APIResponse[CoachTurnResponse])
+async def coach_chat_turn(
+    payload: CoachChatRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[CoachTurnResponse]:
+    """Execute scoped allowlisted tools and generate grounded coaching turn.
+
+    Protected endpoint requiring Bearer JWT authentication.
+    Enforces epistemic separation and medical safety guardrails.
+    """
+    response = await coach_service.chat(
+        message=payload.message,
+        context=payload.context,
+    )
+    return APIResponse(
+        success=True,
+        message="Coach turn completed successfully",
+        data=response,
+    )
+
+
+@router.post("/weekly-review", response_model=APIResponse[WeeklyReviewReport])
+async def generate_athlete_weekly_review(
+    payload: WeeklyReviewRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[WeeklyReviewReport]:
+    """Synthesize deterministic weekly progress review across all tracking domains.
+
+    Protected endpoint requiring Bearer JWT authentication.
+    """
+    context = payload.context or UserCoachingContext()
+    report = generate_weekly_review(context)
+    return APIResponse(
+        success=True,
+        message="Weekly review synthesized successfully",
+        data=report,
+    )
+
+
+@router.get("/tools", response_model=APIResponse[List[CoachToolMetadata]])
+async def get_coach_tool_registry(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[List[CoachToolMetadata]]:
+    """Return metadata for the 8 allowlisted typed coach tools.
+
+    Protected endpoint requiring Bearer JWT authentication.
+    """
+    return APIResponse(
+        success=True,
+        message="Allowlisted coach tools retrieved successfully",
+        data=TOOL_METADATA_LIST,
     )

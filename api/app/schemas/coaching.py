@@ -3,6 +3,12 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from app.domain.coach_tools import (
+    UserCoachingContext,
+    WeeklyReviewReport,
+    CoachToolMetadata,
+)
+
 
 class TargetsPreviewRequest(BaseModel):
     """Input payload to compute deterministic biometric and energy targets."""
@@ -47,3 +53,43 @@ class ReadinessCheckInResponse(BaseModel):
     guidance: str
     triggers: List[str]
     provenance: str
+
+
+# =============================================================================
+# Phase 4 Coach Chat & Weekly Review Schemas
+# =============================================================================
+
+class ProposedAction(BaseModel):
+    """Explicit action proposal requiring athlete confirmation before mutation."""
+
+    type: str = Field(..., description="Action type: log_meal, update_protein_target, or apply_progression")
+    summary: str = Field(..., description="Human-readable description of proposed change")
+    payload: Dict[str, Any] = Field(default_factory=dict, description="Concrete payload to apply upon confirmation")
+
+
+class CoachTurnResponse(BaseModel):
+    """Structured response adhering to epistemic separation and safety guardrails."""
+
+    reply_markdown: str = Field(..., description="Concise, tool-grounded coaching reply")
+    tools_used: List[str] = Field(default_factory=list, description="Allowlisted tools executed for this turn")
+    facts_from_tools: List[str] = Field(default_factory=list, description="Verified facts from logs")
+    app_calculations: List[str] = Field(default_factory=list, description="Deterministic calculations computed by AthlonIQ")
+    recommendations: List[str] = Field(default_factory=list, description="Actionable coaching recommendations")
+    missing_or_uncertain: List[str] = Field(default_factory=list, description="Explicit missing or sparse data notices")
+    proposed_action: Optional[ProposedAction] = Field(None, description="Action awaiting user confirmation")
+
+
+class CoachChatRequest(BaseModel):
+    """Request payload for an interactive AI Coach chat turn."""
+
+    message: str = Field(..., min_length=1, description="Athlete query or message")
+    conversation_id: Optional[str] = Field(None, description="Optional conversation UUID")
+    context: Optional[UserCoachingContext] = Field(None, description="Optional client-side state snapshot")
+
+
+class WeeklyReviewRequest(BaseModel):
+    """Request payload to synthesize a deterministic weekly review."""
+
+    context: Optional[UserCoachingContext] = Field(None, description="User-scoped context snapshot")
+    week_start_date: Optional[str] = Field(None, description="Optional start date ISO string")
+    week_end_date: Optional[str] = Field(None, description="Optional end date ISO string")

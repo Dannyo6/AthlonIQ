@@ -10,6 +10,8 @@ import {
   WorkoutSession,
   ActivitySession,
   BodyMetric,
+  EpistemicCoachMessage,
+  ProposedCoachAction,
 } from "@/types";
 import {
   calculateRulesReadiness,
@@ -136,6 +138,33 @@ const DEFAULT_CHECKIN: RecoveryCheckIn = {
   stress: null,
 };
 
+const DEFAULT_COACH_MESSAGES: EpistemicCoachMessage[] = [
+  {
+    id: "init-1",
+    sender: "coach",
+    text: "Welcome Alex. I have ingested your latest check-in data: self-reported sleep is 7.5 hours (Quality: 4/5), soreness is 2/5, yielding a deterministic Readiness score of 82% (Prime). Your target protein is 110 g/day for your lean bulk. How can we optimize today's protocol?",
+    timestamp: "10:00 AM",
+    toolsUsed: ["get_user_goals", "get_recovery_history"],
+    factsFromTools: [
+      "Athlete baseline: Alex Mercer, 20yo, 173cm, 55kg (lean_bulk, nonvegetarian).",
+      "Training scope: 5 days/wk home gym (70kg free-weight setup), running, badminton, and calisthenics.",
+    ],
+    appCalculations: [
+      "Protein reference band: 88–121 g/day (provisional target: 110 g).",
+      "Readiness: Prime (82%) from transparent rules-based check-in.",
+    ],
+    recommendations: [
+      "Target compound movements at RPE 8.0–8.5.",
+      "Ensure a high-protein post-workout nonvegetarian meal.",
+    ],
+    missingOrUncertain: [
+      "Home gym equipment setup awaits confirmation in Profile → Equipment.",
+      "At least 3 weigh-ins required to build a 7-day rolling weight trend.",
+    ],
+    proposedAction: null,
+  },
+];
+
 // =============================================================================
 // Phase 2 Context Interface
 // =============================================================================
@@ -185,6 +214,14 @@ interface AthloniqContextType {
   updateBodyMetric: (id: string, updates: Partial<BodyMetric>) => void;
   deleteBodyMetric: (id: string) => void;
   getLatestWeight: () => BodyMetric | undefined;
+
+  // Phase 4: AI Coach & Weekly Review
+  coachMessages: EpistemicCoachMessage[];
+  addCoachMessage: (msg: EpistemicCoachMessage) => void;
+  clearCoachMessages: () => void;
+  applyProposedAction: (messageId: string, action: ProposedCoachAction) => void;
+  dismissProposedAction: (messageId: string) => void;
+  getCoachingSnapshot: () => any;
 }
 
 const AthloniqContext = createContext<AthloniqContextType | null>(null);
@@ -232,6 +269,11 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activitySessions, setActivitySessions] = useState<ActivitySession[]>(() => loadFromStorage("activity_sessions", []));
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>(() => loadFromStorage("body_metrics", []));
 
+  // Phase 4 state
+  const [coachMessages, setCoachMessages] = useState<EpistemicCoachMessage[]>(() =>
+    loadFromStorage("coach_messages", DEFAULT_COACH_MESSAGES)
+  );
+
   // Deterministic readiness calculation
   const readiness = calculateRulesReadiness(
     todayCheckIn.sleepHours,
@@ -253,6 +295,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => { saveToStorage("workout_sessions", workoutSessions); }, [workoutSessions]);
   useEffect(() => { saveToStorage("activity_sessions", activitySessions); }, [activitySessions]);
   useEffect(() => { saveToStorage("body_metrics", bodyMetrics); }, [bodyMetrics]);
+
+  // Sync Phase 4 coach messages to localStorage
+  useEffect(() => { saveToStorage("coach_messages", coachMessages); }, [coachMessages]);
 
   // ==========================================================================
   // Phase 1 Actions
@@ -338,6 +383,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWorkoutSessions([]);
     setActivitySessions([]);
     setBodyMetrics([]);
+    setCoachMessages(DEFAULT_COACH_MESSAGES);
     localStorage.clear();
   }, []);
 
@@ -444,6 +490,167 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return [...bodyMetrics].sort((a, b) => b.loggedDate.localeCompare(a.loggedDate))[0];
   }, [bodyMetrics]);
 
+  // ==========================================================================
+  // Phase 4: AI Coach & Action Handlers
+  // ==========================================================================
+
+  const addCoachMessage = useCallback((msg: EpistemicCoachMessage) => {
+    setCoachMessages((prev) => [...prev, msg]);
+  }, []);
+
+  const clearCoachMessages = useCallback(() => {
+    setCoachMessages(DEFAULT_COACH_MESSAGES);
+  }, []);
+
+  const applyProposedAction = useCallback((messageId: string, action: ProposedCoachAction) => {
+    if (action.type === "log_meal" && action.payload) {
+      addFoodEntry({
+        loggedDate: action.payload.logged_date || action.payload.loggedDate || todayISO(),
+        mealSlot: action.payload.meal_slot || action.payload.mealSlot || "dinner",
+        foodName: action.payload.food_name || action.payload.foodName || "Coach Suggested High-Protein Meal",
+        quantity: action.payload.quantity || 1.0,
+        servingLabel: action.payload.serving_label || action.payload.servingLabel || "1 serving",
+        caloriesKcal: action.payload.calories_kcal || action.payload.caloriesKcal || 420.0,
+        proteinG: action.payload.protein_g || action.payload.proteinG || 45.0,
+        carbsG: action.payload.carbs_g || action.payload.carbsG || 35.0,
+        fatG: action.payload.fat_g || action.payload.fatG || 6.5,
+        provenance: action.payload.provenance || "verified_reference",
+        isConfirmed: true,
+        is_confirmed: true,
+        notes: "Confirmed and logged via AI Coach proposal",
+      });
+    } else if (action.type === "update_protein_target" && action.payload?.protein_target_g) {
+      updateGoals({ proteinTargetG: Number(action.payload.protein_target_g) });
+    }
+
+    setCoachMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              proposedAction: m.proposedAction
+                ? { ...m.proposedAction, status: "applied" }
+                : null,
+            }
+          : m
+      )
+    );
+  }, [addFoodEntry, updateGoals]);
+
+  const dismissProposedAction = useCallback((messageId: string) => {
+    setCoachMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              proposedAction: m.proposedAction
+                ? { ...m.proposedAction, status: "dismissed" }
+                : null,
+            }
+          : m
+      )
+    );
+  }, []);
+
+  const getCoachingSnapshot = useCallback(() => {
+    return {
+      profile: {
+        fullName: profile.fullName,
+        age: profile.age,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        dietaryPattern: profile.dietaryPattern,
+        primaryGoal: profile.primaryGoal,
+        trainingDaysPerWeek: profile.trainingDaysPerWeek,
+        trainingEnvironment: profile.trainingEnvironment,
+        equipmentConfirmed: profile.equipmentConfirmed,
+      },
+      equipment: equipment.map((e) => ({
+        itemKey: e.itemKey,
+        itemName: e.itemName,
+        maxLoadKg: e.maxLoadKg,
+        minIncrementKg: e.minIncrementKg,
+        isConfirmed: e.isConfirmed,
+      })),
+      goals: {
+        proteinMinG: goals.proteinMinG,
+        proteinMaxG: goals.proteinMaxG,
+        proteinTargetG: goals.proteinTargetG,
+        proteinProvenance: goals.proteinProvenance,
+        calorieTargetKcal: goals.calorieTargetKcal,
+        calorieProvenance: goals.calorieProvenance,
+      },
+      preferences: {
+        weightUnit: preferences.weightUnit,
+        distanceUnit: preferences.distanceUnit,
+        timezone: preferences.timezone,
+        notificationsEnabled: preferences.notificationsEnabled,
+        quietHoursStart: preferences.quietHoursStart,
+        quietHoursEnd: preferences.quietHoursEnd,
+      },
+      today_check_in: {
+        sleepHours: todayCheckIn.sleepHours,
+        sleepQuality: todayCheckIn.sleepQuality,
+        soreness: todayCheckIn.soreness,
+        fatigue: todayCheckIn.fatigue,
+        stress: todayCheckIn.stress,
+      },
+      food_entries: foodEntries.map((f) => ({
+        loggedDate: f.loggedDate,
+        mealSlot: f.mealSlot,
+        foodName: f.foodName,
+        quantity: f.quantity,
+        servingLabel: f.servingLabel,
+        caloriesKcal: f.caloriesKcal,
+        proteinG: f.proteinG,
+        carbsG: f.carbsG,
+        fatG: f.fatG,
+        isConfirmed: f.isConfirmed,
+        is_confirmed: f.isConfirmed,
+        provenance: f.provenance,
+      })),
+      workout_sessions: workoutSessions.map((w) => ({
+        loggedDate: w.loggedDate,
+        title: w.title,
+        completed: w.completed,
+        sets: (w.sets || []).map((s) => ({
+          exerciseName: s.exerciseName,
+          reps: s.reps,
+          loadKg: s.loadKg,
+          rpe: s.rpe,
+          isCompleted: s.isCompleted,
+          isPr: s.isPr,
+          isBodyweight: s.isBodyweight,
+        })),
+      })),
+      activity_sessions: activitySessions.map((a) => ({
+        loggedDate: a.loggedDate,
+        activityType: a.activityType,
+        durationMinutes: a.durationMinutes,
+        distanceKm: a.distanceKm,
+        paceFormatted: a.paceFormatted,
+        matchFormat: a.matchFormat,
+        perceivedEffort: a.perceivedEffort,
+        skillName: a.skillName,
+        setsCount: a.setsCount,
+      })),
+      body_metrics: bodyMetrics.map((b) => ({
+        loggedDate: b.loggedDate,
+        weightKg: b.weightKg,
+      })),
+      recovery_logs: [
+        {
+          loggedDate: todayCheckIn.date,
+          sleepHours: todayCheckIn.sleepHours,
+          sleepQuality: todayCheckIn.sleepQuality,
+          soreness: todayCheckIn.soreness,
+          fatigue: todayCheckIn.fatigue,
+          stress: todayCheckIn.stress,
+        },
+      ],
+    };
+  }, [profile, equipment, goals, preferences, todayCheckIn, foodEntries, workoutSessions, activitySessions, bodyMetrics]);
+
   return (
     <AthloniqContext.Provider
       value={{
@@ -487,6 +694,13 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateBodyMetric,
         deleteBodyMetric,
         getLatestWeight,
+        // Phase 4: AI Coach
+        coachMessages,
+        addCoachMessage,
+        clearCoachMessages,
+        applyProposedAction,
+        dismissProposedAction,
+        getCoachingSnapshot,
       }}
     >
       {children}

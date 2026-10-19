@@ -79,3 +79,74 @@ export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
   const json = await res.json();
   return json.data; // MealAnalysisResponse
 }
+
+export async function sendCoachChatTurn(
+  message: string,
+  context?: any,
+  token?: string
+) {
+  const res = await fetch(`${API_BASE_URL}/coaching/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+    body: JSON.stringify({ message, context }),
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Coach chat failed with status ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) errorDetail = errJson.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchWeeklyReview(context?: any, token?: string) {
+  const res = await fetch(`${API_BASE_URL}/coaching/weekly-review`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+    body: JSON.stringify({ context }),
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Weekly review failed with status ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) errorDetail = errJson.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchCoachTools(token?: string) {
+  const res = await fetch(`${API_BASE_URL}/coaching/tools`, {
+    method: "GET",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch coach tools: ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
