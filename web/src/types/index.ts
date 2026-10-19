@@ -440,3 +440,48 @@ export interface WeightTrendResult {
     rolling_7d_kg: number | null;
   }>;
 }
+
+// =============================================================================
+// PHASE 5: Advanced Personalization, Fatigue Advisory & Progress Photos
+// =============================================================================
+
+export interface LeanBulkCalibrationResult {
+  status: "insufficient_history" | "on_track" | "increase_surplus" | "trim_surplus";
+  current_calorie_target_kcal: number | null;
+  new_calorie_target_kcal: number | null;
+  suggested_calorie_delta_kcal: number;
+  weekly_delta_kg: number | null;
+  waist_delta_cm: number | null;
+  observation_days_logged: number;
+  observation_weigh_ins: number;
+  explanation: string;
+  recommendation: string;
+  requires_user_confirmation: boolean;
+  provenance: ValueProvenance;
+}
+
+export interface FatigueAdvisoryResult {
+  status: "high_cumulative_fatigue" | "moderate_strain" | "optimal";
+  is_high_fatigue: boolean;
+  sport_volume_flag: boolean;
+  recovery_deficit_flag: boolean;
+  gym_sessions_7d: number;
+  badminton_minutes_7d: number;
+  running_km_7d: number;
+  avg_sleep_hours_7d: number | null;
+  avg_soreness_7d: number | null;
+  avg_fatigue_7d: number | null;
+  explanation: string;
+  recommendations: string[];
+  disclaimer: string;
+}
+
+export interface ProgressPhotoAsset {
+  id: string;
+  loggedDate: string;
+  weightKg: number;
+  imageUrl: string;
+  notes?: string;
+  category: "meal" | "progress";
+}
+

@@ -23,6 +23,10 @@ import {
   Flame,
   RotateCcw,
   Activity,
+  FileSpreadsheet,
+  FileJson,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 // Zod Schema for Onboarding Wizard
@@ -80,6 +84,14 @@ export const ProfileView: React.FC = () => {
     profile,
     equipment,
     goals,
+    preferences,
+    todayCheckIn,
+    foodEntries,
+    workoutSessions,
+    activitySessions,
+    bodyMetrics,
+    coachMessages,
+    progressPhotos,
     updateProfile,
     updateEquipmentItem,
     confirmEquipment,
@@ -92,6 +104,116 @@ export const ProfileView: React.FC = () => {
   const [isEditingAfterCompletion, setIsEditingAfterCompletion] = useState<boolean>(
     !profile.onboardingCompleted
   );
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const handleExportJSON = () => {
+    const archiveData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      profile,
+      goals,
+      equipment,
+      preferences,
+      todayCheckIn,
+      foodEntries,
+      workoutSessions,
+      activitySessions,
+      bodyMetrics,
+      coachMessages,
+      progressPhotos,
+    };
+    const blob = new Blob([JSON.stringify(archiveData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const today = new Date().toISOString().split("T")[0];
+    a.href = url;
+    a.download = `athloniq-archive-${today}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportNotice("Complete AthlonIQ archive JSON downloaded successfully.");
+    setTimeout(() => setExportNotice(null), 4000);
+  };
+
+  const handleExportCSV = () => {
+    const nutritionHeader = [
+      "Type",
+      "Date",
+      "MealSlot",
+      "FoodName",
+      "Quantity",
+      "Serving",
+      "Calories_kcal",
+      "Protein_g",
+      "Carbs_g",
+      "Fat_g",
+      "Confirmed",
+      "Provenance",
+    ].join(",");
+    const nutritionRows = foodEntries.map((e) =>
+      [
+        "NUTRITION",
+        e.loggedDate,
+        e.mealSlot,
+        `"${e.foodName.replace(/"/g, '""')}"`,
+        e.quantity,
+        `"${e.servingLabel.replace(/"/g, '""')}"`,
+        e.caloriesKcal,
+        e.proteinG,
+        e.carbsG,
+        e.fatG,
+        e.is_confirmed !== undefined ? e.is_confirmed : e.isConfirmed,
+        e.provenance,
+      ].join(",")
+    );
+
+    const weightHeader = ["Type", "Date", "Weight_kg", "Waist_cm", "Chest_cm", "Arm_cm", "Notes"].join(",");
+    const weightRows = bodyMetrics.map((m) =>
+      [
+        "WEIGHT",
+        m.loggedDate,
+        m.weightKg,
+        m.waistCm ?? "",
+        m.chestCm ?? "",
+        m.armCm ?? "",
+        m.notes ? `"${m.notes.replace(/"/g, '""')}"` : "",
+      ].join(",")
+    );
+
+    const csvContent = [
+      "# AthlonIQ Nutrition Logs",
+      nutritionHeader,
+      ...nutritionRows,
+      "",
+      "# AthlonIQ Body Metrics & Weigh-Ins",
+      weightHeader,
+      ...weightRows,
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const today = new Date().toISOString().split("T")[0];
+    a.href = url;
+    a.download = `athloniq-nutrition-weight-${today}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportNotice("Nutrition & Weight logs CSV downloaded successfully.");
+    setTimeout(() => setExportNotice(null), 4000);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmText.trim() === "DELETE") {
+      resetToDefaults();
+      setShowDeleteModal(false);
+      setDeleteConfirmText("");
+      setCurrentStep(1);
+      setIsEditingAfterCompletion(true);
+      setExportNotice("All personal AthlonIQ records have been wiped and reset to initial defaults.");
+      setTimeout(() => setExportNotice(null), 5000);
+    }
+  };
 
   const {
     register,
@@ -996,6 +1118,114 @@ export const ProfileView: React.FC = () => {
               <div className="text-[11px] text-slate-400">
                 All biometrics, equipment items, and check-in scores are deterministically verified and stored locally with Supabase cryptographic synchronization.
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Export / Reset Notice Alert */}
+      {exportNotice && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{exportNotice}</span>
+        </div>
+      )}
+
+      {/* Data Portability, Export & Account Controls */}
+      <Card className="space-y-4 border-[#1E2330]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-athloniq-lime" />
+            <div>
+              <h3 className="font-bold text-white text-base">Data Portability, Export & Account Controls</h3>
+              <p className="text-xs text-slate-400">
+                Full athlete sovereignty. Export your logs as JSON or CSV spreadsheets, or securely wipe all personal data.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center justify-center gap-2"
+            onClick={handleExportJSON}
+          >
+            <FileJson className="h-4 w-4 text-cyan-400" />
+            <span>Export Complete JSON</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center justify-center gap-2"
+            onClick={handleExportCSV}
+          >
+            <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+            <span>Export CSV Spreadsheets</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center justify-center gap-2 text-rose-400 hover:text-rose-300 border-rose-500/30 hover:bg-rose-500/10"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <Trash2 className="h-4 w-4 text-rose-400" />
+            <span>Reset / Delete All Data</span>
+          </Button>
+        </div>
+      </Card>
+
+      {/* Two-Step Deletion Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md space-y-4 border-rose-500/40 bg-[#0E121A] shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">Reset & Delete All Personal Data</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  This action will permanently purge all nutrition entries, weigh-ins, progress photos, workout routines, and AI conversation history from this device and local storage.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/20 text-xs text-rose-300">
+              To confirm permanent deletion, please type <strong className="font-mono text-white">DELETE</strong> below:
+            </div>
+
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-[#141923] border border-[#232936] text-white focus:outline-none focus:border-rose-400 font-mono"
+            />
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={deleteConfirmText.trim() !== "DELETE"}
+                className="bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-40 disabled:cursor-not-allowed border-rose-600"
+                onClick={handleConfirmDelete}
+              >
+                Permanently Delete Data
+              </Button>
             </div>
           </Card>
         </div>

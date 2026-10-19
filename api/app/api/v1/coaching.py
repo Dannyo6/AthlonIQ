@@ -16,6 +16,13 @@ from app.domain.coach_tools import (
     UserCoachingContext,
     generate_weekly_review,
 )
+from app.domain.adaptive import (
+    evaluate_lean_bulk_calibration,
+    evaluate_multisport_fatigue,
+    LeanBulkCalibrationResult,
+    FatigueAdvisoryResult,
+)
+from app.domain.tracking import WeightPoint
 from app.services.coach_adapter import coach_service
 from app.schemas.common import APIResponse
 from app.schemas.coaching import (
@@ -26,6 +33,8 @@ from app.schemas.coaching import (
     CoachChatRequest,
     CoachTurnResponse,
     WeeklyReviewRequest,
+    LeanBulkCalibrationRequest,
+    FatigueAdvisoryRequest,
 )
 
 router = APIRouter(prefix="/coaching", tags=["coaching"])
@@ -160,3 +169,63 @@ async def get_coach_tool_registry(
         message="Allowlisted coach tools retrieved successfully",
         data=TOOL_METADATA_LIST,
     )
+
+
+# =============================================================================
+# Phase 5 Adaptive Calibration & Fatigue Advisory Endpoints
+# =============================================================================
+
+@router.post("/calibrate-lean-bulk", response_model=APIResponse[LeanBulkCalibrationResult])
+async def calibrate_athlete_lean_bulk(
+    payload: LeanBulkCalibrationRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[LeanBulkCalibrationResult]:
+    """Evaluate 14-day energy calibration for lean-bulk progression.
+
+    Protected endpoint requiring Bearer JWT authentication.
+    """
+    weigh_in_points = []
+    for item in payload.weigh_ins_last_14d:
+        date_str = item.get("logged_date") or item.get("loggedDate")
+        w_val = item.get("weight_kg") or item.get("weightKg")
+        if date_str and w_val is not None:
+            weigh_in_points.append(WeightPoint(logged_date=str(date_str), weight_kg=float(w_val)))
+
+    result = evaluate_lean_bulk_calibration(
+        current_calorie_target_kcal=payload.current_calorie_target_kcal,
+        logged_nutrition_days=payload.logged_nutrition_days,
+        average_confirmed_intake_kcal=payload.average_confirmed_intake_kcal,
+        weigh_ins_last_14d=weigh_in_points,
+        waist_start_cm=payload.waist_start_cm,
+        waist_current_cm=payload.waist_current_cm,
+    )
+    return APIResponse(
+        success=True,
+        message="Lean-bulk calibration evaluated successfully",
+        data=result,
+    )
+
+
+@router.post("/fatigue-advisory", response_model=APIResponse[FatigueAdvisoryResult])
+async def assess_athlete_fatigue_advisory(
+    payload: FatigueAdvisoryRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[FatigueAdvisoryResult]:
+    """Evaluate multi-sport training fatigue across gym, badminton, and running.
+
+    Protected endpoint requiring Bearer JWT authentication.
+    """
+    result = evaluate_multisport_fatigue(
+        gym_sessions_7d=payload.gym_sessions_7d,
+        badminton_minutes_7d=payload.badminton_minutes_7d,
+        running_km_7d=payload.running_km_7d,
+        avg_sleep_hours_7d=payload.avg_sleep_hours_7d,
+        avg_soreness_7d=payload.avg_soreness_7d,
+        avg_fatigue_7d=payload.avg_fatigue_7d,
+    )
+    return APIResponse(
+        success=True,
+        message="Fatigue advisory assessed successfully",
+        data=result,
+    )
+

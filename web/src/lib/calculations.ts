@@ -16,6 +16,8 @@ import {
   DailyMacroTotals,
   ProgressionSuggestion,
   WeightTrendResult,
+  LeanBulkCalibrationResult,
+  FatigueAdvisoryResult,
 } from "@/types";
 
 // =============================================================================
@@ -594,5 +596,198 @@ export function calculateWeightTrend(entries: WeightPointInput[]): WeightTrendRe
       weight_kg: e.weightKg,
       rolling_7d_kg: rollingAvgs[i],
     })),
+  };
+}
+
+// =============================================================================
+// Phase 5: Adaptive Lean-Bulk Calibrator
+// =============================================================================
+
+export function evaluateLeanBulkCalibration(
+  currentCalorieTargetKcal: number | null,
+  loggedNutritionDays: number,
+  _averageConfirmedIntakeKcal: number | null,
+  weighInsLast14d: WeightPointInput[],
+  waistStartCm?: number | null,
+  waistCurrentCm?: number | null
+): LeanBulkCalibrationResult {
+  let waistDeltaCm: number | null = null;
+  if (waistStartCm != null && waistCurrentCm != null) {
+    waistDeltaCm = Math.round((waistCurrentCm - waistStartCm) * 10) / 10;
+  }
+
+  let weeklyDeltaKg: number | null = null;
+  if (weighInsLast14d.length >= 2) {
+    const trend = calculateWeightTrend(weighInsLast14d);
+    weeklyDeltaKg = trend.weeklyDeltaKg;
+  }
+
+  // 1. Insufficient Data Gate
+  if (
+    currentCalorieTargetKcal === null ||
+    loggedNutritionDays < 10 ||
+    weighInsLast14d.length < 4
+  ) {
+    let explanation = `Need at least 10 logged nutrition days and 4 weigh-ins over 14 days before calibrating your initial energy estimate. Current observation: ${loggedNutritionDays}/10 nutrition days, ${weighInsLast14d.length}/4 weigh-ins.`;
+    if (currentCalorieTargetKcal === null) {
+      explanation = "Caloric targets are gated until onboarding is completed. Complete onboarding to establish your initial estimate.";
+    }
+
+    return {
+      status: "insufficient_history",
+      current_calorie_target_kcal: currentCalorieTargetKcal,
+      new_calorie_target_kcal: currentCalorieTargetKcal,
+      suggested_calorie_delta_kcal: 0,
+      weekly_delta_kg: weeklyDeltaKg,
+      waist_delta_cm: waistDeltaCm,
+      observation_days_logged: loggedNutritionDays,
+      observation_weigh_ins: weighInsLast14d.length,
+      explanation,
+      recommendation: "Continue logging daily meals and fasted morning weigh-ins to establish an auditable baseline.",
+      requires_user_confirmation: true,
+      provenance: "calculated_estimate",
+    };
+  }
+
+  const deltaKg = weeklyDeltaKg ?? 0.0;
+
+  // 2. Rapid Gain / Waist Creep Check
+  if (deltaKg > 0.30 || (waistDeltaCm != null && waistDeltaCm >= 1.5)) {
+    const suggestedDelta = -150;
+    const newTarget = Math.max(1600, currentCalorieTargetKcal + suggestedDelta);
+    const reasons: string[] = [];
+    if (deltaKg > 0.30) reasons.push(`weight gain rate (${deltaKg > 0 ? "+" : ""}${deltaKg.toFixed(2)} kg/wk) exceeds the lean-bulk ceiling (+0.25 kg/wk)`);
+    if (waistDeltaCm != null && waistDeltaCm >= 1.5) reasons.push(`waist expanded by +${waistDeltaCm.toFixed(1)} cm`);
+
+    return {
+      status: "trim_surplus",
+      current_calorie_target_kcal: currentCalorieTargetKcal,
+      new_calorie_target_kcal: newTarget,
+      suggested_calorie_delta_kcal: suggestedDelta,
+      weekly_delta_kg: weeklyDeltaKg,
+      waist_delta_cm: waistDeltaCm,
+      observation_days_logged: loggedNutritionDays,
+      observation_weigh_ins: weighInsLast14d.length,
+      explanation: `Trim surplus recommended: ${reasons.join(" and ")}. Trimming daily intake by 150 kcal curbs excessive adiposity while preserving muscle accrual.`,
+      recommendation: `Adjust daily target from ${currentCalorieTargetKcal} kcal to ${newTarget} kcal (-150 kcal/day). Keep daily protein fixed at 1.6–2.2 g/kg.`,
+      requires_user_confirmation: true,
+      provenance: "calculated_estimate",
+    };
+  }
+
+  // 3. Under-Gaining / Flat Trend Check
+  if (deltaKg < 0.08) {
+    const suggestedDelta = 150;
+    const newTarget = currentCalorieTargetKcal + suggestedDelta;
+    return {
+      status: "increase_surplus",
+      current_calorie_target_kcal: currentCalorieTargetKcal,
+      new_calorie_target_kcal: newTarget,
+      suggested_calorie_delta_kcal: suggestedDelta,
+      weekly_delta_kg: weeklyDeltaKg,
+      waist_delta_cm: waistDeltaCm,
+      observation_days_logged: loggedNutritionDays,
+      observation_weigh_ins: weighInsLast14d.length,
+      explanation: `Under-gaining detected: 14-day rolling weight delta (${deltaKg > 0 ? "+" : ""}${deltaKg.toFixed(2)} kg/wk) is below the target lean-bulk rate (+0.10 to +0.25 kg/wk).`,
+      recommendation: `Increase daily target from ${currentCalorieTargetKcal} kcal to ${newTarget} kcal (+150 kcal/day, primarily via complex carbohydrates). Apply after user confirmation.`,
+      requires_user_confirmation: true,
+      provenance: "calculated_estimate",
+    };
+  }
+
+  // 4. On-Target
+  return {
+    status: "on_track",
+    current_calorie_target_kcal: currentCalorieTargetKcal,
+    new_calorie_target_kcal: currentCalorieTargetKcal,
+    suggested_calorie_delta_kcal: 0,
+    weekly_delta_kg: weeklyDeltaKg,
+    waist_delta_cm: waistDeltaCm,
+    observation_days_logged: loggedNutritionDays,
+    observation_weigh_ins: weighInsLast14d.length,
+    explanation: `On-track lean bulk: 14-day weight gain rate (${deltaKg > 0 ? "+" : ""}${deltaKg.toFixed(2)} kg/wk) is squarely within the optimal lean-bulk corridor (+0.10 to +0.25 kg/wk).`,
+    recommendation: `Maintain current daily target of ${currentCalorieTargetKcal} kcal. Continue consistent resistance training and protein adherence.`,
+    requires_user_confirmation: true,
+    provenance: "calculated_estimate",
+  };
+}
+
+// =============================================================================
+// Phase 5: Multi-Sport Fatigue Advisor
+// =============================================================================
+
+export function evaluateMultisportFatigue(
+  gymSessions7d: number,
+  badmintonMinutes7d: number,
+  runningKm7d: number,
+  avgSleepHours7d?: number | null,
+  avgSoreness7d?: number | null,
+  avgFatigue7d?: number | null
+): FatigueAdvisoryResult {
+  const sportVolumeFlag = badmintonMinutes7d >= 120 || runningKm7d >= 15;
+  const highGym = gymSessions7d >= 4;
+  const sleepDeficit = avgSleepHours7d != null && avgSleepHours7d < 6.8;
+  const sorenessElevated = avgSoreness7d != null && avgSoreness7d >= 3.8;
+  const fatigueElevated = avgFatigue7d != null && avgFatigue7d >= 3.8;
+  const recoveryDeficitFlag = sleepDeficit || sorenessElevated || fatigueElevated;
+
+  const recommendations: string[] = [];
+
+  if (sportVolumeFlag && highGym && recoveryDeficitFlag) {
+    recommendations.push("Reduce lower-body compound axial volume (back squats/deadlifts) by 20% this week.");
+    recommendations.push("Swap heavy leg training with mobility drills or low-impact calisthenics on consecutive badminton days.");
+    recommendations.push("Prioritize sleep hygiene to restore sleep duration to >= 7.5 hours.");
+    return {
+      status: "high_cumulative_fatigue",
+      is_high_fatigue: true,
+      sport_volume_flag: sportVolumeFlag,
+      recovery_deficit_flag: recoveryDeficitFlag,
+      gym_sessions_7d: gymSessions7d,
+      badminton_minutes_7d: badmintonMinutes7d,
+      running_km_7d: runningKm7d,
+      avg_sleep_hours_7d: avgSleepHours7d ?? null,
+      avg_soreness_7d: avgSoreness7d ?? null,
+      avg_fatigue_7d: avgFatigue7d ?? null,
+      explanation: `High cumulative workload detected across ${gymSessions7d} gym sessions, ${badmintonMinutes7d.toFixed(0)} min badminton, and ${runningKm7d.toFixed(1)} km running, coupled with recovery deficits. High lower-body axial demand and eccentric footwork stress require strategic load auto-regulation.`,
+      recommendations,
+      disclaimer: "AthlonIQ fatigue advisory is a workload and neuromuscular training strain calculation only. It is not a clinical medical diagnosis or physiological injury risk assessment.",
+    };
+  }
+
+  if ((sportVolumeFlag && highGym) || recoveryDeficitFlag || gymSessions7d >= 5) {
+    recommendations.push("Keep compound resistance working sets strictly between RPE 7.5–8.0.");
+    recommendations.push("Ensure 24-hour inter-session spacing between heavy badminton match play and lower-body gym sessions.");
+    return {
+      status: "moderate_strain",
+      is_high_fatigue: false,
+      sport_volume_flag: sportVolumeFlag,
+      recovery_deficit_flag: recoveryDeficitFlag,
+      gym_sessions_7d: gymSessions7d,
+      badminton_minutes_7d: badmintonMinutes7d,
+      running_km_7d: runningKm7d,
+      avg_sleep_hours_7d: avgSleepHours7d ?? null,
+      avg_soreness_7d: avgSoreness7d ?? null,
+      avg_fatigue_7d: avgFatigue7d ?? null,
+      explanation: `Moderate multi-sport load (${gymSessions7d} gym sessions, ${badmintonMinutes7d.toFixed(0)} min badminton, ${runningKm7d.toFixed(1)} km running). Athletic volume is elevated but currently within adaptive limits.`,
+      recommendations,
+      disclaimer: "AthlonIQ fatigue advisory is a workload and neuromuscular training strain calculation only. It is not a clinical medical diagnosis or physiological injury risk assessment.",
+    };
+  }
+
+  recommendations.push("Maintain planned progression and stay consistent with daily protein targets.");
+  return {
+    status: "optimal",
+    is_high_fatigue: false,
+    sport_volume_flag: sportVolumeFlag,
+    recovery_deficit_flag: recoveryDeficitFlag,
+    gym_sessions_7d: gymSessions7d,
+    badminton_minutes_7d: badmintonMinutes7d,
+    running_km_7d: runningKm7d,
+    avg_sleep_hours_7d: avgSleepHours7d ?? null,
+    avg_soreness_7d: avgSoreness7d ?? null,
+    avg_fatigue_7d: avgFatigue7d ?? null,
+    explanation: `Optimal multi-sport balance (${gymSessions7d} gym sessions, ${badmintonMinutes7d.toFixed(0)} min badminton, ${runningKm7d.toFixed(1)} km running). Fatigue distribution is balanced with current recovery markers.`,
+    recommendations,
+    disclaimer: "AthlonIQ fatigue advisory is a workload and neuromuscular training strain calculation only. It is not a clinical medical diagnosis or physiological injury risk assessment.",
   };
 }

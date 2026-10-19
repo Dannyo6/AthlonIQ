@@ -12,6 +12,7 @@ import {
   BodyMetric,
   EpistemicCoachMessage,
   ProposedCoachAction,
+  ProgressPhotoAsset,
 } from "@/types";
 import {
   calculateRulesReadiness,
@@ -165,6 +166,17 @@ const DEFAULT_COACH_MESSAGES: EpistemicCoachMessage[] = [
   },
 ];
 
+const DEFAULT_PROGRESS_PHOTOS: ProgressPhotoAsset[] = [
+  {
+    id: "photo-baseline",
+    loggedDate: "2026-10-01",
+    weightKg: 54.8,
+    imageUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'><rect width='400' height='500' fill='%23121622'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2364748b' font-family='sans-serif' font-size='14'>Baseline Front Physique (54.8 kg)</text></svg>",
+    notes: "Baseline lean bulk check-in (Fasted, morning light)",
+    category: "progress",
+  },
+];
+
 // =============================================================================
 // Phase 2 Context Interface
 // =============================================================================
@@ -222,6 +234,11 @@ interface AthloniqContextType {
   applyProposedAction: (messageId: string, action: ProposedCoachAction) => void;
   dismissProposedAction: (messageId: string) => void;
   getCoachingSnapshot: () => any;
+
+  // Phase 5: Progress Photos
+  progressPhotos: ProgressPhotoAsset[];
+  addProgressPhoto: (photo: Omit<ProgressPhotoAsset, "id">) => void;
+  deleteProgressPhoto: (id: string) => void;
 }
 
 const AthloniqContext = createContext<AthloniqContextType | null>(null);
@@ -274,6 +291,11 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadFromStorage("coach_messages", DEFAULT_COACH_MESSAGES)
   );
 
+  // Phase 5 state
+  const [progressPhotos, setProgressPhotos] = useState<ProgressPhotoAsset[]>(() =>
+    loadFromStorage("progress_photos", DEFAULT_PROGRESS_PHOTOS)
+  );
+
   // Deterministic readiness calculation
   const readiness = calculateRulesReadiness(
     todayCheckIn.sleepHours,
@@ -298,6 +320,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Sync Phase 4 coach messages to localStorage
   useEffect(() => { saveToStorage("coach_messages", coachMessages); }, [coachMessages]);
+
+  // Sync Phase 5 progress photos to localStorage
+  useEffect(() => { saveToStorage("progress_photos", progressPhotos); }, [progressPhotos]);
 
   // ==========================================================================
   // Phase 1 Actions
@@ -384,6 +409,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActivitySessions([]);
     setBodyMetrics([]);
     setCoachMessages(DEFAULT_COACH_MESSAGES);
+    setProgressPhotos(DEFAULT_PROGRESS_PHOTOS);
     localStorage.clear();
   }, []);
 
@@ -552,6 +578,22 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   }, []);
 
+  // ==========================================================================
+  // Phase 5: Progress Photos Actions
+  // ==========================================================================
+
+  const addProgressPhoto = useCallback((photo: Omit<ProgressPhotoAsset, "id">) => {
+    const newPhoto: ProgressPhotoAsset = {
+      ...photo,
+      id: generateId(),
+    };
+    setProgressPhotos((prev) => [newPhoto, ...prev]);
+  }, []);
+
+  const deleteProgressPhoto = useCallback((id: string) => {
+    setProgressPhotos((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
   const getCoachingSnapshot = useCallback(() => {
     return {
       profile: {
@@ -701,6 +743,10 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         applyProposedAction,
         dismissProposedAction,
         getCoachingSnapshot,
+        // Phase 5: Progress Photos
+        progressPhotos,
+        addProgressPhoto,
+        deleteProgressPhoto,
       }}
     >
       {children}

@@ -93,3 +93,30 @@ class WeeklyReviewRequest(BaseModel):
     context: Optional[UserCoachingContext] = Field(None, description="User-scoped context snapshot")
     week_start_date: Optional[str] = Field(None, description="Optional start date ISO string")
     week_end_date: Optional[str] = Field(None, description="Optional end date ISO string")
+
+
+# =============================================================================
+# Phase 5 Adaptive Calibration & Fatigue Advisory Schemas
+# =============================================================================
+
+class LeanBulkCalibrationRequest(BaseModel):
+    """Input payload to evaluate 14-day lean bulk energy calibration."""
+
+    current_calorie_target_kcal: Optional[int] = Field(None, description="Current daily calorie target")
+    logged_nutrition_days: int = Field(..., ge=0, description="Logged food days over last 14 days")
+    average_confirmed_intake_kcal: Optional[float] = Field(None, ge=0)
+    weigh_ins_last_14d: List[Dict[str, Any]] = Field(default_factory=list)
+    waist_start_cm: Optional[float] = Field(None, gt=0)
+    waist_current_cm: Optional[float] = Field(None, gt=0)
+
+
+class FatigueAdvisoryRequest(BaseModel):
+    """Input payload to assess multi-sport cumulative fatigue."""
+
+    gym_sessions_7d: int = Field(..., ge=0)
+    badminton_minutes_7d: float = Field(..., ge=0)
+    running_km_7d: float = Field(..., ge=0)
+    avg_sleep_hours_7d: Optional[float] = Field(None, ge=0, le=24)
+    avg_soreness_7d: Optional[float] = Field(None, ge=1, le=5)
+    avg_fatigue_7d: Optional[float] = Field(None, ge=1, le=5)
+

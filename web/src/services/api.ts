@@ -150,3 +150,54 @@ export async function fetchCoachTools(token?: string) {
   return json.data;
 }
 
+export async function calibrateLeanBulkApi(payload: any, token?: string) {
+  const res = await fetch(`${API_BASE_URL}/coaching/calibrate-lean-bulk`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Calibrate lean-bulk failed with status ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) errorDetail = errJson.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
+  const res = await fetch(`${API_BASE_URL}/coaching/fatigue-advisory`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Fatigue advisory failed with status ${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) errorDetail = errJson.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+

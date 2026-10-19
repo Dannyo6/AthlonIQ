@@ -1,0 +1,17 @@
+{
+  "name": "AthlonIQ — Personal AI Performance & Physique OS",
+  "short_name": "AthlonIQ",
+  "description": "Autonomous Personal AI Performance & Physique Operating System with deterministic tracking, adaptive calibration, and AI coaching.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0E14",
+  "theme_color": "#0E121A",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
