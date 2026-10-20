@@ -127,3 +127,32 @@ supabase db push
   - `ENVIRONMENT`: `production`
   - `SUPABASE_JWT_SECRET`: `your-supabase-jwt-secret`
   - `GEMINI_API_KEY`: `your-gemini-key` (optional, offline fallback active)
+
+---
+
+## 📱 Progressive Web App (PWA) & Safe Caching Architecture
+
+AthlonIQ operates as a secure, installable Progressive Web App engineered under a strict **Zero-Private-Data Caching Policy**.
+
+### 1. What is Precached
+Only the immutable, compiled application shell is precached by Workbox:
+- Static HTML entrypoint (`dist/index.html`)
+- Compiled JavaScript & CSS bundles (`dist/assets/`)
+- Public brand typography, logos, and PWA icons (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`, `athloniq-icon.svg`)
+- Web App Manifest (`dist/manifest.webmanifest`)
+
+### 2. What is NEVER Cached (`NetworkOnly` Enforced)
+To guarantee cryptographic privacy and HIPAA/GDPR health data compliance, the following routes and URL patterns are explicitly configured with `NetworkOnly` and denylisted from any runtime storage or navigation fallback:
+- **Supabase Cloud (`*.supabase.co`)**: All Auth tokens, session refreshes, PostgREST database queries, and storage objects.
+- **Backend API (`/api/*`, `/health`, port 8000)**: All deterministic calculation endpoints, health probes, and Gemini AI inference turn routes.
+- **Signed & Expiring URLs**: Any query containing `token=`, `Signature=`, `X-Amz-Signature=`, or `sig=`.
+- **Private Athlete Media**: All requests targeting `meal-photos`, `progress-photos`, `athlete_progress_photos`, or `meal_photos` storage buckets.
+
+### 3. In-Memory Query Cache & Sign-Out Invalidation
+- Athlete data queries are maintained strictly in volatile RAM using TanStack Query.
+- Triggering **Sign Out** immediately executes `queryClient.clear()`, wiping all memory records and returning the browser to the unauthenticated session gate.
+
+### 4. Offline UX & Transparency
+- When network disconnects, a high-contrast persistent banner alerts the athlete.
+- Network-dependent intelligence modules (**AI Performance Coach**, **Vision Meal Recognition**) switch to an informative read-only empty state.
+- **Explicit Guarantee**: AthlonIQ never simulates or promises offline meal syncing or offline generative AI.

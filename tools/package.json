@@ -9,7 +9,8 @@
     "test:hosted-rls": "node test-hosted-rls.mjs"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.2.14"
+    "@electric-sql/pglite": "^0.2.14",
+    "sharp": "^0.35.5"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0"

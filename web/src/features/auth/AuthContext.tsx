@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { queryClient } from "@/lib/queryClient";
 
 export interface AuthContextValue {
   user: User | null;
@@ -69,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setReAuthRequired(false);
         setAuthToast({ message: "Successfully authenticated with AthlonIQ OS.", type: "success" });
       } else if (event === "SIGNED_OUT") {
+        queryClient.clear();
         setSession(null);
         setUser(null);
         setReAuthRequired(false);
@@ -122,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = useCallback(async () => {
+    queryClient.clear();
     const { error } = await supabase.auth.signOut();
     if (!error) {
       setSession(null);

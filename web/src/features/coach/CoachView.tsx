@@ -26,6 +26,8 @@ import {
   RotateCcw,
   Zap,
 } from "lucide-react";
+import { usePwa } from "@/features/pwa/usePwa";
+import { PwaOfflineEmptyState } from "@/features/pwa/PwaComponents";
 
 export const CoachView: React.FC = () => {
   const {
@@ -42,6 +44,7 @@ export const CoachView: React.FC = () => {
   } = useAthloniqState();
 
   const [activeTab, setActiveTab] = useState<"chat" | "review">("chat");
+  const { isOnline } = usePwa();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReviewReport | null>(null);
@@ -356,6 +359,10 @@ export const CoachView: React.FC = () => {
             </Button>
           </div>
 
+          {!isOnline && (
+            <PwaOfflineEmptyState featureName="AI Performance Coach" />
+          )}
+
           {/* Chat Container */}
           <Card className="flex flex-col h-[600px] p-0 overflow-hidden border-[#1E2330] bg-[#0E121B]">
             {/* Messages Scroll Area */}
@@ -561,8 +568,8 @@ export const CoachView: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => handleSendPrompt(prompt)}
-                  disabled={isLoading}
-                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#181E2E] hover:bg-[#222A40] text-slate-300 hover:text-white transition-colors border border-[#232A3B] text-xs flex items-center gap-1.5"
+                  disabled={isLoading || !isOnline}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#181E2E] hover:bg-[#222A40] text-slate-300 hover:text-white transition-colors border border-[#232A3B] text-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>{prompt}</span>
                   <ArrowRight className="h-3 w-3 text-slate-500" />
@@ -576,15 +583,19 @@ export const CoachView: React.FC = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendPrompt(input)}
-                disabled={isLoading}
-                placeholder="Ask about workouts, protein gap, equipment progression, or recovery..."
-                className="flex-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime"
+                onKeyDown={(e) => e.key === "Enter" && isOnline && handleSendPrompt(input)}
+                disabled={isLoading || !isOnline}
+                placeholder={
+                  !isOnline
+                    ? "AI Performance Coach is offline. Please reconnect to internet (offline AI not supported)."
+                    : "Ask about workouts, protein gap, equipment progression, or recovery..."
+                }
+                className="flex-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <Button
                 variant="primary"
                 onClick={() => handleSendPrompt(input)}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || !isOnline}
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -598,6 +609,10 @@ export const CoachView: React.FC = () => {
       {/* ===================================================================== */}
       {activeTab === "review" && (
         <div className="space-y-6">
+          {!isOnline && (
+            <PwaOfflineEmptyState featureName="Weekly Progress Synthesizer" />
+          )}
+
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -613,7 +628,7 @@ export const CoachView: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={handleLoadWeeklyReview}
-              disabled={isLoadingReview}
+              disabled={isLoadingReview || !isOnline}
               className="text-xs font-bold"
             >
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoadingReview ? "animate-spin" : ""}`} />

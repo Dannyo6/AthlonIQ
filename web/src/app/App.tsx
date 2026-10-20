@@ -13,6 +13,8 @@ import { ProfileView } from "@/features/profile/ProfileView";
 import { ActivitiesView } from "@/features/activities/ActivitiesView";
 import { Badge } from "@/components/ui/Badge";
 import { checkBackendHealth } from "@/services/api";
+import { usePwa } from "@/features/pwa/usePwa";
+import { PwaUpdateBanner, PwaOfflineBanner } from "@/features/pwa/PwaComponents";
 import {
   LayoutDashboard,
   Dumbbell,
@@ -36,6 +38,7 @@ import {
   CloudOff,
   UploadCloud,
   ShieldAlert,
+  Download,
 } from "lucide-react";
 
 const AppContent: React.FC = () => {
@@ -44,6 +47,7 @@ const AppContent: React.FC = () => {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
 
   const { user, signOut, reAuthRequired, dismissReAuthPrompt, authToast, clearAuthToast } = useAuth();
+  const { needRefresh, applyUpdate, dismissUpdate, isOnline, canInstall, installApp } = usePwa();
 
   const {
     profile,
@@ -86,6 +90,16 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
+      {/* PWA Offline Persistent Banner */}
+      <PwaOfflineBanner isOnline={isOnline} />
+
+      {/* PWA Service Worker Update Prompt Banner */}
+      <PwaUpdateBanner
+        needRefresh={needRefresh}
+        onUpdate={applyUpdate}
+        onDismiss={dismissUpdate}
+      />
+
       {/* Re-auth Expired Session Modal */}
       {reAuthRequired && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
@@ -290,6 +304,18 @@ const AppContent: React.FC = () => {
               )}
             </button>
 
+            {/* Install PWA Button if available */}
+            {canInstall && (
+              <button
+                onClick={() => installApp()}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-athloniq-lime/40 bg-athloniq-lime/15 text-athloniq-lime hover:bg-athloniq-lime/25 transition-all flex items-center gap-1 shadow-glow-lime"
+                title="Install AthlonIQ App"
+              >
+                <Download className="h-3 w-3" />
+                <span>Install</span>
+              </button>
+            )}
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-xl bg-[#12151E] border border-white/[0.08] text-slate-300"
@@ -419,6 +445,24 @@ const AppContent: React.FC = () => {
             );
           })}
         </nav>
+
+        {/* PWA Install Button (Desktop) */}
+        {canInstall && (
+          <div className="pt-3 pb-1 border-t border-white/[0.06]">
+            <button
+              onClick={() => installApp()}
+              className="w-full px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border border-athloniq-lime/40 bg-athloniq-lime/10 text-athloniq-lime hover:bg-athloniq-lime/20 shadow-glow-lime cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Download className="h-3.5 w-3.5 text-athloniq-lime" />
+                <span>Install AthlonIQ</span>
+              </div>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-athloniq-lime/20 text-athloniq-lime">
+                PWA
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* 14-Day Demo Fixture Fast Switcher (Desktop) */}
         <div className="pt-3 pb-1 border-t border-white/[0.06]">

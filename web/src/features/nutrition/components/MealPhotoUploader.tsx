@@ -11,6 +11,8 @@ import {
   Scan,
   UtensilsCrossed,
 } from "lucide-react";
+import { usePwa } from "@/features/pwa/usePwa";
+import { PwaOfflineEmptyState } from "@/features/pwa/PwaComponents";
 
 interface MealPhotoUploaderProps {
   isOpen: boolean;
@@ -106,6 +108,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   onEntryAdded,
 }) => {
   const { addFoodEntry } = useAthloniqState();
+  const { isOnline } = usePwa();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [dragOver, setDragOver] = useState(false);
@@ -305,8 +308,22 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 resetState();
               }}
             />
+          ) : !isOnline ? (
+            /* STATE 3A: Offline Read-Only Empty State */
+            <div className="py-4 space-y-4">
+              <PwaOfflineEmptyState featureName="AI Vision Meal Analysis" />
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] border border-white/[0.08]"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           ) : (
-            /* STATE 3: Initial Dropzone & Upload */
+            /* STATE 3B: Initial Dropzone & Upload */
             <div className="space-y-5">
               {analysisError && (
                 <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">

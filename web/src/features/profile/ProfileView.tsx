@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
+import { PwaInstallCard } from "@/features/pwa/PwaComponents";
+import { usePwa } from "@/features/pwa/usePwa";
 import {
   calculateBmi,
   calculateProteinReference,
@@ -107,6 +109,8 @@ export const ProfileView: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const { canInstall, isInstalled, isIos, installApp } = usePwa();
 
   const handleExportJSON = () => {
     const archiveData = {
@@ -1130,6 +1134,14 @@ export const ProfileView: React.FC = () => {
           <span>{exportNotice}</span>
         </div>
       )}
+
+      {/* Progressive Web App (PWA) Offline & Install Card */}
+      <PwaInstallCard
+        canInstall={canInstall}
+        isInstalled={isInstalled}
+        isIos={isIos}
+        onInstall={installApp}
+      />
 
       {/* Data Portability, Export & Account Controls */}
       <Card className="space-y-4 border-[#1E2330]">
