@@ -23,6 +23,7 @@ import {
   Star,
   X,
   Clock,
+  Trash2,
 } from "lucide-react";
 
 const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
@@ -101,7 +102,14 @@ function blankSet(exerciseName: string, order: number, isBodyweight: boolean): E
 }
 
 export const WorkoutsView: React.FC = () => {
-  const { equipment, profile, readiness, addWorkoutSession, workoutSessions } = useAthloniqState();
+  const {
+    equipment,
+    profile,
+    readiness,
+    addWorkoutSession,
+    deleteWorkoutSession,
+    workoutSessions,
+  } = useAthloniqState();
   const [activeTab, setActiveTab] = useState<"templates" | "active" | "history">("templates");
   const [selectedTemplate, setSelectedTemplate] = useState<WorkoutTemplate | null>(null);
   const [sessionTitle, setSessionTitle] = useState("");
@@ -119,26 +127,42 @@ export const WorkoutsView: React.FC = () => {
   const unconfirmedEquipment = equipment.filter((i) => !i.isConfirmed);
   const freeWeights = equipment.find((e) => e.itemKey === "free_weights_70kg");
 
-  // Rest timer logic
+  // Rest timer logic — clean single interval on unmount
   useEffect(() => {
-    if (restRunning && restTimer > 0) {
-      restIntervalRef.current = setInterval(() => {
-        setRestTimer((t) => {
-          if (t <= 1) {
-            setRestRunning(false);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
+    if (!restRunning) {
+      if (restIntervalRef.current) {
+        clearInterval(restIntervalRef.current);
+        restIntervalRef.current = null;
+      }
+      return;
     }
-    return () => { if (restIntervalRef.current) clearInterval(restIntervalRef.current); };
-  }, [restRunning, restTimer]);
+
+    restIntervalRef.current = setInterval(() => {
+      setRestTimer((t) => {
+        if (t <= 1) {
+          setRestRunning(false);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (restIntervalRef.current) {
+        clearInterval(restIntervalRef.current);
+        restIntervalRef.current = null;
+      }
+    };
+  }, [restRunning]);
 
   const startRestTimer = useCallback((seconds: number) => {
     setRestTimer(seconds);
     setRestRunning(true);
   }, []);
+
+  const adjustRestTimer = (deltaSeconds: number) => {
+    setRestTimer((t) => Math.max(0, t + deltaSeconds));
+  };
 
   const startSession = (template: WorkoutTemplate) => {
     setSelectedTemplate(template);
@@ -350,36 +374,77 @@ export const WorkoutsView: React.FC = () => {
                   </div>
                 </div>
                 {/* Rest Timer */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className={`font-mono text-2xl font-black tabular-nums ${restTimer > 0 ? "text-athloniq-lime" : "text-slate-500"}`}>
-                    {restFormatted}
+                <div className="flex flex-wrap items-center gap-2 shrink-0 bg-[#0C0E15] p-2.5 rounded-xl border border-white/[0.06]">
+                  <div className="flex items-center gap-1.5 mr-1">
+                    <Timer className="h-4 w-4 text-athloniq-lime" />
+                    <div className={`font-mono text-2xl font-black tabular-nums ${restTimer > 0 ? "text-athloniq-lime" : "text-slate-500"}`}>
+                      {restFormatted}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
+
+                  {/* Quick adjustments: -15s and +15s */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => adjustRestTimer(-15)}
+                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#141824] text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
+                      title="Decrease 15 seconds"
+                    >
+                      -15s
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => adjustRestTimer(15)}
+                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#141824] text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
+                      title="Add 15 seconds"
+                    >
+                      +15s
+                    </button>
+                  </div>
+
+                  {/* Presets */}
+                  <div className="flex items-center gap-1">
                     {([60, 90, 120] as const).map((sec) => (
                       <button
                         key={sec}
-                        onClick={() => startRestTimer(sec)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-colors ${
+                        type="button"
+                        onClick={() => {
+                          setRestPreset(sec);
+                          startRestTimer(sec);
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
                           restPreset === sec
-                            ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/30"
-                            : "bg-[#181D2A] text-slate-400 border border-[#1E2330] hover:text-white"
+                            ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40 font-black"
+                            : "bg-[#141824] text-slate-400 border border-white/[0.06] hover:text-white"
                         }`}
-                        onClickCapture={() => setRestPreset(sec)}
                       >
                         {sec}s
                       </button>
                     ))}
                   </div>
-                  <div className="flex flex-col gap-1">
+
+                  {/* Play/Pause & Reset */}
+                  <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       onClick={() => setRestRunning(!restRunning)}
-                      className="p-1.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-slate-300 hover:text-white"
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        restRunning
+                          ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                          : "bg-athloniq-lime/15 border-athloniq-lime/40 text-athloniq-lime"
+                      }`}
+                      title={restRunning ? "Pause timer" : "Start timer"}
                     >
                       {restRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>
                     <button
-                      onClick={() => { setRestTimer(0); setRestRunning(false); }}
-                      className="p-1.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-slate-400 hover:text-white"
+                      type="button"
+                      onClick={() => {
+                        setRestTimer(0);
+                        setRestRunning(false);
+                      }}
+                      className="p-1.5 rounded-lg bg-[#141824] border border-white/[0.08] text-slate-400 hover:text-white"
+                      title="Reset timer"
                     >
                       <RotateCcw className="h-4 w-4" />
                     </button>
@@ -456,29 +521,55 @@ export const WorkoutsView: React.FC = () => {
                               <span className="text-xs text-slate-400 font-mono">BW</span>
                             ) : (
                               <input
-                                type="number" step="0.5" min="0"
-                                value={set.loadKg || ""}
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={set.loadKg === 0 ? "" : set.loadKg}
                                 placeholder="0"
-                                onChange={(e) => updateSet(ex.id, idx, { loadKg: parseFloat(e.target.value) || 0 })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateSet(ex.id, idx, {
+                                    loadKg: val === "" ? 0 : parseFloat(val) || 0,
+                                  });
+                                }}
                                 className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                               />
                             )}
                           </div>
                           <div className="col-span-2">
                             <input
-                              type="number" min="0"
-                              value={set.reps || ""}
+                              type="number"
+                              min="0"
+                              value={set.reps === 0 ? "" : set.reps}
                               placeholder="0"
-                              onChange={(e) => updateSet(ex.id, idx, { reps: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateSet(ex.id, idx, {
+                                  reps: val === "" ? 0 : parseInt(val, 10) || 0,
+                                });
+                              }}
                               className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
                           <div className="col-span-2">
                             <input
-                              type="number" min="1" max="10" step="0.5"
+                              type="number"
+                              min="1"
+                              max="10"
+                              step="0.5"
                               value={set.rpe ?? ""}
                               placeholder="–"
-                              onChange={(e) => updateSet(ex.id, idx, { rpe: parseFloat(e.target.value) || null })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "") {
+                                  updateSet(ex.id, idx, { rpe: null });
+                                } else {
+                                  const n = parseFloat(val);
+                                  updateSet(ex.id, idx, {
+                                    rpe: isNaN(n) ? null : Math.min(10, Math.max(1, n)),
+                                  });
+                                }
+                              }}
                               className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
@@ -496,7 +587,8 @@ export const WorkoutsView: React.FC = () => {
                           <div className="col-span-1 flex justify-center">
                             <button
                               onClick={() => removeSet(ex.id, idx)}
-                              className="text-slate-500 hover:text-red-400 transition-colors"
+                              className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                              title="Delete set"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -522,10 +614,21 @@ export const WorkoutsView: React.FC = () => {
                   <div>
                     <label className="text-xs text-slate-400">Session RPE (1–10)</label>
                     <input
-                      type="number" min="1" max="10" step="0.5"
+                      type="number"
+                      min="1"
+                      max="10"
+                      step="0.5"
                       value={sessionRpe ?? ""}
                       placeholder="–"
-                      onChange={(e) => setSessionRpe(parseFloat(e.target.value) || null)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setSessionRpe(null);
+                        } else {
+                          const n = parseFloat(val);
+                          setSessionRpe(isNaN(n) ? null : Math.min(10, Math.max(1, n)));
+                        }
+                      }}
                       className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                     />
                   </div>
@@ -578,6 +681,13 @@ export const WorkoutsView: React.FC = () => {
                         <Badge variant={session.completed ? "emerald" : "amber"}>
                           {session.completed ? "COMPLETED" : "IN PROGRESS"}
                         </Badge>
+                        <button
+                          onClick={() => deleteWorkoutSession(session.id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
+                          title="Delete workout entry"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                     {totalVolume > 0 && (

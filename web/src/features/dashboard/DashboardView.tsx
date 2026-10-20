@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Zap,
   ShieldAlert,
+  Database,
+  RotateCcw,
 } from "lucide-react";
 
 interface DashboardViewProps {
@@ -42,6 +44,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     workoutSessions,
     activitySessions,
     bodyMetrics,
+    isDemoFixtureActive,
+    loadDemoFixture,
+    resetDemoFixture,
   } = useAthloniqState();
 
   const [checkInOpen, setCheckInOpen] = useState(false);
@@ -253,6 +258,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Button
+              variant={isDemoFixtureActive ? "danger" : "outline"}
+              size="lg"
+              onClick={() => {
+                if (isDemoFixtureActive) {
+                  resetDemoFixture();
+                } else {
+                  loadDemoFixture();
+                }
+              }}
+              title={isDemoFixtureActive ? "Reset back to personal state" : "Load 14-day populated demo data"}
+            >
+              {isDemoFixtureActive ? (
+                <>
+                  <RotateCcw className="h-4 w-4" /> Reset Demo
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4 text-athloniq-lime" /> Load 14d Demo Fixture
+                </>
+              )}
+            </Button>
+
             <Button
               variant="secondary"
               size="lg"

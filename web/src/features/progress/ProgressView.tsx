@@ -23,6 +23,8 @@ import {
   Zap,
   ArrowLeftRight,
   ShieldAlert,
+  Database,
+  RotateCcw,
 } from "lucide-react";
 
 function todayISO() {
@@ -44,6 +46,9 @@ export const ProgressView: React.FC = () => {
     progressPhotos,
     addProgressPhoto,
     deleteProgressPhoto,
+    isDemoFixtureActive,
+    loadDemoFixture,
+    resetDemoFixture,
   } = useAthloniqState();
 
   // Weigh-in form state
@@ -278,9 +283,28 @@ export const ProgressView: React.FC = () => {
             Deterministic energy calibrations, multi-sport fatigue flags, private photo timeline, and volume metrics.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="lime">LEAN BULK</Badge>
-          <ProvenanceBadge provenance="calculated_estimate" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={isDemoFixtureActive ? "danger" : "outline"}
+            onClick={() => {
+              if (isDemoFixtureActive) {
+                resetDemoFixture();
+              } else {
+                loadDemoFixture();
+              }
+            }}
+            title={isDemoFixtureActive ? "Reset back to personal state" : "Load 14-day populated demo data"}
+          >
+            {isDemoFixtureActive ? (
+              <>
+                <RotateCcw className="h-4 w-4" /> Reset Demo
+              </>
+            ) : (
+              <>
+                <Database className="h-4 w-4 text-athloniq-lime" /> Load 14d Demo Fixture
+              </>
+            )}
+          </Button>
           <Button variant="secondary" onClick={() => setShowPhotoForm(!showPhotoForm)}>
             <Camera className="h-4 w-4" /> Add Photo
           </Button>

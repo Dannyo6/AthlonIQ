@@ -1,15 +1,34 @@
 /**
  * AthlonIQ API Client Service
- * Connects web client to FastAPI intelligence backend with graceful offline fallback.
+ * Connects web client to FastAPI intelligence backend with dynamic LAN hostname resolution
+ * and deterministic offline fallbacks.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+export function getApiBaseUrl(): string {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
+  return `http://${host}:8000/api/v1`;
+}
 
-export async function checkBackendHealth() {
+export function getHealthUrl(): string {
+  const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
+  return `http://${host}:8000/health`;
+}
+
+export async function checkBackendHealth(): Promise<{ status: string; environment?: string } | null> {
   try {
-    const res = await fetch("http://localhost:8000/health", { method: "GET" });
-    if (!res.ok) throw new Error("Health check failed");
-    return await res.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(getHealthUrl(), {
+      method: "GET",
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error("Health check non-200");
+    const json = await res.json();
+    return json?.data || json || { status: "healthy" };
   } catch (error) {
     return null;
   }
@@ -17,7 +36,7 @@ export async function checkBackendHealth() {
 
 export async function fetchTargetsPreview(payload: any, token?: string) {
   try {
-    const res = await fetch(`${API_BASE_URL}/coaching/targets-preview`, {
+    const res = await fetch(`${getApiBaseUrl()}/coaching/targets-preview`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +54,7 @@ export async function fetchTargetsPreview(payload: any, token?: string) {
 
 export async function submitReadinessCheckIn(payload: any, token?: string) {
   try {
-    const res = await fetch(`${API_BASE_URL}/coaching/readiness`, {
+    const res = await fetch(`${getApiBaseUrl()}/coaching/readiness`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,7 +74,7 @@ export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
   const formData = new FormData();
   formData.append("file", imageFile);
 
-  const res = await fetch(`${API_BASE_URL}/vision/analyze-meal`, {
+  const res = await fetch(`${getApiBaseUrl()}/vision/analyze-meal`, {
     method: "POST",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
@@ -85,7 +104,7 @@ export async function sendCoachChatTurn(
   context?: any,
   token?: string
 ) {
-  const res = await fetch(`${API_BASE_URL}/coaching/chat`, {
+  const res = await fetch(`${getApiBaseUrl()}/coaching/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -110,7 +129,7 @@ export async function sendCoachChatTurn(
 }
 
 export async function fetchWeeklyReview(context?: any, token?: string) {
-  const res = await fetch(`${API_BASE_URL}/coaching/weekly-review`, {
+  const res = await fetch(`${getApiBaseUrl()}/coaching/weekly-review`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -135,7 +154,7 @@ export async function fetchWeeklyReview(context?: any, token?: string) {
 }
 
 export async function fetchCoachTools(token?: string) {
-  const res = await fetch(`${API_BASE_URL}/coaching/tools`, {
+  const res = await fetch(`${getApiBaseUrl()}/coaching/tools`, {
     method: "GET",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
@@ -151,7 +170,7 @@ export async function fetchCoachTools(token?: string) {
 }
 
 export async function calibrateLeanBulkApi(payload: any, token?: string) {
-  const res = await fetch(`${API_BASE_URL}/coaching/calibrate-lean-bulk`, {
+  const res = await fetch(`${getApiBaseUrl()}/coaching/calibrate-lean-bulk`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -176,7 +195,7 @@ export async function calibrateLeanBulkApi(payload: any, token?: string) {
 }
 
 export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
-  const res = await fetch(`${API_BASE_URL}/coaching/fatigue-advisory`, {
+  const res = await fetch(`${getApiBaseUrl()}/coaching/fatigue-advisory`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -199,5 +218,6 @@ export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
   const json = await res.json();
   return json.data;
 }
+
 
 

@@ -19,6 +19,13 @@ import {
   calculateEnergyEstimate,
   calculateProteinReference,
 } from "@/lib/calculations";
+import { generate14DayDemoFixture } from "@/lib/demoFixture";
+
+export interface AthlonToast {
+  id: string;
+  message: string;
+  type: "success" | "info" | "warning";
+}
 
 const STORAGE_KEY = "athloniq_state_v1";
 
@@ -239,6 +246,16 @@ interface AthloniqContextType {
   progressPhotos: ProgressPhotoAsset[];
   addProgressPhoto: (photo: Omit<ProgressPhotoAsset, "id">) => void;
   deleteProgressPhoto: (id: string) => void;
+
+  // Feedback Toast System
+  toast: AthlonToast | null;
+  showToast: (message: string, type?: "success" | "info" | "warning") => void;
+  hideToast: () => void;
+
+  // 14-Day Labeled Demo Fixture
+  isDemoFixtureActive: boolean;
+  loadDemoFixture: () => void;
+  resetDemoFixture: () => void;
 }
 
 const AthloniqContext = createContext<AthloniqContextType | null>(null);
@@ -296,6 +313,29 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadFromStorage("progress_photos", DEFAULT_PROGRESS_PHOTOS)
   );
 
+  // Toast notification state
+  const [toast, setToast] = useState<AthlonToast | null>(null);
+  const toastTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((message: string, type: "success" | "info" | "warning" = "success") => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    const id = Date.now().toString();
+    setToast({ id, message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((cur) => (cur?.id === id ? null : cur));
+    }, 3800);
+  }, []);
+
+  const hideToast = useCallback(() => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(null);
+  }, []);
+
+  // Demo fixture active state
+  const [isDemoFixtureActive, setIsDemoFixtureActive] = useState<boolean>(() =>
+    loadFromStorage("is_demo_fixture_active", false)
+  );
+
   // Deterministic readiness calculation
   const readiness = calculateRulesReadiness(
     todayCheckIn.sleepHours,
@@ -323,6 +363,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Sync Phase 5 progress photos to localStorage
   useEffect(() => { saveToStorage("progress_photos", progressPhotos); }, [progressPhotos]);
+
+  // Sync demo fixture state
+  useEffect(() => { saveToStorage("is_demo_fixture_active", isDemoFixtureActive); }, [isDemoFixtureActive]);
 
   // ==========================================================================
   // Phase 1 Actions
@@ -358,7 +401,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setEquipment(confirmedItems);
     const allConfirmed = confirmedItems.length > 0 && confirmedItems.every((i) => i.isConfirmed);
     setProfile((p) => ({ ...p, equipmentConfirmed: allConfirmed }));
-  }, []);
+    showToast("Home Gym Equipment Setup Confirmed", "success");
+  }, [showToast]);
 
   const updateGoals = useCallback((updates: Partial<UserGoals>) => {
     setGoals((prev) => ({ ...prev, ...updates }));
@@ -374,7 +418,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...checkIn,
       date: todayISO(),
     }));
-  }, []);
+    showToast("Daily Check-In Saved — Readiness Score Updated", "success");
+  }, [showToast]);
 
   const completeOnboarding = useCallback((finalData: Partial<UserProfile>) => {
     const mergedProfile: UserProfile = {
@@ -396,7 +441,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fatTargetG: energyEst.macros!.fatG,
       }));
     }
-  }, [profile]);
+    showToast("Athlete Onboarding Completed — Plan Calibrated!", "success");
+  }, [profile, showToast]);
 
   const resetToDefaults = useCallback(() => {
     setProfile(DEFAULT_PROFILE);
@@ -410,8 +456,32 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setBodyMetrics([]);
     setCoachMessages(DEFAULT_COACH_MESSAGES);
     setProgressPhotos(DEFAULT_PROGRESS_PHOTOS);
+    setIsDemoFixtureActive(false);
     localStorage.clear();
   }, []);
+
+  const loadDemoFixture = useCallback(() => {
+    const fixture = generate14DayDemoFixture();
+    setFoodEntries(fixture.foodEntries);
+    setBodyMetrics(fixture.bodyMetrics);
+    setWorkoutSessions(fixture.workoutSessions);
+    setActivitySessions(fixture.activitySessions);
+    setTodayCheckIn(fixture.todayCheckIn);
+    setProgressPhotos(fixture.progressPhotos);
+    setGoals(fixture.goals);
+    setProfile((prev) => ({
+      ...prev,
+      ...fixture.profileUpdates,
+    }));
+    setEquipment((prev) => prev.map((eq) => ({ ...eq, isConfirmed: true })));
+    setIsDemoFixtureActive(true);
+    showToast("14-Day Demo Fixture Loaded — All 14d Charts & Calibrations Active!", "success");
+  }, [showToast]);
+
+  const resetDemoFixture = useCallback(() => {
+    resetToDefaults();
+    showToast("Demo Fixture Cleared — Clean Personal Baseline Restored", "info");
+  }, [resetToDefaults, showToast]);
 
   // ==========================================================================
   // Phase 2: Nutrition Actions
@@ -428,7 +498,11 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       is_confirmed: isConf,
     };
     setFoodEntries((prev) => [...prev, newEntry]);
-  }, []);
+    showToast(
+      `Logged ${newEntry.quantity}× ${newEntry.foodName} (+${Math.round(newEntry.proteinG * newEntry.quantity * 10) / 10}g protein)`,
+      "success"
+    );
+  }, [showToast]);
 
   const updateFoodEntry = useCallback((id: string, updates: Partial<FoodEntry>) => {
     setFoodEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
@@ -436,7 +510,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteFoodEntry = useCallback((id: string) => {
     setFoodEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+    showToast("Meal entry removed", "info");
+  }, [showToast]);
 
   const getFoodEntriesForDate = useCallback(
     (date: string) => foodEntries.filter((e) => e.loggedDate === date),
@@ -449,8 +524,15 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addWorkoutSession = useCallback((session: Omit<WorkoutSession, "id">) => {
     const newSession: WorkoutSession = { ...session, id: generateId() };
+    const prCount = (session.sets || []).filter((s) => s.isPr).length;
     setWorkoutSessions((prev) => [...prev, newSession]);
-  }, []);
+    showToast(
+      prCount > 0
+        ? `Workout Session Saved — ${prCount} New PR! 🔥`
+        : `Workout Session Saved — ${session.title}`,
+      "success"
+    );
+  }, [showToast]);
 
   const updateWorkoutSession = useCallback((id: string, updates: Partial<WorkoutSession>) => {
     setWorkoutSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
@@ -458,7 +540,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteWorkoutSession = useCallback((id: string) => {
     setWorkoutSessions((prev) => prev.filter((s) => s.id !== id));
-  }, []);
+    showToast("Workout session removed", "info");
+  }, [showToast]);
 
   const getTodayWorkout = useCallback(
     () => workoutSessions.find((s) => s.loggedDate === todayISO()),
@@ -472,7 +555,13 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addActivitySession = useCallback((session: Omit<ActivitySession, "id">) => {
     const newSession: ActivitySession = { ...session, id: generateId() };
     setActivitySessions((prev) => [...prev, newSession]);
-  }, []);
+    showToast(
+      `Logged ${session.activityType.toUpperCase()} (${session.durationMinutes} min${
+        session.distanceKm ? ` · ${session.distanceKm} km` : ""
+      })`,
+      "success"
+    );
+  }, [showToast]);
 
   const updateActivitySession = useCallback((id: string, updates: Partial<ActivitySession>) => {
     setActivitySessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
@@ -480,7 +569,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteActivitySession = useCallback((id: string) => {
     setActivitySessions((prev) => prev.filter((s) => s.id !== id));
-  }, []);
+    showToast("Activity session removed", "info");
+  }, [showToast]);
 
   const getActivitiesForDate = useCallback(
     (date: string) => activitySessions.filter((s) => s.loggedDate === date),
@@ -501,7 +591,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addBodyMetric = useCallback((metric: Omit<BodyMetric, "id">) => {
     const newMetric: BodyMetric = { ...metric, id: generateId() };
     setBodyMetrics((prev) => [...prev, newMetric]);
-  }, []);
+    showToast(`Weigh-In Recorded: ${metric.weightKg.toFixed(1)} kg`, "success");
+  }, [showToast]);
 
   const updateBodyMetric = useCallback((id: string, updates: Partial<BodyMetric>) => {
     setBodyMetrics((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -509,7 +600,8 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const deleteBodyMetric = useCallback((id: string) => {
     setBodyMetrics((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+    showToast("Weigh-in record removed", "info");
+  }, [showToast]);
 
   const getLatestWeight = useCallback((): BodyMetric | undefined => {
     if (bodyMetrics.length === 0) return undefined;
@@ -588,11 +680,13 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: generateId(),
     };
     setProgressPhotos((prev) => [newPhoto, ...prev]);
-  }, []);
+    showToast(`Progress Photo Recorded (${photo.weightKg.toFixed(1)} kg)`, "success");
+  }, [showToast]);
 
   const deleteProgressPhoto = useCallback((id: string) => {
     setProgressPhotos((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+    showToast("Progress photo record deleted", "info");
+  }, [showToast]);
 
   const getCoachingSnapshot = useCallback(() => {
     return {
@@ -747,6 +841,14 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         progressPhotos,
         addProgressPhoto,
         deleteProgressPhoto,
+        // Feedback Toast
+        toast,
+        showToast,
+        hideToast,
+        // Demo Fixture
+        isDemoFixtureActive,
+        loadDemoFixture,
+        resetDemoFixture,
       }}
     >
       {children}
