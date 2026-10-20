@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "audit": "node audit-migrations.js",
-    "test:rls": "node test-rls.js"
+    "test:rls": "node test-rls.js",
+    "test:hosted-rls": "node test-hosted-rls.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.14"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
   }
 }

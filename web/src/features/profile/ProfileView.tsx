@@ -1116,7 +1116,7 @@ export const ProfileView: React.FC = () => {
             </div>
             <div className="pt-3 border-t border-[#1E2330]">
               <div className="text-[11px] text-slate-400">
-                All biometrics, equipment items, and check-in scores are deterministically verified and stored locally with Supabase cryptographic synchronization.
+                All biometrics, equipment items, and check-in scores are deterministically verified and synchronized with PostgreSQL Row-Level Security (RLS) policies in Supabase.
               </div>
             </div>
           </Card>

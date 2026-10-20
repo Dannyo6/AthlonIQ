@@ -1,8 +1,10 @@
 /**
  * AthlonIQ API Client Service
  * Connects web client to FastAPI intelligence backend with dynamic LAN hostname resolution
- * and deterministic offline fallbacks.
+ * and verified Bearer JWT authentication on EVERY request.
  */
+
+import { supabase } from "@/lib/supabase";
 
 export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -15,6 +17,26 @@ export function getApiBaseUrl(): string {
 export function getHealthUrl(): string {
   const host = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost";
   return `http://${host}:8000/health`;
+}
+
+/**
+ * Resolves the active Supabase JWT access token from the authenticated session.
+ * Sends Authorization: Bearer <token> on every request.
+ */
+async function getAuthHeaders(token?: string): Promise<Record<string, string>> {
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  try {
+    const { data } = await supabase.auth.getSession();
+    const sessionToken = data.session?.access_token;
+    if (sessionToken) {
+      return { Authorization: `Bearer ${sessionToken}` };
+    }
+  } catch (err) {
+    console.warn("[api.ts] Could not retrieve session access token:", err);
+  }
+  return {};
 }
 
 export async function checkBackendHealth(): Promise<{ status: string; environment?: string } | null> {
@@ -36,11 +58,12 @@ export async function checkBackendHealth(): Promise<{ status: string; environmen
 
 export async function fetchTargetsPreview(payload: any, token?: string) {
   try {
+    const authHeaders = await getAuthHeaders(token);
     const res = await fetch(`${getApiBaseUrl()}/coaching/targets-preview`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer dev-token" }),
+        ...authHeaders,
       },
       body: JSON.stringify(payload),
     });
@@ -54,11 +77,12 @@ export async function fetchTargetsPreview(payload: any, token?: string) {
 
 export async function submitReadinessCheckIn(payload: any, token?: string) {
   try {
+    const authHeaders = await getAuthHeaders(token);
     const res = await fetch(`${getApiBaseUrl()}/coaching/readiness`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer dev-token" }),
+        ...authHeaders,
       },
       body: JSON.stringify(payload),
     });
@@ -71,13 +95,14 @@ export async function submitReadinessCheckIn(payload: any, token?: string) {
 }
 
 export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
+  const authHeaders = await getAuthHeaders(token);
   const formData = new FormData();
   formData.append("file", imageFile);
 
   const res = await fetch(`${getApiBaseUrl()}/vision/analyze-meal`, {
     method: "POST",
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
     body: formData,
   });
@@ -104,11 +129,12 @@ export async function sendCoachChatTurn(
   context?: any,
   token?: string
 ) {
+  const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
     body: JSON.stringify({ message, context }),
   });
@@ -129,11 +155,12 @@ export async function sendCoachChatTurn(
 }
 
 export async function fetchWeeklyReview(context?: any, token?: string) {
+  const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/weekly-review`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
     body: JSON.stringify({ context }),
   });
@@ -154,10 +181,11 @@ export async function fetchWeeklyReview(context?: any, token?: string) {
 }
 
 export async function fetchCoachTools(token?: string) {
+  const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/tools`, {
     method: "GET",
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
   });
 
@@ -170,11 +198,12 @@ export async function fetchCoachTools(token?: string) {
 }
 
 export async function calibrateLeanBulkApi(payload: any, token?: string) {
+  const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/calibrate-lean-bulk`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
     body: JSON.stringify(payload),
   });
@@ -195,11 +224,12 @@ export async function calibrateLeanBulkApi(payload: any, token?: string) {
 }
 
 export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
+  const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/fatigue-advisory`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : { Authorization: "Bearer test-token-athlete" }),
+      ...authHeaders,
     },
     body: JSON.stringify(payload),
   });
@@ -218,6 +248,3 @@ export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
   const json = await res.json();
   return json.data;
 }
-
-
-

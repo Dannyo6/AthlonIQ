@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { BRAND_CONFIG, NavigationItemId } from "@/config/brand";
 import { AthloniqProvider, useAthloniqState } from "@/hooks/useAthloniqState";
+import { useAuth } from "@/features/auth/AuthContext";
+import { SignInView } from "@/features/auth/SignInView";
 import { DashboardView } from "@/features/dashboard/DashboardView";
 import { WorkoutsView } from "@/features/workouts/WorkoutsView";
 import { NutritionView } from "@/features/nutrition/NutritionView";
@@ -29,12 +31,19 @@ import {
   Info,
   Database,
   RotateCcw,
+  LogOut,
+  RefreshCw,
+  CloudOff,
+  UploadCloud,
+  ShieldAlert,
 } from "lucide-react";
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavigationItemId | "activities">("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
+  const { user, signOut, reAuthRequired, dismissReAuthPrompt, authToast, clearAuthToast } = useAuth();
 
   const {
     profile,
@@ -44,6 +53,13 @@ const AppContent: React.FC = () => {
     isDemoFixtureActive,
     loadDemoFixture,
     resetDemoFixture,
+    syncStatus,
+    syncError,
+    retrySync,
+    legacyImportAvailable,
+    legacyImportCounts,
+    runLegacyImport,
+    dismissLegacyImport,
   } = useAthloniqState();
 
   // Check backend health status (graceful fallback)
@@ -70,6 +86,118 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
+      {/* Re-auth Expired Session Modal */}
+      {reAuthRequired && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full bg-[#12151E] border border-amber-500/40 rounded-2xl p-6 shadow-2xl text-center space-y-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Session Refresh Required</h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Your authenticated session has expired. To maintain cryptographic security and sync with the database, please sign in again.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={dismissReAuthPrompt}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/[0.04] border border-white/[0.08]"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => signOut()}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-[#a3e635] transition-all shadow-glow-lime"
+              >
+                Sign In Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legacy localStorage Migration Modal */}
+      {legacyImportAvailable && legacyImportCounts && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="max-w-md w-full bg-[#12151E] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
+                <UploadCloud className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Import Offline Athlete Data</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  We detected previous local session data stored in this browser:
+                </p>
+                <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
+                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.food}</div>
+                    <div className="text-[10px] text-slate-400">Foods</div>
+                  </div>
+                  <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
+                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.workouts}</div>
+                    <div className="text-[10px] text-slate-400">Workouts</div>
+                  </div>
+                  <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
+                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.metrics}</div>
+                    <div className="text-[10px] text-slate-400">Metrics</div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  * Note: Pre-existing mock/demo records are automatically excluded.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/[0.06]">
+              <button
+                onClick={dismissLegacyImport}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/[0.04] border border-white/[0.08]"
+              >
+                Skip Import
+              </button>
+              <button
+                onClick={() => runLegacyImport()}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+              >
+                <UploadCloud className="h-3.5 w-3.5" />
+                <span>Import to Cloud</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auth Toast Notification */}
+      {authToast && (
+        <div className="fixed top-4 right-4 left-4 md:left-auto md:max-w-md z-[9999] animate-in fade-in slide-in-from-top-3 duration-200">
+          <div
+            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md ${
+              authToast.type === "success"
+                ? "bg-slate-900/95 border-athloniq-lime/40 text-athloniq-lime shadow-[0_0_20px_rgba(190,242,100,0.15)]"
+                : authToast.type === "warning"
+                ? "bg-slate-900/95 border-amber-500/40 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+                : "bg-slate-900/95 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {authToast.type === "success" && <CheckCircle2 className="h-4 w-4 shrink-0 text-athloniq-lime" />}
+              {authToast.type === "warning" && <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />}
+              {authToast.type === "info" && <Info className="h-4 w-4 shrink-0 text-cyan-400" />}
+              <span className="text-xs font-semibold text-slate-100 truncate">{authToast.message}</span>
+            </div>
+            <button
+              onClick={clearAuthToast}
+              className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white shrink-0"
+              aria-label="Dismiss toast"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating System Toast Notification */}
       {toast && (
         <div className="fixed top-4 right-4 left-4 md:left-auto md:max-w-md z-[9999] animate-in fade-in slide-in-from-top-3 duration-200">
@@ -110,13 +238,30 @@ const AppContent: React.FC = () => {
               <span className="font-extrabold text-white text-sm tracking-tight leading-none">
                 {BRAND_CONFIG.name}
               </span>
-              <span className="text-[9px] text-athloniq-lime font-mono uppercase tracking-wider mt-0.5">
-                {profile.fullName || "Athlete"}
+              <span className="text-[9px] text-athloniq-lime font-mono uppercase tracking-wider mt-0.5 truncate max-w-[120px]">
+                {profile.fullName || user?.email || "Athlete"}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Sync Status Badge */}
+            {syncStatus === "syncing" && (
+              <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold flex items-center gap-1">
+                <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                <span>Syncing</span>
+              </div>
+            )}
+            {syncStatus === "failed" && (
+              <button
+                onClick={() => retrySync()}
+                className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-bold flex items-center gap-1"
+              >
+                <CloudOff className="h-2.5 w-2.5" />
+                <span>Retry</span>
+              </button>
+            )}
+
             {/* Quick Demo Toggle */}
             <button
               onClick={() => {
@@ -144,11 +289,6 @@ const AppContent: React.FC = () => {
                 </>
               )}
             </button>
-
-            {/* Readiness pill */}
-            <div className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold tabular-nums">
-              {readiness.readinessScore}% Ready
-            </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -200,6 +340,33 @@ const AppContent: React.FC = () => {
               {BRAND_CONFIG.releasePhase}
             </div>
           </div>
+        </div>
+
+        {/* Sync Status Banner */}
+        <div className="mb-4 px-3 py-2 rounded-xl bg-[#12151E] border border-white/[0.07] flex items-center justify-between text-xs">
+          <span className="text-slate-400 flex items-center gap-2">
+            {syncStatus === "synced" && <CheckCircle2 className="h-3.5 w-3.5 text-athloniq-lime" />}
+            {syncStatus === "syncing" && <RefreshCw className="h-3.5 w-3.5 text-cyan-400 animate-spin" />}
+            {syncStatus === "failed" && <CloudOff className="h-3.5 w-3.5 text-rose-400" />}
+            <span className="text-[11px] font-medium">
+              {syncStatus === "synced" ? "Cloud Synced (RLS)" : syncStatus === "syncing" ? "Syncing..." : "Sync Failed"}
+            </span>
+          </span>
+          {syncStatus === "failed" && (
+            <div className="flex items-center gap-1.5">
+              {syncError && (
+                <span className="text-[10px] text-rose-400/80 truncate max-w-[80px]" title={syncError}>
+                  {syncError}
+                </span>
+              )}
+              <button
+                onClick={() => retrySync()}
+                className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline underline-offset-2 shrink-0"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Athlete Live Readiness Card (Desktop) */}
@@ -285,8 +452,8 @@ const AppContent: React.FC = () => {
           </button>
         </div>
 
-        {/* System Status Card */}
-        <div className="pt-3 border-t border-white/[0.06] space-y-2.5">
+        {/* Intelligence Engine Status */}
+        <div className="pt-3 border-t border-white/[0.06] space-y-1.5">
           <div className="flex items-center justify-between text-xs px-1">
             <span className="text-slate-400 flex items-center gap-1.5 font-medium">
               <Radio
@@ -300,19 +467,56 @@ const AppContent: React.FC = () => {
               {apiOnline ? "ONLINE" : "STANDBY"}
             </Badge>
           </div>
-
-          <div className="rounded-xl bg-[#12151E] p-3 border border-white/[0.07] text-[11px] text-slate-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-            <div className="text-slate-200 font-bold mb-0.5 flex items-center gap-1.5">
-              <span>Deterministic OS Core</span>
-              <Sparkles className="h-3 w-3 text-athloniq-lime" />
-            </div>
-            <div>Phase 1–5 QA Validated • Dark Graphite & Electric Lime</div>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 px-1 font-mono">
+            <Sparkles className="h-3 w-3 text-athloniq-lime" />
+            <span>Deterministic OS Core Active</span>
           </div>
+        </div>
+
+        {/* Authenticated User & Sign Out */}
+        <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between px-1">
+          <div className="flex flex-col min-w-0 pr-2">
+            <span className="text-[11px] font-bold text-white truncate">
+              {profile.fullName || "Athlete"}
+            </span>
+            <span className="text-[10px] text-slate-500 truncate font-mono">
+              {user?.email || "Authenticated"}
+            </span>
+          </div>
+          <button
+            onClick={() => signOut()}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            title="Sign out of AthlonIQ"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </aside>
 
-      {/* Main Content Area — With full bottom clearance for mobile dock */}
+      {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto pb-28 md:pb-10">
+        {/* Prominent Demo Mode Banner */}
+        {isDemoFixtureActive && (
+          <div className="mb-6 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-300 animate-in fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+              <div className="text-xs">
+                <span className="font-bold">DEMO FIXTURE ACTIVE:</span>{" "}
+                <span className="text-amber-200/90">
+                  In-memory 14-day sample preview. All cloud writes are safely blocked.
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={resetDemoFixture}
+              className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 shrink-0 transition-colors"
+            >
+              Reset to My State
+            </button>
+          </div>
+        )}
+
         {activeTab === "dashboard" && <DashboardView onNavigate={(t) => setActiveTab(t as any)} />}
         {activeTab === "workouts" && <WorkoutsView />}
         {activeTab === "nutrition" && <NutritionView />}
@@ -356,10 +560,35 @@ const AppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => {
+  const { session, loading } = useAuth();
+
+  // Loading state while verifying Supabase session
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col items-center justify-center p-6">
+        <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-300">
+          <div className="h-14 w-14 rounded-2xl bg-[#12151E] border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-black text-xl shadow-glow-lime">
+            AQ
+          </div>
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 tracking-wider">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin text-athloniq-lime" />
+            <span>INITIALIZING ATHLONIQ OS...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate the entire application behind an active authenticated session
+  if (!session) {
+    return <SignInView />;
+  }
+
   return (
     <AthloniqProvider>
       <AppContent />
     </AthloniqProvider>
   );
 };
+
 export default App;
