@@ -171,8 +171,7 @@ VALUES
     ('progress-photos', 'progress-photos', FALSE)
 ON CONFLICT (id) DO UPDATE SET public = FALSE;
 
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
+DROP POLICY IF EXISTS "storage_meal_progress_select_own" ON storage.objects;
 CREATE POLICY "storage_meal_progress_select_own"
     ON storage.objects FOR SELECT TO authenticated
     USING (
@@ -180,6 +179,7 @@ CREATE POLICY "storage_meal_progress_select_own"
         AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
     );
 
+DROP POLICY IF EXISTS "storage_meal_progress_insert_own" ON storage.objects;
 CREATE POLICY "storage_meal_progress_insert_own"
     ON storage.objects FOR INSERT TO authenticated
     WITH CHECK (
@@ -187,6 +187,7 @@ CREATE POLICY "storage_meal_progress_insert_own"
         AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
     );
 
+DROP POLICY IF EXISTS "storage_meal_progress_update_own" ON storage.objects;
 CREATE POLICY "storage_meal_progress_update_own"
     ON storage.objects FOR UPDATE TO authenticated
     USING (
@@ -198,6 +199,7 @@ CREATE POLICY "storage_meal_progress_update_own"
         AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
     );
 
+DROP POLICY IF EXISTS "storage_meal_progress_delete_own" ON storage.objects;
 CREATE POLICY "storage_meal_progress_delete_own"
     ON storage.objects FOR DELETE TO authenticated
     USING (

@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.user_equipment (
     item_key TEXT NOT NULL,
     item_name TEXT NOT NULL,
     max_load_kg NUMERIC(6, 2) CHECK (max_load_kg IS NULL OR max_load_kg > 0),
-    min_increment_kg NUMERIC(4, 2) DEFAULT 1.25 CHECK (min_increment_kg IS NULL OR min_increment_kg > 0),
+    min_increment_kg NUMERIC(4, 2) CHECK (min_increment_kg IS NULL OR min_increment_kg > 0),
     is_available BOOLEAN DEFAULT TRUE NOT NULL,
     is_confirmed BOOLEAN DEFAULT FALSE NOT NULL,
     notes TEXT,
@@ -248,7 +248,11 @@ CREATE POLICY "exercises_delete_own"
 -- 6. Automated Athlete Provisioning Trigger (On Signup)
 -- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_athlete_signup()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     -- 1. Initialize Profile with deterministic Phase 1 baselines
     INSERT INTO public.profiles (
@@ -278,7 +282,7 @@ BEGIN
     ) VALUES (
         NEW.id,
         NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', 'Athlete'),
+        NEW.raw_user_meta_data->>'full_name',
         20,
         173.0,
         55.0,
@@ -304,11 +308,11 @@ BEGIN
     -- 2. Seed unconfirmed historical home gym items (RULE: is_confirmed = false by default)
     INSERT INTO public.user_equipment (user_id, item_key, item_name, max_load_kg, min_increment_kg, is_available, is_confirmed)
     VALUES
-        (NEW.id, 'bench', 'Bench', 150.0, 2.5, TRUE, FALSE),
-        (NEW.id, 'squat_rack', 'Squat/Power Rack', 200.0, 2.5, TRUE, FALSE),
+        (NEW.id, 'bench', 'Bench', NULL, NULL, TRUE, FALSE),
+        (NEW.id, 'squat_rack', 'Squat/Power Rack', NULL, NULL, TRUE, FALSE),
         (NEW.id, 'dips_station', 'Dips Station', NULL, NULL, TRUE, FALSE),
-        (NEW.id, 'lat_pulldown_station', 'Lat Pulldown Station', 100.0, 5.0, TRUE, FALSE),
-        (NEW.id, 'free_weights_70kg', 'Free Weights up to 70 kg', 70.0, 1.25, TRUE, FALSE);
+        (NEW.id, 'lat_pulldown_station', 'Lat Pulldown Station', NULL, NULL, TRUE, FALSE),
+        (NEW.id, 'free_weights_70kg', 'Free Weights up to 70 kg', 70.0, NULL, TRUE, FALSE);
 
     -- 3. Seed provisional goals (protein 88-121g, calories awaiting onboarding)
     INSERT INTO public.user_goals (
@@ -354,7 +358,10 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Revoke public execution of SECURITY DEFINER trigger function
+REVOKE EXECUTE ON FUNCTION public.handle_new_athlete_signup() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_on_auth_user_created ON auth.users;
 CREATE TRIGGER trg_on_auth_user_created

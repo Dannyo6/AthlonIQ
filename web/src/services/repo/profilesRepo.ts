@@ -5,7 +5,7 @@ import { UserProfile } from "@/types";
 export const ProfileDbRowSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-  full_name: z.string().nullable().default(""),
+  full_name: z.string().nullable().default(null),
   age: z.coerce.number().int().min(1).max(129).default(20),
   height_cm: z.coerce.number().min(1).default(173.0),
   weight_kg: z.coerce.number().min(25).max(250).default(55.0),

@@ -685,8 +685,8 @@ export const ProfileView: React.FC = () => {
                             />
                           </div>
                           <div className="text-xs text-slate-400 font-mono mt-1">
-                            {item.maxLoadKg ? `Max Load: ${item.maxLoadKg} kg` : "Bodyweight"}{" "}
-                            {item.minIncrementKg ? `• Min Increment: ${item.minIncrementKg} kg` : ""}
+                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "not set"}{" "}
+                            • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "not set"}
                           </div>
                         </div>
                       </div>

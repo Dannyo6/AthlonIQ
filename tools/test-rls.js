@@ -149,6 +149,62 @@ async function runRlsTests() {
   const profileCount = await db.query(`SELECT count(*) FROM public.profiles WHERE id IN ($1, $2)`, [USER_A_ID, USER_B_ID]);
   assert(parseInt(profileCount.rows[0].count, 10) === 2, "Both profiles must be automatically provisioned");
 
+  // Step 2 Verification: Assert equipment max_load_kg and min_increment_kg are NULL except 70.0 free-weights limit
+  const eqRes = await db.query(
+    `SELECT item_key, item_name, max_load_kg, min_increment_kg, is_confirmed FROM public.user_equipment WHERE user_id = $1 ORDER BY item_key`,
+    [USER_A_ID]
+  );
+  assert(eqRes.rows.length === 5, `Expected 5 seeded equipment items, found ${eqRes.rows.length}`);
+  for (const eq of eqRes.rows) {
+    assert(eq.is_confirmed === false, `Equipment '${eq.item_key}' must have is_confirmed = false`);
+    assert(eq.min_increment_kg === null, `Equipment '${eq.item_key}' min_increment_kg must be NULL, got ${eq.min_increment_kg}`);
+    if (eq.item_key === "free_weights_70kg") {
+      assert(parseFloat(eq.max_load_kg) === 70.0, `free_weights_70kg max_load_kg must be 70.0, got ${eq.max_load_kg}`);
+    } else {
+      assert(eq.max_load_kg === null, `Equipment '${eq.item_key}' max_load_kg must be NULL, got ${eq.max_load_kg}`);
+    }
+  }
+  console.log("  ✓ Seeded equipment verified: max_load_kg/min_increment_kg NULL except 70kg free-weights, all is_confirmed=false");
+
+  // Step 1 Verification: Signup with NO full_name leaves profiles.full_name NULL (no 'Athlete' fallback)
+  const USER_C_ID = "33333333-3333-4333-a333-333333333333";
+  await db.query(`
+    INSERT INTO auth.users (id, email, raw_user_meta_data)
+    VALUES ($1, 'athlete.c@athloniq.local', '{}'::jsonb)
+    ON CONFLICT (id) DO NOTHING;
+  `, [USER_C_ID]);
+  const cProfile = await db.query(
+    `SELECT full_name, age, height_cm, weight_kg, dietary_pattern, training_days_per_week, training_environment, calorie_tracking_habit
+     FROM public.profiles WHERE id = $1`,
+    [USER_C_ID]
+  );
+  assert(cProfile.rows.length === 1, "Athlete C profile must be automatically provisioned");
+  assert(cProfile.rows[0].full_name === null, "Athlete C full_name must be NULL when not provided (no 'Athlete' fallback)");
+  assert(cProfile.rows[0].age === 20, "Athlete C age must be 20");
+  assert(parseFloat(cProfile.rows[0].height_cm) === 173.0, "Athlete C height must be 173.0");
+  assert(parseFloat(cProfile.rows[0].weight_kg) === 55.0, "Athlete C weight must be 55.0");
+  assert(cProfile.rows[0].dietary_pattern === "nonvegetarian", "Athlete C dietary_pattern must be nonvegetarian");
+  assert(cProfile.rows[0].training_days_per_week === 5, "Athlete C training_days_per_week must be 5");
+  assert(cProfile.rows[0].training_environment === "home_gym", "Athlete C training_environment must be home_gym");
+  assert(cProfile.rows[0].calorie_tracking_habit === "rough_estimates", "Athlete C calorie_tracking_habit must be rough_estimates");
+  console.log("  ✓ Signup trigger verified: NULL full_name preserved without fallback, provenance-safe baselines intact");
+
+  // Step 1 Verification: REVOKE EXECUTE ON FUNCTION handle_new_athlete_signup
+  await setSession(db, USER_A_ID, "authenticated");
+  let directCallBlocked = false;
+  try {
+    await db.query(`SELECT public.handle_new_athlete_signup()`);
+  } catch (err) {
+    directCallBlocked = true;
+    assert(
+      err.message.includes("permission denied") || err.message.includes("permission"),
+      `Expected permission denied error, got: ${err.message}`
+    );
+  }
+  assert(directCallBlocked, "Direct execution of handle_new_athlete_signup by authenticated role must be denied");
+  console.log("  ✓ REVOKE verified: direct execution of handle_new_athlete_signup by authenticated role is blocked");
+  await resetRole(db);
+
   // Populate Athlete B's data across all domain tables
   console.log("\n4. Populating Private Dataset for Athlete B:");
   await setSession(db, USER_B_ID, "authenticated");

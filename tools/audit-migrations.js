@@ -85,6 +85,7 @@ export async function createStubbedDb() {
       last_accessed_at TIMESTAMPTZ DEFAULT NOW(),
       metadata JSONB DEFAULT '{}'::jsonb
     );
+    ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
     CREATE OR REPLACE FUNCTION storage.foldername(name text)
     RETURNS text[] AS $$

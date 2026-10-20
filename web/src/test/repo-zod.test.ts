@@ -51,7 +51,7 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
       };
 
       const parsed = ProfileDbRowSchema.parse(rowWithDefaults);
-      expect(parsed.full_name).toBe("");
+      expect(parsed.full_name).toBe(null);
       expect(parsed.onboarding_completed).toBe(false);
       expect(parsed.equipment_confirmed).toBe(false);
 
@@ -131,10 +131,14 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
       const parsed = EquipmentDbRowSchema.parse(validEquip);
       expect(parsed.is_confirmed).toBe(false);
       expect(parsed.is_available).toBe(true);
+      expect(parsed.max_load_kg).toBe(null);
+      expect(parsed.min_increment_kg).toBe(null);
 
       const domain = mapDbEquipmentToDomain(parsed);
       expect(domain.isConfirmed).toBe(false);
       expect(domain.itemName).toBe("Adjustable Dumbbells");
+      expect(domain.maxLoadKg).toBe(null);
+      expect(domain.minIncrementKg).toBe(null);
     });
   });
 
