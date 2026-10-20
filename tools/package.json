@@ -1,0 +1,13 @@
+{
+  "name": "athloniq-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "node audit-migrations.js",
+    "test:rls": "node test-rls.js"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.14"
+  }
+}
