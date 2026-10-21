@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.coach_conversations (
 
 CREATE INDEX IF NOT EXISTS idx_coach_conversations_user ON public.coach_conversations(user_id, created_at DESC);
 
+DROP TRIGGER IF EXISTS trg_coach_conversations_updated_at ON public.coach_conversations;
 CREATE TRIGGER trg_coach_conversations_updated_at
     BEFORE UPDATE ON public.coach_conversations
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.coach_messages (
 CREATE INDEX IF NOT EXISTS idx_coach_messages_conversation ON public.coach_messages(conversation_id, created_at ASC);
 CREATE INDEX IF NOT EXISTS idx_coach_messages_user ON public.coach_messages(user_id, created_at DESC);
 
+DROP TRIGGER IF EXISTS trg_coach_messages_updated_at ON public.coach_messages;
 CREATE TRIGGER trg_coach_messages_updated_at
     BEFORE UPDATE ON public.coach_messages
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -97,6 +99,7 @@ CREATE TABLE IF NOT EXISTS public.weekly_reports (
 
 CREATE INDEX IF NOT EXISTS idx_weekly_reports_user_date ON public.weekly_reports(user_id, week_start_date DESC);
 
+DROP TRIGGER IF EXISTS trg_weekly_reports_updated_at ON public.weekly_reports;
 CREATE TRIGGER trg_weekly_reports_updated_at
     BEFORE UPDATE ON public.weekly_reports
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -138,6 +141,7 @@ CREATE TABLE IF NOT EXISTS public.progress_photos (
 
 CREATE INDEX IF NOT EXISTS idx_progress_photos_user_date ON public.progress_photos(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_progress_photos_updated_at ON public.progress_photos;
 CREATE TRIGGER trg_progress_photos_updated_at
     BEFORE UPDATE ON public.progress_photos
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

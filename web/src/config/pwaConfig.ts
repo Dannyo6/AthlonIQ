@@ -50,7 +50,7 @@ export const PWA_WORKBOX_CONFIG = {
   
   // Navigation fallback to app shell
   navigateFallback: "/index.html",
-  navigateFallbackDenylist: [/^\/api\//, /^\/health/],
+  navigateFallbackDenylist: [/^\/api/, /^\/health/],
 
   // Strict zero-caching rules for sensitive private data & APIs
   runtimeCaching: [

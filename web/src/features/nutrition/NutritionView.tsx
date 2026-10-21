@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
+import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
 import {
   searchFoodCatalog,
   calculateDailyNutritionTotals,
@@ -70,6 +71,22 @@ export const NutritionView: React.FC = () => {
   const [customProtein, setCustomProtein] = useState("");
   const [customCarbs, setCustomCarbs] = useState("");
   const [customFat, setCustomFat] = useState("");
+
+  const { setFormDirty } = useUnsavedWork();
+
+  const hasUnsavedFoodInput = Boolean(
+    customName.trim() ||
+    customCal.trim() ||
+    customProtein.trim() ||
+    (showAddPanel && selectedFood)
+  );
+
+  useEffect(() => {
+    setFormDirty("meal-entry", hasUnsavedFoodInput, "Meal / Food Log");
+    return () => {
+      setFormDirty("meal-entry", false);
+    };
+  }, [hasUnsavedFoodInput, setFormDirty]);
 
   const todayEntries = useMemo(
     () => getFoodEntriesForDate(selectedDate),

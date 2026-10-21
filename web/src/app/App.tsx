@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { BRAND_CONFIG, NavigationItemId } from "@/config/brand";
+import React, { useState, useEffect, Suspense } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useInRouterContext,
+  BrowserRouter,
+} from "react-router-dom";
+import { BRAND_CONFIG } from "@/config/brand";
 import { AthloniqProvider, useAthloniqState } from "@/hooks/useAthloniqState";
 import { useAuth } from "@/features/auth/AuthContext";
 import { SignInView } from "@/features/auth/SignInView";
-import { DashboardView } from "@/features/dashboard/DashboardView";
-import { WorkoutsView } from "@/features/workouts/WorkoutsView";
-import { NutritionView } from "@/features/nutrition/NutritionView";
-import { RecoveryView } from "@/features/recovery/RecoveryView";
-import { ProgressView } from "@/features/progress/ProgressView";
-import { CoachView } from "@/features/coach/CoachView";
-import { ProfileView } from "@/features/profile/ProfileView";
-import { ActivitiesView } from "@/features/activities/ActivitiesView";
+import { RouteLoadingSkeleton } from "@/components/ui/RouteLoadingSkeleton";
+import { NotFoundView } from "@/features/navigation/NotFoundView";
+import {
+  UnsavedWorkProvider,
+  useUnsavedWork,
+} from "@/features/navigation/UnsavedWorkContext";
+import { GuardedNavLink } from "@/features/navigation/GuardedNavLink";
 import { Badge } from "@/components/ui/Badge";
 import { checkBackendHealth } from "@/services/api";
 import { usePwa } from "@/features/pwa/usePwa";
@@ -41,10 +48,68 @@ import {
   Download,
 } from "lucide-react";
 
-const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavigationItemId | "activities">("dashboard");
+// Lazy-loaded feature views (Code Splitting)
+const LazyDashboardView = React.lazy(() =>
+  import("@/features/dashboard/DashboardView").then((m) => ({ default: m.DashboardView }))
+);
+const LazyNutritionView = React.lazy(() =>
+  import("@/features/nutrition/NutritionView").then((m) => ({ default: m.NutritionView }))
+);
+const LazyWorkoutsView = React.lazy(() =>
+  import("@/features/workouts/WorkoutsView").then((m) => ({ default: m.WorkoutsView }))
+);
+const LazyActivitiesView = React.lazy(() =>
+  import("@/features/activities/ActivitiesView").then((m) => ({ default: m.ActivitiesView }))
+);
+const LazyRecoveryView = React.lazy(() =>
+  import("@/features/recovery/RecoveryView").then((m) => ({ default: m.RecoveryView }))
+);
+const LazyProgressView = React.lazy(() =>
+  import("@/features/progress/ProgressView").then((m) => ({ default: m.ProgressView }))
+);
+const LazyCoachView = React.lazy(() =>
+  import("@/features/coach/CoachView").then((m) => ({ default: m.CoachView }))
+);
+const LazyProfileView = React.lazy(() =>
+  import("@/features/profile/ProfileView").then((m) => ({ default: m.ProfileView }))
+);
+
+const ROUTE_TITLES: Record<string, string> = {
+  "/today": "Today Dashboard — AthlonIQ",
+  "/nutrition": "Nutrition & Energy — AthlonIQ",
+  "/workouts": "Training & Equipment — AthlonIQ",
+  "/activities": "Activities & Cardio — AthlonIQ",
+  "/recovery": "Recovery & Readiness — AthlonIQ",
+  "/progress": "Physique Analytics — AthlonIQ",
+  "/coach": "AI Performance Coach — AthlonIQ",
+  "/profile": "Profile & Setup — AthlonIQ",
+};
+
+export const NAV_ITEMS = [
+  { id: "today", path: "/today", label: "Today Dashboard", short: "Today", icon: LayoutDashboard },
+  { id: "nutrition", path: "/nutrition", label: "Nutrition & Energy", short: "Nutrition", icon: Utensils },
+  { id: "workouts", path: "/workouts", label: "Training & Equipment", short: "Training", icon: Dumbbell },
+  { id: "recovery", path: "/recovery", label: "Recovery & Readiness", short: "Recovery", icon: Moon },
+  { id: "progress", path: "/progress", label: "Physique Analytics", short: "Physique", icon: TrendingUp },
+  { id: "coach", path: "/coach", label: "AI Performance Coach", short: "Coach", icon: Bot },
+  { id: "activities", path: "/activities", label: "Activities & Cardio", short: "Cardio", icon: Activity },
+  { id: "profile", path: "/profile", label: "Profile & Setup", short: "Profile", icon: User },
+] as const;
+
+export const MOBILE_DOCK_ITEMS = [
+  { id: "today", path: "/today", label: "Today", icon: LayoutDashboard },
+  { id: "nutrition", path: "/nutrition", label: "Nutrition", icon: Utensils },
+  { id: "workouts", path: "/workouts", label: "Training", icon: Dumbbell },
+  { id: "coach", path: "/coach", label: "Coach", icon: Bot },
+  { id: "progress", path: "/progress", label: "Physique", icon: TrendingUp },
+] as const;
+
+const AppShell: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
+  const location = useLocation();
+  const { guardedNavigate } = useUnsavedWork();
 
   const { user, signOut, reAuthRequired, dismissReAuthPrompt, authToast, clearAuthToast } = useAuth();
   const { needRefresh, applyUpdate, dismissUpdate, isOnline, canInstall, installApp } = usePwa();
@@ -66,6 +131,25 @@ const AppContent: React.FC = () => {
     dismissLegacyImport,
   } = useAthloniqState();
 
+  // Document title and heading focus management per route
+  useEffect(() => {
+    const currentPath = location.pathname;
+    document.title = ROUTE_TITLES[currentPath] || "AthlonIQ — Personal AI Performance & Physique OS";
+
+    // Shift focus to main page heading for screen-reader & keyboard accessibility
+    requestAnimationFrame(() => {
+      const heading =
+        document.getElementById("page-heading") ||
+        document.querySelector("main h1");
+      if (heading instanceof HTMLElement) {
+        if (!heading.hasAttribute("tabindex")) {
+          heading.setAttribute("tabindex", "-1");
+        }
+        heading.focus({ preventScroll: false });
+      }
+    });
+  }, [location.pathname]);
+
   // Check backend health status (graceful fallback)
   useEffect(() => {
     const verifyApi = async () => {
@@ -76,17 +160,6 @@ const AppContent: React.FC = () => {
     const interval = setInterval(verifyApi, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const navItems = [
-    { id: "dashboard", label: "Today Dashboard", short: "Today", icon: LayoutDashboard },
-    { id: "nutrition", label: "Nutrition & Energy", short: "Nutrition", icon: Utensils },
-    { id: "workouts", label: "Training & Equipment", short: "Training", icon: Dumbbell },
-    { id: "recovery", label: "Recovery & Readiness", short: "Recovery", icon: Moon },
-    { id: "progress", label: "Physique Analytics", short: "Physique", icon: TrendingUp },
-    { id: "coach", label: "AI Performance Coach", short: "Coach", icon: Bot },
-    { id: "activities", label: "Activities & Cardio", short: "Cardio", icon: Activity },
-    { id: "profile", label: "Profile & Setup", short: "Profile", icon: User },
-  ] as const;
 
   return (
     <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
@@ -328,22 +401,21 @@ const AppContent: React.FC = () => {
 
         {/* 1-Click Horizontal Quick Rail for Mobile */}
         <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-t border-white/[0.04] bg-[#090A0F]/60">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all border shrink-0 ${
+          {NAV_ITEMS.map((item) => (
+            <GuardedNavLink
+              key={item.id}
+              to={item.path}
+              className={({ isActive }) =>
+                `px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all border shrink-0 ${
                   isActive
                     ? "bg-athloniq-lime text-slate-950 font-bold border-athloniq-lime shadow-glow-lime"
                     : "bg-[#141824]/80 text-slate-300 border-white/[0.06] hover:text-white"
-                }`}
-              >
-                {item.short}
-              </button>
-            );
-          })}
+                }`
+              }
+            >
+              {item.short}
+            </GuardedNavLink>
+          ))}
         </div>
       </header>
 
@@ -417,31 +489,34 @@ const AppContent: React.FC = () => {
 
         {/* Navigation Links */}
         <nav className="flex-1 space-y-1">
-          {navItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
             return (
-              <button
+              <GuardedNavLink
                 key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id as any);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all select-none ${
-                  isActive
-                    ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/30 shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)] font-bold"
-                    : "text-slate-400 hover:text-white hover:bg-[#141824]/60 border border-transparent"
-                }`}
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all select-none ${
+                    isActive
+                      ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/30 shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)] font-bold"
+                      : "text-slate-400 hover:text-white hover:bg-[#141824]/60 border border-transparent"
+                  }`
+                }
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`h-4 w-4 ${isActive ? "text-athloniq-lime" : "text-slate-400"}`} />
-                  <span>{item.label}</span>
-                </div>
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <Icon className={`h-4 w-4 ${isActive ? "text-athloniq-lime" : "text-slate-400"}`} />
+                      <span>{item.label}</span>
+                    </div>
 
-                {item.id === "profile" && !profile.onboardingCompleted && (
-                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                    {item.id === "profile" && !profile.onboardingCompleted && (
+                      <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                    )}
+                  </>
                 )}
-              </button>
+              </GuardedNavLink>
             );
           })}
         </nav>
@@ -561,46 +636,88 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {activeTab === "dashboard" && <DashboardView onNavigate={(t) => setActiveTab(t as any)} />}
-        {activeTab === "workouts" && <WorkoutsView />}
-        {activeTab === "nutrition" && <NutritionView />}
-        {activeTab === "recovery" && <RecoveryView />}
-        {activeTab === "progress" && <ProgressView />}
-        {activeTab === "coach" && <CoachView />}
-        {activeTab === "activities" && <ActivitiesView />}
-        {activeTab === "profile" && <ProfileView />}
+        {/* Route Definitions with Suspense Fallback */}
+        <Suspense fallback={<RouteLoadingSkeleton />}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/today" replace />} />
+            <Route
+              path="/today"
+              element={
+                <LazyDashboardView
+                  onNavigate={(tab) =>
+                    guardedNavigate(`/${tab === "dashboard" ? "today" : tab}`)
+                  }
+                />
+              }
+            />
+            <Route path="/nutrition" element={<LazyNutritionView />} />
+            <Route path="/workouts" element={<LazyWorkoutsView />} />
+            <Route path="/activities" element={<LazyActivitiesView />} />
+            <Route path="/recovery" element={<LazyRecoveryView />} />
+            <Route path="/progress" element={<LazyProgressView />} />
+            <Route path="/coach" element={<LazyCoachView />} />
+            <Route path="/profile" element={<LazyProfileView />} />
+            <Route path="*" element={<NotFoundView />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {/* Mobile Bottom Navigation Bar for thumb ergonomics */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0C0E15]/95 border-t border-white/[0.08] px-2 py-1.5 flex items-center justify-around z-50 backdrop-blur-lg">
-        {[
-          { id: "dashboard", label: "Today", icon: LayoutDashboard },
-          { id: "nutrition", label: "Nutrition", icon: Utensils },
-          { id: "workouts", label: "Training", icon: Dumbbell },
-          { id: "coach", label: "Coach", icon: Bot },
-          { id: "progress", label: "Physique", icon: TrendingUp },
-        ].map((item) => {
+        {MOBILE_DOCK_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
           return (
-            <button
+            <GuardedNavLink
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
-              className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl min-h-[44px] transition-all relative select-none ${
-                isActive ? "text-athloniq-lime font-bold" : "text-slate-400 hover:text-slate-200"
-              }`}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl min-h-[44px] transition-all relative select-none ${
+                  isActive ? "text-athloniq-lime font-bold" : "text-slate-400 hover:text-slate-200"
+                }`
+              }
             >
-              <Icon className={`h-4 w-4 ${isActive ? "text-athloniq-lime scale-110" : ""}`} />
-              <span className="text-[10px] tracking-tight">{item.label}</span>
-              {isActive && (
-                <span className="absolute bottom-0 w-6 h-0.5 bg-athloniq-lime rounded-full shadow-glow-lime" />
+              {({ isActive }) => (
+                <>
+                  <Icon className={`h-4 w-4 ${isActive ? "text-athloniq-lime scale-110" : ""}`} />
+                  <span className="text-[10px] tracking-tight">{item.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 w-6 h-0.5 bg-athloniq-lime rounded-full shadow-glow-lime" />
+                  )}
+                </>
               )}
-            </button>
+            </GuardedNavLink>
           );
         })}
       </nav>
     </div>
   );
+};
+
+// Safe helper to check if AthloniqState is available from outer tree
+const EnsureAthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  let hasProvider = false;
+  try {
+    if (useAthloniqState()) {
+      hasProvider = true;
+    }
+  } catch {
+    hasProvider = false;
+  }
+
+  if (hasProvider) {
+    return <>{children}</>;
+  }
+
+  return <AthloniqProvider>{children}</AthloniqProvider>;
+};
+
+// Safe helper to check if Router context exists (e.g. tests using MemoryRouter)
+const EnsureRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const inRouter = useInRouterContext();
+  if (inRouter) {
+    return <>{children}</>;
+  }
+  return <BrowserRouter>{children}</BrowserRouter>;
 };
 
 export const App: React.FC = () => {
@@ -629,9 +746,13 @@ export const App: React.FC = () => {
   }
 
   return (
-    <AthloniqProvider>
-      <AppContent />
-    </AthloniqProvider>
+    <EnsureAthloniqProvider>
+      <EnsureRouter>
+        <UnsavedWorkProvider>
+          <AppShell />
+        </UnsavedWorkProvider>
+      </EnsureRouter>
+    </EnsureAthloniqProvider>
   );
 };
 

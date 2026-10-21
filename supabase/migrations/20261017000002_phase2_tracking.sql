@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.custom_foods (
 
 CREATE INDEX IF NOT EXISTS idx_custom_foods_user ON public.custom_foods(user_id);
 
+DROP TRIGGER IF EXISTS trg_custom_foods_updated_at ON public.custom_foods;
 CREATE TRIGGER trg_custom_foods_updated_at
     BEFORE UPDATE ON public.custom_foods
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS public.food_entries (
 
 CREATE INDEX IF NOT EXISTS idx_food_entries_user_date ON public.food_entries(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_food_entries_updated_at ON public.food_entries;
 CREATE TRIGGER trg_food_entries_updated_at
     BEFORE UPDATE ON public.food_entries
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -113,6 +115,7 @@ CREATE TABLE IF NOT EXISTS public.workout_templates (
 
 CREATE INDEX IF NOT EXISTS idx_workout_templates_user ON public.workout_templates(user_id);
 
+DROP TRIGGER IF EXISTS trg_workout_templates_updated_at ON public.workout_templates;
 CREATE TRIGGER trg_workout_templates_updated_at
     BEFORE UPDATE ON public.workout_templates
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -158,6 +161,7 @@ CREATE TABLE IF NOT EXISTS public.workout_template_exercises (
 CREATE INDEX IF NOT EXISTS idx_wte_template ON public.workout_template_exercises(template_id);
 CREATE INDEX IF NOT EXISTS idx_wte_user ON public.workout_template_exercises(user_id);
 
+DROP TRIGGER IF EXISTS trg_workout_template_exercises_updated_at ON public.workout_template_exercises;
 CREATE TRIGGER trg_workout_template_exercises_updated_at
     BEFORE UPDATE ON public.workout_template_exercises
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -200,6 +204,7 @@ CREATE TABLE IF NOT EXISTS public.workout_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_workout_sessions_user_date ON public.workout_sessions(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_workout_sessions_updated_at ON public.workout_sessions;
 CREATE TRIGGER trg_workout_sessions_updated_at
     BEFORE UPDATE ON public.workout_sessions
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -248,6 +253,7 @@ CREATE TABLE IF NOT EXISTS public.exercise_sets (
 CREATE INDEX IF NOT EXISTS idx_exercise_sets_session ON public.exercise_sets(session_id);
 CREATE INDEX IF NOT EXISTS idx_exercise_sets_user ON public.exercise_sets(user_id);
 
+DROP TRIGGER IF EXISTS trg_exercise_sets_updated_at ON public.exercise_sets;
 CREATE TRIGGER trg_exercise_sets_updated_at
     BEFORE UPDATE ON public.exercise_sets
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -295,6 +301,7 @@ CREATE TABLE IF NOT EXISTS public.activity_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_activity_sessions_user_date ON public.activity_sessions(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_activity_sessions_updated_at ON public.activity_sessions;
 CREATE TRIGGER trg_activity_sessions_updated_at
     BEFORE UPDATE ON public.activity_sessions
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -336,6 +343,7 @@ CREATE TABLE IF NOT EXISTS public.body_metrics (
 
 CREATE INDEX IF NOT EXISTS idx_body_metrics_user_date ON public.body_metrics(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_body_metrics_updated_at ON public.body_metrics;
 CREATE TRIGGER trg_body_metrics_updated_at
     BEFORE UPDATE ON public.body_metrics
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -382,6 +390,7 @@ CREATE TABLE IF NOT EXISTS public.recovery_logs (
 
 CREATE INDEX IF NOT EXISTS idx_recovery_logs_user_date ON public.recovery_logs(user_id, logged_date DESC);
 
+DROP TRIGGER IF EXISTS trg_recovery_logs_updated_at ON public.recovery_logs;
 CREATE TRIGGER trg_recovery_logs_updated_at
     BEFORE UPDATE ON public.recovery_logs
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

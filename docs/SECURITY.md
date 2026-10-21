@@ -55,3 +55,10 @@ AthlonIQ strictly segregates static user interface code from confidential athlet
 3. **Session Teardown**: Calling `signOut()` immediately invokes `queryClient.clear()` to destroy all in-memory query snapshots, preventing cross-athlete leakage on shared devices.
 4. **Offline Integrity**: Generative AI coaching and vision photo analysis are blocked when offline. AthlonIQ strictly avoids simulating fake offline synchronization.
 
+---
+
+## 6. Database Functions & RLS Hardening
+- **Function Permissions**: The hosted project's `rls_auto_enable()` function had `EXECUTE` revoked from `public`, `anon`, and `authenticated` (`REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`), preventing unauthorized execution of schema automation routines.
+- **Search Path Isolation**: All trigger functions (including `handle_updated_at()` and `handle_new_athlete_signup()`) strictly enforce `SET search_path = public` to eliminate search-path injection vulnerabilities.
+
+

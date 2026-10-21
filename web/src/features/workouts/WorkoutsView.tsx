@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
+import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
 import { evaluateProgressionSuggestion } from "@/lib/calculations";
 import {
   WorkoutTemplate,
@@ -117,6 +118,17 @@ export const WorkoutsView: React.FC = () => {
   const [sessionRpe, setSessionRpe] = useState<number | null>(null);
   const [sessionNotes, setSessionNotes] = useState("");
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+
+  const { setFormDirty } = useUnsavedWork();
+
+  const hasUnsavedWorkout = activeTab === "active" && sessionExercises.length > 0;
+
+  useEffect(() => {
+    setFormDirty("workout-session", hasUnsavedWorkout, "Workout Session");
+    return () => {
+      setFormDirty("workout-session", false);
+    };
+  }, [hasUnsavedWorkout, setFormDirty]);
 
   // Rest timer
   const [restTimer, setRestTimer] = useState<number>(0);

@@ -13,6 +13,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+ALTER FUNCTION public.handle_updated_at() SET search_path = public;
+
 -- ------------------------------------------------------------------------------
 -- 1. Profiles (Athlete Identity, Biometrics & Onboarding Baselines)
 -- ------------------------------------------------------------------------------
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
 CREATE TRIGGER trg_profiles_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -95,6 +98,7 @@ CREATE TABLE IF NOT EXISTS public.user_equipment (
 
 CREATE INDEX IF NOT EXISTS idx_user_equipment_user ON public.user_equipment(user_id);
 
+DROP TRIGGER IF EXISTS trg_user_equipment_updated_at ON public.user_equipment;
 CREATE TRIGGER trg_user_equipment_updated_at
     BEFORE UPDATE ON public.user_equipment
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -141,6 +145,7 @@ CREATE TABLE IF NOT EXISTS public.user_goals (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+DROP TRIGGER IF EXISTS trg_user_goals_updated_at ON public.user_goals;
 CREATE TRIGGER trg_user_goals_updated_at
     BEFORE UPDATE ON public.user_goals
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -180,6 +185,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
+DROP TRIGGER IF EXISTS trg_user_preferences_updated_at ON public.user_preferences;
 CREATE TRIGGER trg_user_preferences_updated_at
     BEFORE UPDATE ON public.user_preferences
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -221,6 +227,7 @@ CREATE TABLE IF NOT EXISTS public.exercises (
 
 CREATE INDEX IF NOT EXISTS idx_exercises_user ON public.exercises(user_id);
 
+DROP TRIGGER IF EXISTS trg_exercises_updated_at ON public.exercises;
 CREATE TRIGGER trg_exercises_updated_at
     BEFORE UPDATE ON public.exercises
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

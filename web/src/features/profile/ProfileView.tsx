@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
+import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
 import { PwaInstallCard } from "@/features/pwa/PwaComponents";
 import { usePwa } from "@/features/pwa/usePwa";
 import {
@@ -219,11 +220,13 @@ export const ProfileView: React.FC = () => {
     }
   };
 
+  const { setFormDirty } = useUnsavedWork();
+
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -256,6 +259,13 @@ export const ProfileView: React.FC = () => {
   const watchedExp = watch("experienceLevel");
   const watchedBadminton = watch("weeklyBadmintonSessions");
   const watchedRunning = watch("weeklyRunningSessions");
+
+  useEffect(() => {
+    setFormDirty("profile-form", isDirty, "Profile Setup Form");
+    return () => {
+      setFormDirty("profile-form", false);
+    };
+  }, [isDirty, setFormDirty]);
 
   // Live client calculations for preview in wizard
   const liveBmi = calculateBmi(watchedWeight, watchedHeight);
