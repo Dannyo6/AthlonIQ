@@ -74,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null);
         setUser(null);
         setReAuthRequired(false);
+        setAuthToast(null);
       } else if (event === "TOKEN_REFRESHED") {
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -126,10 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = useCallback(async () => {
     queryClient.clear();
     const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setSession(null);
-      setUser(null);
-    }
+    setSession(null);
+    setUser(null);
+    setReAuthRequired(false);
+    setAuthToast(null);
     return { error };
   }, []);
 

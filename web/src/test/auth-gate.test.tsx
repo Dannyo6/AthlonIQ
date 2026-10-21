@@ -3,25 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { App } from "@/app/App";
 import * as AuthContextModule from "@/features/auth/AuthContext";
 
-// Mock Supabase client to prevent actual network calls during unit tests
-vi.mock("@/lib/supabase", () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      }),
-    },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }),
-  },
-}));
+
 
 // Mock checkBackendHealth
 vi.mock("@/services/api", () => ({

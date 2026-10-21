@@ -77,20 +77,19 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Test / Dev bypass path: allow mock tokens starting with "test-token-" in test environments
-    is_test_env = (
-        "pytest" in sys.modules
-        or settings.ENVIRONMENT == "test"
-        or os.getenv("ENVIRONMENT") == "test"
-        or settings.DEV_AUTH_BYPASS is True
-        or os.getenv("DEV_AUTH_BYPASS", "").lower() in ("true", "1")
-    )
-    if is_test_env and token.startswith("test-token-"):
-        user_id = token.replace("test-token-", "") or "test-athlete-001"
-        return AuthenticatedUser(
-            user_id=user_id,
-            email=f"{user_id}@athloniq.test",
-            role="authenticated",
+    # Test / Dev bypass path: allow mock tokens starting with "test-token-" ONLY when DEV_AUTH_BYPASS is True AND ENVIRONMENT != "production"
+    if token.startswith("test-token-"):
+        if settings.DEV_AUTH_BYPASS and settings.ENVIRONMENT != "production":
+            user_id = token.replace("test-token-", "") or "test-athlete-001"
+            return AuthenticatedUser(
+                user_id=user_id,
+                email=f"{user_id}@athloniq.test",
+                role="authenticated",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Development auth bypass is disabled or not permitted in production",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Parse unverified header to detect algorithm and key ID
@@ -111,17 +110,17 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    supabase_url = settings.SUPABASE_URL or os.getenv("SUPABASE_URL", "")
-    expected_iss = f"{supabase_url.rstrip('/')}/auth/v1" if supabase_url else None
+    supabase_url = (settings.SUPABASE_URL or "").strip()
+    if not supabase_url:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="SUPABASE_URL is not configured on server; issuer verification cannot be performed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    expected_iss = f"{supabase_url.rstrip('/')}/auth/v1"
 
     # Asymmetric JWKS path (ES256 / RS256)
     if alg in ("ES256", "RS256"):
-        if not supabase_url:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="SUPABASE_URL is not configured on server for JWKS verification",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
         try:
             jwks_client = get_jwks_client(supabase_url)
             signing_key = jwks_client.get_signing_key_from_jwt(token)
@@ -136,7 +135,7 @@ async def get_current_user(
 
     # Symmetric legacy path (HS256)
     elif alg == "HS256":
-        secret = settings.SUPABASE_JWT_SECRET or os.getenv("SUPABASE_JWT_SECRET", "")
+        secret = settings.SUPABASE_JWT_SECRET or ""
         if not secret:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -158,16 +157,15 @@ async def get_current_user(
         "verify_signature": True,
         "verify_exp": True,
         "verify_aud": True,
-        "require": ["exp", "sub"],
+        "verify_iss": True,
+        "require": ["exp", "sub", "iss"],
     }
     decode_kwargs: Dict[str, Any] = {
         "algorithms": allowed_algorithms,
         "audience": "authenticated",
+        "issuer": expected_iss,
         "options": decode_options,
     }
-    if expected_iss:
-        decode_kwargs["issuer"] = expected_iss
-        decode_options["verify_iss"] = True
 
     try:
         payload = jwt.decode(token, key, **decode_kwargs)

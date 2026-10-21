@@ -15,6 +15,11 @@ from app.schemas.health import HealthStatus
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifecycle management."""
     # Startup actions
+    if settings.ENVIRONMENT == "production" and settings.DEV_AUTH_BYPASS:
+        raise RuntimeError(
+            "CRITICAL SECURITY CONFIGURATION ERROR: DEV_AUTH_BYPASS cannot be enabled "
+            "when ENVIRONMENT is 'production'!"
+        )
     yield
     # Shutdown actions
 

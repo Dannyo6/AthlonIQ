@@ -204,3 +204,54 @@ async def test_jwks_es256_asymmetric_verification():
             assert response.status_code == 200
             data = response.json()
             assert data["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_bypass_token_rejected_by_default():
+    """Verify mock bypass token is rejected with 401 when DEV_AUTH_BYPASS is False."""
+    settings.DEV_AUTH_BYPASS = False
+    headers = {"Authorization": "Bearer test-token-hacker-001"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get("/api/v1/coaching/tools", headers=headers)
+        assert response.status_code == 401
+        assert "bypass is disabled" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_bypass_token_rejected_in_production_even_if_bypass_true():
+    """Verify mock bypass token is rejected with 401 when ENVIRONMENT is production even if DEV_AUTH_BYPASS is True."""
+    settings.ENVIRONMENT = "production"
+    settings.DEV_AUTH_BYPASS = True
+    headers = {"Authorization": "Bearer test-token-hacker-001"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get("/api/v1/coaching/tools", headers=headers)
+        assert response.status_code == 401
+        assert "not permitted in production" in response.json()["detail"].lower()
+
+
+def test_app_refuses_to_start_with_dev_bypass_in_production():
+    """Verify app lifespan raises RuntimeError on startup if DEV_AUTH_BYPASS is True in production."""
+    settings.ENVIRONMENT = "production"
+    settings.DEV_AUTH_BYPASS = True
+    from fastapi.testclient import TestClient
+    with pytest.raises(RuntimeError, match="DEV_AUTH_BYPASS cannot be enabled"):
+        with TestClient(app):
+            pass
+
+
+@pytest.mark.asyncio
+async def test_jwt_rejected_when_supabase_url_not_configured():
+    """Verify that when SUPABASE_URL is not set, tokens are rejected instead of skipping issuer check."""
+    settings.SUPABASE_URL = ""
+    token = create_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get("/api/v1/coaching/tools", headers=headers)
+        assert response.status_code == 401
+        assert "SUPABASE_URL is not configured" in response.json()["detail"]

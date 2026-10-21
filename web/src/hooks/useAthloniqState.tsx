@@ -20,6 +20,7 @@ import {
   calculateProteinReference,
 } from "@/lib/calculations";
 import { generate14DayDemoFixture } from "@/lib/demoFixture";
+import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/features/auth/AuthContext";
 import {
   profilesRepo,
@@ -41,7 +42,7 @@ export interface AthlonToast {
   type: "success" | "info" | "warning";
 }
 
-export type SyncStatus = "synced" | "syncing" | "failed";
+export type SyncStatus = "idle" | "synced" | "syncing" | "failed";
 
 export interface LegacyImportCounts {
   food: number;
@@ -301,7 +302,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isDemoFixtureActive, setIsDemoFixtureActive] = useState<boolean>(false);
 
   // Sync state
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>("synced");
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Legacy import state
@@ -336,6 +337,33 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Sign-Out & User Isolation: Reset all in-memory athlete state
+  // ---------------------------------------------------------------------------
+  const resetAllAthleteState = useCallback(() => {
+    setProfile(DEFAULT_PROFILE);
+    setEquipment(DEFAULT_EQUIPMENT);
+    setGoals(DEFAULT_GOALS);
+    setPreferences(DEFAULT_PREFERENCES);
+    setTodayCheckIn(DEFAULT_CHECKIN);
+    setFoodEntries([]);
+    setWorkoutSessions([]);
+    setActivitySessions([]);
+    setBodyMetrics([]);
+    setCoachMessages(DEFAULT_COACH_MESSAGES);
+    setProgressPhotos([]);
+    setIsDemoFixtureActive(false);
+    setSyncStatus("idle");
+    setSyncError(null);
+    setToast(null);
+    setLegacyImportAvailable(false);
+    setLegacyImportCounts(null);
+    queryClient.clear();
+  }, []);
+
+  const currentUserIdRef = useRef<string | null>(null);
+
+  // ---------------------------------------------------------------------------
   // Load data from Supabase repositories when user signs in
   // ---------------------------------------------------------------------------
   const loadCloudState = useCallback(async (userId: string) => {
@@ -365,6 +393,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await preferencesRepo.upsertPreferences(userId, DEFAULT_PREFERENCES);
       }
 
+      // Guard: discard if user signed out or changed during fetch
+      if (currentUserIdRef.current !== userId) return;
+
       setProfile(cloudProfile);
 
       // 2. Fetch parallel domain slices
@@ -392,19 +423,23 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         progressPhotosRepo.fetchPhotos(userId),
       ]);
 
-      if (cloudEquipment && cloudEquipment.length > 0) setEquipment(cloudEquipment);
-      if (cloudGoals) setGoals(cloudGoals);
-      if (cloudPreferences) setPreferences(cloudPreferences);
-      if (cloudFoods) setFoodEntries(cloudFoods);
-      if (cloudWorkouts) setWorkoutSessions(cloudWorkouts);
-      if (cloudActivities) setActivitySessions(cloudActivities);
-      if (cloudMetrics) setBodyMetrics(cloudMetrics);
-      if (cloudRecovery && cloudRecovery.length > 0) setTodayCheckIn(cloudRecovery[0]);
-      if (cloudMessages && cloudMessages.length > 0) setCoachMessages(cloudMessages);
-      if (cloudPhotos) setProgressPhotos(cloudPhotos);
+      // Guard: discard if user signed out or changed during fetch
+      if (currentUserIdRef.current !== userId) return;
+
+      setEquipment(cloudEquipment && cloudEquipment.length > 0 ? cloudEquipment : DEFAULT_EQUIPMENT);
+      setGoals(cloudGoals || DEFAULT_GOALS);
+      setPreferences(cloudPreferences || DEFAULT_PREFERENCES);
+      setFoodEntries(cloudFoods || []);
+      setWorkoutSessions(cloudWorkouts || []);
+      setActivitySessions(cloudActivities || []);
+      setBodyMetrics(cloudMetrics || []);
+      setTodayCheckIn(cloudRecovery && cloudRecovery.length > 0 ? cloudRecovery[0] : DEFAULT_CHECKIN);
+      setCoachMessages(cloudMessages && cloudMessages.length > 0 ? cloudMessages : DEFAULT_COACH_MESSAGES);
+      setProgressPhotos(cloudPhotos || []);
 
       setSyncStatus("synced");
     } catch (err: any) {
+      if (currentUserIdRef.current !== userId) return;
       console.error("[AthlonIQ Provider] Error loading cloud state:", err);
       setSyncStatus("failed");
       setSyncError(err.message || "Failed to load cloud state");
@@ -412,11 +447,18 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [user, showToast]);
 
+  // Synchronize authentication lifecycle with state isolation
   useEffect(() => {
-    if (user?.id && !isDemoFixtureActive) {
-      loadCloudState(user.id);
+    const nextUserId = user?.id ?? null;
+    if (currentUserIdRef.current !== nextUserId) {
+      currentUserIdRef.current = nextUserId;
+      resetAllAthleteState();
     }
-  }, [user?.id, isDemoFixtureActive, loadCloudState]);
+
+    if (nextUserId && !isDemoFixtureActive) {
+      loadCloudState(nextUserId);
+    }
+  }, [user?.id, isDemoFixtureActive, loadCloudState, resetAllAthleteState]);
 
   // ---------------------------------------------------------------------------
   // Check for legacy localStorage data to offer one-time import
@@ -536,15 +578,20 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
 
-      if (!user?.id) return;
+      const activeUserId = user?.id;
+      if (!activeUserId) return;
 
       setSyncStatus("syncing");
       setSyncError(null);
 
       try {
         await executeRemote();
+        // Guard: discard if user changed or signed out during network flight
+        if (currentUserIdRef.current !== activeUserId) return;
         setSyncStatus("synced");
       } catch (err: any) {
+        // Guard: discard if user changed or signed out during network flight
+        if (currentUserIdRef.current !== activeUserId) return;
         console.error("[AthlonIQ Repo Sync Failed]:", err);
         rollbackLocal(snapshot);
         setSyncStatus("failed");
