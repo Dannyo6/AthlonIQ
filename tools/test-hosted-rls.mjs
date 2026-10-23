@@ -43,22 +43,22 @@ console.log("===================================================================
 
 const TABLES_TO_TEST = [
   "profiles",
-  "equipment",
+  "user_equipment",
   "user_goals",
   "user_preferences",
-  "food_entries",
   "custom_foods",
+  "food_entries",
+  "workout_templates",
+  "workout_template_exercises",
   "workout_sessions",
   "exercise_sets",
-  "workout_templates",
-  "template_exercises",
-  "template_sets",
   "activity_sessions",
-  "recovery_check_ins",
   "body_metrics",
-  "epistemic_coach_messages",
-  "weekly_coaching_reports",
-  "progress_photo_assets",
+  "recovery_logs",
+  "coach_conversations",
+  "coach_messages",
+  "weekly_reports",
+  "progress_photos",
 ];
 
 async function getAuthenticatedClient(email, password, fullName) {
@@ -147,24 +147,44 @@ async function runHostedRlsVerification() {
       // 1. User B inserts a row in the table
       let insertPayload = { user_id: userB.id };
       if (table === "profiles") {
-        insertPayload = { id: userB.id, user_id: userB.id, full_name: "Bravo Profile" };
-      } else if (table === "equipment") {
-        insertPayload = { user_id: userB.id, item_key: "db_bell", item_name: "Bravo Dumbbell" };
+        insertPayload = { id: userB.id, email: emailB, full_name: "Bravo Profile" };
+      } else if (table === "user_equipment") {
+        insertPayload = { user_id: userB.id, item_key: "custom_bench", item_name: "Bravo Bench", is_confirmed: false };
+      } else if (table === "user_goals") {
+        insertPayload = { user_id: userB.id, primary_goal: "lean_bulk", calorie_target_kcal: 2500 };
+      } else if (table === "user_preferences") {
+        insertPayload = { user_id: userB.id, units: "metric" };
+      } else if (table === "custom_foods") {
+        insertPayload = { user_id: userB.id, name: "Bravo Oats", serving_label: "100g", calories_kcal: 350, protein_g: 12, carbs_g: 60, fat_g: 5 };
       } else if (table === "food_entries") {
         insertPayload = {
           user_id: userB.id,
           logged_date: "2026-10-20",
           meal_slot: "breakfast",
           food_name: "Bravo Oats",
-          serving_label: "bowl",
-          calories_kcal: 300,
-          protein_g: 25,
-          carbs_g: 40,
+          serving_label: "100g",
+          calories_kcal: 350,
+          protein_g: 12,
+          carbs_g: 60,
           fat_g: 5,
         };
+      } else if (table === "workout_templates") {
+        insertPayload = { user_id: userB.id, name: "Bravo Routine" };
+      } else if (table === "workout_template_exercises") {
+        // Create template first
+        const { data: tmpl } = await clientB.from("workout_templates").insert({ user_id: userB.id, name: "Bravo Parent" }).select().single();
+        insertPayload = { user_id: userB.id, template_id: tmpl?.id, exercise_name: "Bravo Bench" };
       } else if (table === "workout_sessions") {
         insertPayload = { user_id: userB.id, logged_date: "2026-10-20", title: "Bravo Workout" };
-      } else if (table === "recovery_check_ins") {
+      } else if (table === "exercise_sets") {
+        // Create session first
+        const { data: sess } = await clientB.from("workout_sessions").insert({ user_id: userB.id, logged_date: "2026-10-20", title: "Bravo Parent" }).select().single();
+        insertPayload = { user_id: userB.id, session_id: sess?.id, exercise_name: "Bravo Bench", set_order: 1, reps: 10, load_kg: 50 };
+      } else if (table === "activity_sessions") {
+        insertPayload = { user_id: userB.id, logged_date: "2026-10-20", activity_type: "running", duration_minutes: 30 };
+      } else if (table === "body_metrics") {
+        insertPayload = { user_id: userB.id, logged_date: "2026-10-20", weight_kg: 75.0 };
+      } else if (table === "recovery_logs") {
         insertPayload = {
           user_id: userB.id,
           logged_date: "2026-10-20",
@@ -175,25 +195,18 @@ async function runHostedRlsVerification() {
           readiness_score: 90,
           readiness_status: "Prime",
         };
-      } else if (table === "body_metrics") {
-        insertPayload = { user_id: userB.id, logged_date: "2026-10-20", weight_kg: 75.0 };
-      } else if (table === "epistemic_coach_messages") {
-        insertPayload = { user_id: userB.id, sender: "coach", content: "Bravo message" };
-      } else if (table === "custom_foods") {
-        insertPayload = { user_id: userB.id, name: "Bravo Custom", serving_unit: "g", serving_size: 100, calories: 150, protein: 10, carbs: 20, fat: 3 };
-      } else if (table === "user_goals") {
-        insertPayload = { user_id: userB.id, protein_min_g: 150, protein_max_g: 170, calories_surplus_target: 300 };
-      } else if (table === "user_preferences") {
-        insertPayload = { user_id: userB.id, units: "metric", dark_mode: true };
-      } else {
-        insertPayload = { user_id: userB.id, title: "Bravo Item", name: "Bravo Item" };
+      } else if (table === "coach_conversations") {
+        insertPayload = { user_id: userB.id, title: "Bravo Chat" };
+      } else if (table === "coach_messages") {
+        const { data: conv } = await clientB.from("coach_conversations").insert({ user_id: userB.id, title: "Bravo Conv" }).select().single();
+        insertPayload = { user_id: userB.id, conversation_id: conv?.id, role: "user", content: "Bravo message" };
+      } else if (table === "weekly_reports") {
+        insertPayload = { user_id: userB.id, week_start_date: "2026-10-12", week_end_date: "2026-10-18", summary_payload: {} };
+      } else if (table === "progress_photos") {
+        insertPayload = { user_id: userB.id, logged_date: "2026-10-20", image_url: "https://example.com/photo.jpg" };
       }
 
-      const { data: insertedB, error: insErr } = await clientB.from(table).upsert(insertPayload).select();
-      if (insErr) {
-        // Some tables might have unique constraints or FK constraints
-        // We still test SELECT / INSERT across tenants
-      }
+      await clientB.from(table).upsert(insertPayload);
 
       // Check A: User A attempts to SELECT from table filtering by User B
       const { data: selectA } = await clientA.from(table).select("*").eq("user_id", userB.id);
@@ -224,6 +237,9 @@ async function runHostedRlsVerification() {
         testSuccess = false;
         failureReason = `User A was permitted to delete User B's rows!`;
       }
+
+      // Clean up User B's row
+      await clientB.from(table).delete().eq("user_id", userB.id);
     } catch (err) {
       testSuccess = false;
       failureReason = err.message;
@@ -239,48 +255,48 @@ async function runHostedRlsVerification() {
 
   // 2. Storage Bucket Path Isolation Tests
   console.log("\n--- Storage Path Isolation Tests ---");
-  totalTests++;
-  let storageSuccess = true;
-  try {
-    const bucketName = "athlete_progress_photos";
-    const testFileContent = Buffer.from("Test Photo Data for Athlete Bravo");
+  for (const bucketName of ["progress-photos", "meal-photos"]) {
+    totalTests++;
+    let storageSuccess = true;
+    try {
+      const testFileContent = Buffer.from("Test Photo Data for Athlete Bravo");
 
-    // 1. User B uploads to their own storage folder
-    const bravoPath = `${userB.id}/test-bravo-photo.png`;
-    await clientB.storage.from(bucketName).upload(bravoPath, testFileContent, { upsert: true });
+      // 1. User B uploads to their own storage folder
+      const bravoPath = `${userB.id}/test-bravo-photo.png`;
+      await clientB.storage.from(bucketName).upload(bravoPath, testFileContent, { upsert: true });
 
-    // 2. User A attempts to read User B's file
-    const { data: downloadA, error: downErrA } = await clientA.storage.from(bucketName).download(bravoPath);
-    if (downloadA && !downErrA) {
-      storageSuccess = false;
-      console.error("  [FAIL] Storage: Athlete A was able to download Athlete B's private progress photo!");
+      // 2. User A attempts to read User B's file
+      const { data: downloadA, error: downErrA } = await clientA.storage.from(bucketName).download(bravoPath);
+      if (downloadA && !downErrA) {
+        storageSuccess = false;
+        console.error(`  [FAIL] Storage ${bucketName}: Athlete A was able to download Athlete B's private photo!`);
+      }
+
+      // 3. User A attempts to upload into User B's folder
+      const maliciousUploadPath = `${userB.id}/malicious-injected.png`;
+      const { data: maliciousUpload, error: malUpErr } = await clientA.storage.from(bucketName).upload(maliciousUploadPath, testFileContent);
+      if (maliciousUpload && !malUpErr) {
+        storageSuccess = false;
+        console.error(`  [FAIL] Storage ${bucketName}: Athlete A was permitted to upload files into Athlete B's path!`);
+      }
+
+      // 4. User A attempts to delete User B's file
+      const { data: deleteFiles } = await clientA.storage.from(bucketName).remove([bravoPath]);
+      if (deleteFiles && deleteFiles.length > 0) {
+        storageSuccess = false;
+        console.error(`  [FAIL] Storage ${bucketName}: Athlete A was permitted to delete Athlete B's storage files!`);
+      }
+
+      // Clean up User B's uploaded test file
+      await clientB.storage.from(bucketName).remove([bravoPath]);
+    } catch (err) {
+      console.log(`  [INFO] Storage bucket check (${bucketName}): ${err.message}`);
     }
 
-    // 3. User A attempts to upload into User B's folder
-    const maliciousUploadPath = `${userB.id}/malicious-injected.png`;
-    const { data: maliciousUpload, error: malUpErr } = await clientA.storage.from(bucketName).upload(maliciousUploadPath, testFileContent);
-    if (maliciousUpload && !malUpErr) {
-      storageSuccess = false;
-      console.error("  [FAIL] Storage: Athlete A was permitted to upload files into Athlete B's storage path!");
+    if (storageSuccess) {
+      passedTests++;
+      console.log(`  [PASS] Storage ${bucketName.padEnd(20)} Path Isolation Verified (cross-tenant read/write/delete blocked)`);
     }
-
-    // 4. User A attempts to delete User B's file
-    const { data: deleteFiles } = await clientA.storage.from(bucketName).remove([bravoPath]);
-    if (deleteFiles && deleteFiles.length > 0) {
-      storageSuccess = false;
-      console.error("  [FAIL] Storage: Athlete A was permitted to delete Athlete B's storage files!");
-    }
-
-    // Clean up User B's uploaded test file
-    await clientB.storage.from(bucketName).remove([bravoPath]);
-  } catch (err) {
-    // If storage bucket hasn't been created yet on brand new project
-    console.log(`  [INFO] Storage bucket check: ${err.message}`);
-  }
-
-  if (storageSuccess) {
-    passedTests++;
-    console.log("  [PASS] Storage athlete_progress_photos  Path Isolation Verified (cross-tenant read/write/delete blocked)");
   }
 
   console.log("\n================================================================================");

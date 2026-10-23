@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { CandidateReviewForm } from "./CandidateReviewForm";
 import { analyzeMealPhotoApi } from "@/services/api";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
+import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
 import { CandidateFoodItem, FoodEntry, MealSlot } from "@/types";
 import {
   Camera,
@@ -117,6 +118,17 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<CandidateFoodItem[] | null>(null);
   const [analysisStep, setAnalysisStep] = useState<string>("");
+
+  const { setFormDirty } = useUnsavedWork();
+
+  const isCandidateReviewOpen = Boolean(candidates && candidates.length > 0);
+
+  useEffect(() => {
+    setFormDirty("photo-candidate-review", isCandidateReviewOpen, "AI Meal Photo Review");
+    return () => {
+      setFormDirty("photo-candidate-review", false);
+    };
+  }, [isCandidateReviewOpen, setFormDirty]);
 
   const resetState = () => {
     setPreviewUrl(null);

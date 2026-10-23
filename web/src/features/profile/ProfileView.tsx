@@ -111,6 +111,11 @@ export const ProfileView: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
+  // Equipment inline limit editor state
+  const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
+  const [editMaxLoad, setEditMaxLoad] = useState<string>("");
+  const [editMinIncrement, setEditMinIncrement] = useState<string>("");
+
   const { canInstall, isInstalled, isIos, installApp } = usePwa();
 
   const handleExportJSON = () => {
@@ -695,13 +700,27 @@ export const ProfileView: React.FC = () => {
                             />
                           </div>
                           <div className="text-xs text-slate-400 font-mono mt-1">
-                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "not set"}{" "}
-                            • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "not set"}
+                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "Not set"}{" "}
+                            • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "Not set"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        {editingEquipmentId !== item.id && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingEquipmentId(item.id);
+                              setEditMaxLoad(item.maxLoadKg != null ? String(item.maxLoadKg) : "");
+                              setEditMinIncrement(item.minIncrementKg != null ? String(item.minIncrementKg) : "");
+                            }}
+                          >
+                            Set Limits
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant={item.isConfirmed ? "outline" : "primary"}
@@ -715,6 +734,60 @@ export const ProfileView: React.FC = () => {
                           {item.isConfirmed ? "Mark Unconfirmed" : "Confirm Available"}
                         </Button>
                       </div>
+
+                      {editingEquipmentId === item.id && (
+                        <div className="mt-3 pt-3 border-t border-[#1E2330] w-full flex flex-col sm:flex-row items-end gap-3 animate-fade-in">
+                          <div className="space-y-1 flex-1 w-full sm:w-auto">
+                            <label className="text-[10px] text-slate-400 font-medium">Max Load (kg)</label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="0"
+                              placeholder="e.g. 70 (or leave blank)"
+                              value={editMaxLoad}
+                              onChange={(e) => setEditMaxLoad(e.target.value)}
+                              className="w-full bg-[#12151E] border border-[#1E2330] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1 flex-1 w-full sm:w-auto">
+                            <label className="text-[10px] text-slate-400 font-medium">Min Increment (kg)</label>
+                            <input
+                              type="number"
+                              step="0.25"
+                              min="0"
+                              placeholder="e.g. 2.5 (or leave blank)"
+                              value={editMinIncrement}
+                              onChange={(e) => setEditMinIncrement(e.target.value)}
+                              className="w-full bg-[#12151E] border border-[#1E2330] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingEquipmentId(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
+                              onClick={() => {
+                                updateEquipmentItem(item.id, {
+                                  maxLoadKg: editMaxLoad.trim() === "" ? null : parseFloat(editMaxLoad),
+                                  minIncrementKg: editMinIncrement.trim() === "" ? null : parseFloat(editMinIncrement),
+                                  isConfirmed: true,
+                                });
+                                setEditingEquipmentId(null);
+                              }}
+                            >
+                              Save & Confirm
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

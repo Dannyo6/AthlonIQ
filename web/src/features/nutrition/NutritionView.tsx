@@ -76,9 +76,12 @@ export const NutritionView: React.FC = () => {
 
   const hasUnsavedFoodInput = Boolean(
     customName.trim() ||
+    customServing.trim() ||
     customCal.trim() ||
     customProtein.trim() ||
-    (showAddPanel && selectedFood)
+    customCarbs.trim() ||
+    customFat.trim() ||
+    customQty.trim()
   );
 
   useEffect(() => {

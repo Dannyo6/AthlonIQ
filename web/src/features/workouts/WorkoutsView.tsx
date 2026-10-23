@@ -121,7 +121,11 @@ export const WorkoutsView: React.FC = () => {
 
   const { setFormDirty } = useUnsavedWork();
 
-  const hasUnsavedWorkout = activeTab === "active" && sessionExercises.length > 0;
+  const hasLoggedSets = sessionExercises.some((ex) =>
+    ex.sets.some((s) => s.isCompleted || s.reps > 0 || s.loadKg > 0 || (s.rpe != null && s.rpe > 0))
+  );
+  const hasTypedSessionNotes = Boolean(sessionNotes.trim());
+  const hasUnsavedWorkout = activeTab === "active" && (hasLoggedSets || hasTypedSessionNotes);
 
   useEffect(() => {
     setFormDirty("workout-session", hasUnsavedWorkout, "Workout Session");
@@ -472,8 +476,17 @@ export const WorkoutsView: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
                       <div>
                         <h3 className="font-bold text-white">{ex.exerciseName}</h3>
-                        <div className="text-xs text-slate-400 font-mono mt-0.5">
-                          Target: {ex.targetSets}×{ex.targetRepsMin}–{ex.targetRepsMax} · Rest: {ex.restSeconds}s
+                        <div className="text-xs text-slate-400 font-mono mt-0.5 flex flex-wrap items-center gap-x-2">
+                          <span>Target: {ex.targetSets}×{ex.targetRepsMin}–{ex.targetRepsMax} · Rest: {ex.restSeconds}s</span>
+                          {ex.equipmentKey && (
+                            <span className="text-slate-500">
+                              · Equipment: {equipment.find((e) => e.itemKey === ex.equipmentKey)?.itemName ?? ex.equipmentKey} (
+                              {equipment.find((e) => e.itemKey === ex.equipmentKey)?.maxLoadKg != null
+                                ? `${equipment.find((e) => e.itemKey === ex.equipmentKey)?.maxLoadKg} kg cap`
+                                : "Load not set"}
+                              )
+                            </span>
+                          )}
                         </div>
                       </div>
                       <button

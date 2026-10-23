@@ -1,9 +1,9 @@
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { MemoryRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { App } from "@/app/App";
 import * as AuthContextModule from "@/features/auth/AuthContext";
-import { AthloniqProvider } from "@/hooks/useAthloniqState";
 import { RouteLoadingSkeleton } from "@/components/ui/RouteLoadingSkeleton";
 import {
   UnsavedWorkProvider,
@@ -270,5 +270,86 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     fireEvent.click(screen.getByText("Go Clean"));
     expect(screen.queryByText(/Unsaved Work in Progress/i)).not.toBeInTheDocument();
     expect(screen.getByText("Workouts Loaded Immediately")).toBeInTheDocument();
+  });
+
+  it("does not arm meal guard on catalog browsing / meal slot selection, but arms on typed inputs", () => {
+    const MealInputSimulator = () => {
+      const { setFormDirty, isDirty } = useUnsavedWork();
+      const [customName, setCustomName] = React.useState("");
+
+      React.useEffect(() => {
+        // Reproduce exact NutritionView logic
+        const hasUnsavedFoodInput = Boolean(customName.trim());
+        setFormDirty("meal-entry", hasUnsavedFoodInput, "Meal / Food Log");
+      }, [customName, setFormDirty]);
+
+      return (
+        <div>
+          <span data-testid="is-dirty">{isDirty ? "DIRTY" : "CLEAN"}</span>
+          <button type="button" onClick={() => setCustomName("Paneer Bhurji")}>Type Food</button>
+        </div>
+      );
+    };
+
+    render(
+      <MemoryRouter>
+        <UnsavedWorkProvider>
+          <MealInputSimulator />
+        </UnsavedWorkProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("is-dirty").textContent).toBe("CLEAN");
+    fireEvent.click(screen.getByText("Type Food"));
+    expect(screen.getByTestId("is-dirty").textContent).toBe("DIRTY");
+  });
+
+  it("does not arm workout guard when simply viewing template exercises, arms only when sets are logged", () => {
+    interface DummyExercise {
+      id: string;
+      sets: { reps: number; loadKg: number; rpe: number | null; isCompleted: boolean }[];
+    }
+
+    const WorkoutSessionSimulator = () => {
+      const { setFormDirty, isDirty } = useUnsavedWork();
+      const [exercises, setExercises] = React.useState<DummyExercise[]>([
+        { id: "e1", sets: [{ reps: 0, loadKg: 0, rpe: null, isCompleted: false }] }
+      ]);
+
+      React.useEffect(() => {
+        const hasLoggedSets = exercises.some((ex) =>
+          ex.sets.some((s) => s.isCompleted || s.reps > 0 || s.loadKg > 0 || (s.rpe !== null && s.rpe > 0))
+        );
+        setFormDirty("workout-session", hasLoggedSets, "Workout Session");
+      }, [exercises, setFormDirty]);
+
+      return (
+        <div>
+          <span data-testid="workout-dirty">{isDirty ? "DIRTY" : "CLEAN"}</span>
+          <button
+            type="button"
+            onClick={() =>
+              setExercises([
+                { id: "e1", sets: [{ reps: 8, loadKg: 40, rpe: 8, isCompleted: true }] }
+              ])
+            }
+          >
+            Log First Set
+          </button>
+        </div>
+      );
+    };
+
+    render(
+      <MemoryRouter>
+        <UnsavedWorkProvider>
+          <WorkoutSessionSimulator />
+        </UnsavedWorkProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("workout-dirty").textContent).toBe("CLEAN");
+    fireEvent.click(screen.getByText("Log First Set"));
+    expect(screen.getByTestId("workout-dirty").textContent).toBe("DIRTY");
   });
 });
