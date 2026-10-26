@@ -1,0 +1,2462 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AthlonIQ API",
+    "description": "AthlonIQ \u2014 Personal AI Performance & Physique OS Intelligence Engine",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Root Health",
+        "description": "Root health check probe.",
+        "operationId": "root_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_HealthStatus_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Root Info",
+        "description": "Root information endpoint.",
+        "operationId": "root_info__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root Info  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Health check endpoint returning system status.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_HealthStatus_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coaching/targets-preview": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Preview Athlete Targets",
+        "description": "Calculate deterministic targets preview for athlete profile and onboarding.\n\nProtected endpoint requiring Bearer JWT authentication.",
+        "operationId": "preview_athlete_targets_api_v1_coaching_targets_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetsPreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_TargetsPreviewResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/readiness": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Assess Athlete Readiness",
+        "description": "Calculate transparent rules-based daily athlete readiness.\n\nProtected endpoint requiring Bearer JWT authentication.\nCalculates score exclusively from user-reported sleep, soreness, fatigue, and stress.",
+        "operationId": "assess_athlete_readiness_api_v1_coaching_readiness_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadinessCheckInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_ReadinessCheckInResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/chat": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Coach Chat Turn",
+        "description": "Execute scoped allowlisted tools and generate grounded coaching turn.\n\nProtected endpoint requiring Bearer JWT authentication.\nEnforces epistemic separation and medical safety guardrails.",
+        "operationId": "coach_chat_turn_api_v1_coaching_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoachChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_CoachTurnResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/weekly-review": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Generate Athlete Weekly Review",
+        "description": "Synthesize deterministic weekly progress review across all tracking domains.\n\nProtected endpoint requiring Bearer JWT authentication.",
+        "operationId": "generate_athlete_weekly_review_api_v1_coaching_weekly_review_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeeklyReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_WeeklyReviewReport_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/tools": {
+      "get": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Get Coach Tool Registry",
+        "description": "Return metadata for the 8 allowlisted typed coach tools.\n\nProtected endpoint requiring Bearer JWT authentication.",
+        "operationId": "get_coach_tool_registry_api_v1_coaching_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_List_CoachToolMetadata__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/calibrate-lean-bulk": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Calibrate Athlete Lean Bulk",
+        "description": "Evaluate 14-day energy calibration for lean-bulk progression.\n\nProtected endpoint requiring Bearer JWT authentication.",
+        "operationId": "calibrate_athlete_lean_bulk_api_v1_coaching_calibrate_lean_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeanBulkCalibrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_LeanBulkCalibrationResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/coaching/fatigue-advisory": {
+      "post": {
+        "tags": [
+          "coaching"
+        ],
+        "summary": "Assess Athlete Fatigue Advisory",
+        "description": "Evaluate multi-sport training fatigue across gym, badminton, and running.\n\nProtected endpoint requiring Bearer JWT authentication.",
+        "operationId": "assess_athlete_fatigue_advisory_api_v1_coaching_fatigue_advisory_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FatigueAdvisoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_FatigueAdvisoryResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tracking/foods": {
+      "get": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Search Indian & Athletic Food Reference Catalog",
+        "description": "Search the 22+ item Indian & Athletic food reference catalog.\n\nDoes NOT require authentication \u2014 the catalog is read-only reference data.",
+        "operationId": "get_food_catalog_api_v1_tracking_foods_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Food name search term",
+              "title": "Query"
+            },
+            "description": "Food name search term"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by category",
+              "title": "Category"
+            },
+            "description": "Filter by category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_List_Dict_str__Any___"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tracking/nutrition-summary": {
+      "post": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Calculate confirmed daily macro totals",
+        "description": "Compute daily macro totals, strictly separating confirmed from\nunconfirmed photo-estimate entries.\n\nCRITICAL: is_confirmed=False entries never contribute to confirmed_totals.",
+        "operationId": "post_nutrition_summary_api_v1_tracking_nutrition_summary_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NutritionSummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tracking/running-pace": {
+      "post": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Calculate running pace (MM:SS /km)",
+        "description": "Deterministic running pace calculation. Validates inputs, returns\ndecimal pace and formatted MM:SS /km string.",
+        "operationId": "post_running_pace_api_v1_tracking_running_pace_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunningPaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tracking/progression-suggestion": {
+      "post": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "Equipment-constrained progressive overload suggestion",
+        "description": "Rules-based progression engine for home-gym constrained training.\n\nAlways returns requires_user_confirmation=True \u2014 the athlete must\nexplicitly apply any suggested change. Auto-mutation of weights is\narchitecturally forbidden.",
+        "operationId": "post_progression_suggestion_api_v1_tracking_progression_suggestion_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tracking/weight-trend": {
+      "post": {
+        "tags": [
+          "tracking"
+        ],
+        "summary": "7-day rolling weight trend with data-gate",
+        "description": "Compute rolling 7-day weight average and weekly trend.\n\nReturns status='insufficient_data' with explanatory message when\nfewer than 3 weigh-ins are provided.",
+        "operationId": "post_weight_trend_api_v1_tracking_weight_trend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightTrendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/vision/analyze-meal": {
+      "post": {
+        "tags": [
+          "vision"
+        ],
+        "summary": "Analyze meal photo using Gemini Vision and map to verified catalog",
+        "description": "Accepts meal photo upload, detects food items using Gemini Vision AI,\nmaps candidates to the verified Indian Food Catalog, and calculates\nestimated macros.\n\nCRITICAL GUARDRAIL: Returned items are marked provenance=\"ai_estimated\"\nand is_confirmed=False. They require explicit athlete confirmation before\njoining daily totals.",
+        "operationId": "analyze_meal_photo_api_v1_vision_analyze_meal_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_meal_photo_api_v1_vision_analyze_meal_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse_MealAnalysisResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIResponse_CoachTurnResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachTurnResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[CoachTurnResponse]"
+      },
+      "APIResponse_Dict_str__Any__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[Dict[str, Any]]"
+      },
+      "APIResponse_FatigueAdvisoryResult_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FatigueAdvisoryResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[FatigueAdvisoryResult]"
+      },
+      "APIResponse_HealthStatus_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[HealthStatus]"
+      },
+      "APIResponse_LeanBulkCalibrationResult_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LeanBulkCalibrationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[LeanBulkCalibrationResult]"
+      },
+      "APIResponse_List_CoachToolMetadata__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CoachToolMetadata"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[List[CoachToolMetadata]]"
+      },
+      "APIResponse_List_Dict_str__Any___": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[List[Dict[str, Any]]]"
+      },
+      "APIResponse_MealAnalysisResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MealAnalysisResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[MealAnalysisResponse]"
+      },
+      "APIResponse_ReadinessCheckInResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReadinessCheckInResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[ReadinessCheckInResponse]"
+      },
+      "APIResponse_TargetsPreviewResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetsPreviewResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[TargetsPreviewResponse]"
+      },
+      "APIResponse_WeeklyReviewReport_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeeklyReviewReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[WeeklyReviewReport]"
+      },
+      "Body_analyze_meal_photo_api_v1_vision_analyze_meal_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_analyze_meal_photo_api_v1_vision_analyze_meal_post"
+      },
+      "CandidateFoodItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "catalog_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Id"
+          },
+          "food_name": {
+            "type": "string",
+            "title": "Food Name"
+          },
+          "matched_catalog_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Catalog Name"
+          },
+          "estimated_serving": {
+            "type": "string",
+            "title": "Estimated Serving"
+          },
+          "serving_label": {
+            "type": "string",
+            "title": "Serving Label",
+            "default": "1 serving"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity",
+            "default": 1.0
+          },
+          "calories_kcal": {
+            "type": "number",
+            "title": "Calories Kcal"
+          },
+          "protein_g": {
+            "type": "number",
+            "title": "Protein G"
+          },
+          "carbs_g": {
+            "type": "number",
+            "title": "Carbs G"
+          },
+          "fat_g": {
+            "type": "number",
+            "title": "Fat G"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence",
+            "default": "medium"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "ai_estimated"
+          },
+          "is_confirmed": {
+            "type": "boolean",
+            "title": "Is Confirmed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "food_name",
+          "estimated_serving",
+          "calories_kcal",
+          "protein_g",
+          "carbs_g",
+          "fat_g"
+        ],
+        "title": "CandidateFoodItem"
+      },
+      "CoachChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message",
+            "description": "Athlete query or message"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Optional conversation UUID"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserCoachingContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional client-side state snapshot"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today",
+            "description": "Optional evaluation date override"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "CoachChatRequest",
+        "description": "Request payload for an interactive AI Coach chat turn."
+      },
+      "CoachToolMetadata": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          },
+          "returns": {
+            "type": "string",
+            "title": "Returns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameters",
+          "returns"
+        ],
+        "title": "CoachToolMetadata",
+        "description": "Metadata specification for an allowlisted typed tool."
+      },
+      "CoachTurnResponse": {
+        "properties": {
+          "reply_markdown": {
+            "type": "string",
+            "title": "Reply Markdown",
+            "description": "Concise, tool-grounded coaching reply"
+          },
+          "tools_used": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tools Used",
+            "description": "Allowlisted tools executed for this turn"
+          },
+          "facts_from_tools": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Facts From Tools",
+            "description": "Verified facts from logs"
+          },
+          "app_calculations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "App Calculations",
+            "description": "Deterministic calculations computed by AthlonIQ"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations",
+            "description": "Actionable coaching recommendations"
+          },
+          "missing_or_uncertain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Or Uncertain",
+            "description": "Explicit missing or sparse data notices"
+          },
+          "proposed_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposedAction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Action awaiting user confirmation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply_markdown"
+        ],
+        "title": "CoachTurnResponse",
+        "description": "Structured response adhering to epistemic separation and safety guardrails."
+      },
+      "FatigueAdvisoryRequest": {
+        "properties": {
+          "gym_sessions_7d": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Gym Sessions 7D"
+          },
+          "badminton_minutes_7d": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Badminton Minutes 7D"
+          },
+          "running_km_7d": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Running Km 7D"
+          },
+          "avg_sleep_hours_7d": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 24.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Sleep Hours 7D"
+          },
+          "avg_soreness_7d": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Soreness 7D"
+          },
+          "avg_fatigue_7d": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Fatigue 7D"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gym_sessions_7d",
+          "badminton_minutes_7d",
+          "running_km_7d"
+        ],
+        "title": "FatigueAdvisoryRequest",
+        "description": "Input payload to assess multi-sport cumulative fatigue."
+      },
+      "FatigueAdvisoryResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status: 'high_cumulative_fatigue' | 'moderate_strain' | 'optimal'"
+          },
+          "is_high_fatigue": {
+            "type": "boolean",
+            "title": "Is High Fatigue",
+            "description": "Whether cumulative fatigue exceeds threshold"
+          },
+          "sport_volume_flag": {
+            "type": "boolean",
+            "title": "Sport Volume Flag",
+            "description": "Whether running or badminton volume is elevated"
+          },
+          "recovery_deficit_flag": {
+            "type": "boolean",
+            "title": "Recovery Deficit Flag",
+            "description": "Whether sleep or soreness indicates deficit"
+          },
+          "gym_sessions_7d": {
+            "type": "integer",
+            "title": "Gym Sessions 7D"
+          },
+          "badminton_minutes_7d": {
+            "type": "number",
+            "title": "Badminton Minutes 7D"
+          },
+          "running_km_7d": {
+            "type": "number",
+            "title": "Running Km 7D"
+          },
+          "avg_sleep_hours_7d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Sleep Hours 7D"
+          },
+          "avg_soreness_7d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Soreness 7D"
+          },
+          "avg_fatigue_7d": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Fatigue 7D"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer",
+            "default": "AthlonIQ fatigue advisory is a workload and neuromuscular training strain calculation only. It is not a clinical medical diagnosis or physiological injury risk assessment."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "is_high_fatigue",
+          "sport_volume_flag",
+          "recovery_deficit_flag",
+          "gym_sessions_7d",
+          "badminton_minutes_7d",
+          "running_km_7d",
+          "explanation",
+          "recommendations"
+        ],
+        "title": "FatigueAdvisoryResult",
+        "description": "Workload fatigue advisory across strength, badminton, and running disciplines."
+      },
+      "FoodEntryRequest": {
+        "properties": {
+          "food_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Food Name"
+          },
+          "calories_kcal": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Calories Kcal"
+          },
+          "protein_g": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Protein G"
+          },
+          "carbs_g": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Carbs G"
+          },
+          "fat_g": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Fat G"
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity",
+            "default": 1.0
+          },
+          "is_confirmed": {
+            "type": "boolean",
+            "title": "Is Confirmed",
+            "default": true
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "verified_reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "food_name",
+          "calories_kcal",
+          "protein_g",
+          "carbs_g",
+          "fat_g"
+        ],
+        "title": "FoodEntryRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "project": {
+            "type": "string",
+            "title": "Project"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "environment",
+          "version",
+          "project"
+        ],
+        "title": "HealthStatus",
+        "description": "Health check response payload."
+      },
+      "LeanBulkCalibrationRequest": {
+        "properties": {
+          "current_calorie_target_kcal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Calorie Target Kcal",
+            "description": "Current daily calorie target"
+          },
+          "logged_nutrition_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Logged Nutrition Days",
+            "description": "Logged food days over last 14 days"
+          },
+          "average_confirmed_intake_kcal": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Confirmed Intake Kcal"
+          },
+          "weigh_ins_last_14d": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Weigh Ins Last 14D"
+          },
+          "waist_start_cm": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist Start Cm"
+          },
+          "waist_current_cm": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist Current Cm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logged_nutrition_days"
+        ],
+        "title": "LeanBulkCalibrationRequest",
+        "description": "Input payload to evaluate 14-day lean bulk energy calibration."
+      },
+      "LeanBulkCalibrationResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status: 'insufficient_history' | 'on_track' | 'increase_surplus' | 'trim_surplus'"
+          },
+          "current_calorie_target_kcal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Calorie Target Kcal",
+            "description": "Current calorie target"
+          },
+          "new_calorie_target_kcal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Calorie Target Kcal",
+            "description": "Recommended calorie target"
+          },
+          "suggested_calorie_delta_kcal": {
+            "type": "integer",
+            "title": "Suggested Calorie Delta Kcal",
+            "description": "Suggested daily calorie delta (+150, -150, or 0)",
+            "default": 0
+          },
+          "weekly_delta_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Delta Kg",
+            "description": "Weekly weight change rate in kg/week"
+          },
+          "waist_delta_cm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist Delta Cm",
+            "description": "Waist circumference delta over the period"
+          },
+          "observation_days_logged": {
+            "type": "integer",
+            "title": "Observation Days Logged",
+            "description": "Number of nutrition logging days over last 14 days"
+          },
+          "observation_weigh_ins": {
+            "type": "integer",
+            "title": "Observation Weigh Ins",
+            "description": "Number of weigh-in records over last 14 days"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "description": "Detailed deterministic rationale"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "description": "Actionable athlete recommendation"
+          },
+          "requires_user_confirmation": {
+            "type": "boolean",
+            "title": "Requires User Confirmation",
+            "description": "Always requires explicit athlete confirmation",
+            "default": true
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "description": "Provenance marker",
+            "default": "calculated_estimate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "observation_days_logged",
+          "observation_weigh_ins",
+          "explanation",
+          "recommendation"
+        ],
+        "title": "LeanBulkCalibrationResult",
+        "description": "Calibrated energy target evaluation with audit provenance and confirmation gating."
+      },
+      "MealAnalysisResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateFoodItem"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "detected_item_count": {
+            "type": "integer",
+            "title": "Detected Item Count"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "ai_estimated"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidates",
+          "detected_item_count"
+        ],
+        "title": "MealAnalysisResponse"
+      },
+      "NutritionSummaryRequest": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/FoodEntryRequest"
+            },
+            "type": "array",
+            "minItems": 0,
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "title": "NutritionSummaryRequest"
+      },
+      "PreviousSetRequest": {
+        "properties": {
+          "reps": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Reps"
+          },
+          "load_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Load Kg"
+          },
+          "rpe": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpe"
+          },
+          "is_bodyweight": {
+            "type": "boolean",
+            "title": "Is Bodyweight",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "reps",
+          "load_kg"
+        ],
+        "title": "PreviousSetRequest"
+      },
+      "ProgressionRequest": {
+        "properties": {
+          "exercise_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Exercise Name"
+          },
+          "previous_sets": {
+            "items": {
+              "$ref": "#/components/schemas/PreviousSetRequest"
+            },
+            "type": "array",
+            "minItems": 0,
+            "title": "Previous Sets"
+          },
+          "equipment_max_load_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Equipment Max Load Kg",
+            "default": 70.0
+          },
+          "equipment_min_increment_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Equipment Min Increment Kg",
+            "default": 2.5
+          },
+          "equipment_confirmed": {
+            "type": "boolean",
+            "title": "Equipment Confirmed",
+            "default": false
+          },
+          "readiness_status": {
+            "type": "string",
+            "title": "Readiness Status",
+            "default": "Moderate"
+          },
+          "target_reps_max": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Target Reps Max",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "required": [
+          "exercise_name",
+          "previous_sets"
+        ],
+        "title": "ProgressionRequest"
+      },
+      "ProposedAction": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Action type: log_meal, update_protein_target, or apply_progression"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Human-readable description of proposed change"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload",
+            "description": "Concrete payload to apply upon confirmation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "summary"
+        ],
+        "title": "ProposedAction",
+        "description": "Explicit action proposal requiring athlete confirmation before mutation."
+      },
+      "ReadinessCheckInRequest": {
+        "properties": {
+          "sleep_hours": {
+            "type": "number",
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Sleep Hours",
+            "description": "Sleep duration in hours"
+          },
+          "sleep_quality": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Sleep Quality",
+            "description": "Sleep quality rating (1 to 5)"
+          },
+          "soreness": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Soreness",
+            "description": "Muscle soreness rating (1=none, 5=crippling)"
+          },
+          "fatigue": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Fatigue",
+            "description": "Fatigue rating (1=energized, 5=exhausted)"
+          },
+          "stress": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stress",
+            "description": "Optional stress rating (1 to 5)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sleep_hours",
+          "sleep_quality",
+          "soreness",
+          "fatigue"
+        ],
+        "title": "ReadinessCheckInRequest",
+        "description": "Subjective daily recovery and strain check-in inputs."
+      },
+      "ReadinessCheckInResponse": {
+        "properties": {
+          "readiness_score": {
+            "type": "integer",
+            "title": "Readiness Score"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "guidance": {
+            "type": "string",
+            "title": "Guidance"
+          },
+          "triggers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Triggers"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "readiness_score",
+          "status",
+          "guidance",
+          "triggers",
+          "provenance"
+        ],
+        "title": "ReadinessCheckInResponse",
+        "description": "Rules-based readiness score and transparent rule triggers."
+      },
+      "RunningPaceRequest": {
+        "properties": {
+          "distance_km": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Distance Km",
+            "description": "Distance in kilometres, must be > 0"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Minutes",
+            "description": "Duration in minutes, must be > 0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distance_km",
+          "duration_minutes"
+        ],
+        "title": "RunningPaceRequest"
+      },
+      "TargetsPreviewRequest": {
+        "properties": {
+          "weight_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Weight Kg",
+            "description": "Athlete weight in kg"
+          },
+          "height_cm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height Cm",
+            "description": "Athlete height in cm"
+          },
+          "age": {
+            "type": "integer",
+            "exclusiveMaximum": 130.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Age",
+            "description": "Athlete age in years",
+            "default": 20
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex",
+            "description": "Biological sex (male, female, or None)"
+          },
+          "primary_goal": {
+            "type": "string",
+            "title": "Primary Goal",
+            "description": "Primary physical goal",
+            "default": "lean_bulk"
+          },
+          "onboarding_completed": {
+            "type": "boolean",
+            "title": "Onboarding Completed",
+            "description": "Whether onboarding has been completed",
+            "default": false
+          },
+          "sleep_baseline_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sleep Baseline Hours",
+            "description": "Self-reported sleep baseline"
+          },
+          "experience_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experience Level",
+            "description": "Training experience level"
+          },
+          "activity_multiplier": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Multiplier",
+            "description": "Custom activity multiplier"
+          },
+          "weekly_badminton_sessions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Badminton Sessions"
+          },
+          "weekly_running_sessions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Running Sessions"
+          },
+          "custom_protein_target_g": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Protein Target G"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weight_kg",
+          "height_cm"
+        ],
+        "title": "TargetsPreviewRequest",
+        "description": "Input payload to compute deterministic biometric and energy targets."
+      },
+      "TargetsPreviewResponse": {
+        "properties": {
+          "bmi_info": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Bmi Info"
+          },
+          "protein_info": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Protein Info"
+          },
+          "energy_estimate": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Energy Estimate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bmi_info",
+          "protein_info",
+          "energy_estimate"
+        ],
+        "title": "TargetsPreviewResponse",
+        "description": "Calibrated targets preview with deterministic math and auditable provenance."
+      },
+      "UserCoachingContext": {
+        "properties": {
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile"
+          },
+          "equipment": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Equipment"
+          },
+          "goals": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Goals"
+          },
+          "preferences": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Preferences"
+          },
+          "today_check_in": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today Check In"
+          },
+          "food_entries": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Food Entries"
+          },
+          "workout_sessions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Workout Sessions"
+          },
+          "activity_sessions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Activity Sessions"
+          },
+          "body_metrics": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Body Metrics"
+          },
+          "recovery_logs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Recovery Logs"
+          }
+        },
+        "type": "object",
+        "title": "UserCoachingContext",
+        "description": "Auditable, user-scoped snapshot of an athlete's biometrics, logs, and preferences."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeeklyReviewReport": {
+        "properties": {
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "week_end_date": {
+            "type": "string",
+            "title": "Week End Date"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "nutrition_consistency": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Nutrition Consistency"
+          },
+          "weight_trend_review": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Weight Trend Review"
+          },
+          "training_and_sports_load": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Training And Sports Load"
+          },
+          "recovery_patterns": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Recovery Patterns"
+          },
+          "next_week_priorities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Next Week Priorities"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start_date",
+          "week_end_date",
+          "generated_at",
+          "nutrition_consistency",
+          "weight_trend_review",
+          "training_and_sports_load",
+          "recovery_patterns",
+          "next_week_priorities"
+        ],
+        "title": "WeeklyReviewReport",
+        "description": "Deterministic weekly progress review synthesized across all athlete domains."
+      },
+      "WeeklyReviewRequest": {
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserCoachingContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "User-scoped context snapshot"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today",
+            "description": "Optional evaluation date override"
+          },
+          "week_start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week Start Date",
+            "description": "Optional start date ISO string"
+          },
+          "week_end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week End Date",
+            "description": "Optional end date ISO string"
+          }
+        },
+        "type": "object",
+        "title": "WeeklyReviewRequest",
+        "description": "Request payload to synthesize a deterministic weekly review."
+      },
+      "WeightPointRequest": {
+        "properties": {
+          "logged_date": {
+            "type": "string",
+            "title": "Logged Date",
+            "description": "ISO date string YYYY-MM-DD"
+          },
+          "weight_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Weight Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logged_date",
+          "weight_kg"
+        ],
+        "title": "WeightPointRequest"
+      },
+      "WeightTrendRequest": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/WeightPointRequest"
+            },
+            "type": "array",
+            "minItems": 0,
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "title": "WeightTrendRequest"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

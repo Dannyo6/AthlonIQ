@@ -268,6 +268,11 @@ class WeeklyReviewReport(BaseModel):
     next_week_priorities: List[str]
 
 
+def get_today() -> date:
+    """Return the reference calendar date for coaching tools (injectable/monkeypatchable in tests)."""
+    return date.today()
+
+
 # =============================================================================
 # Tool Implementations
 # =============================================================================
@@ -275,12 +280,14 @@ class WeeklyReviewReport(BaseModel):
 def get_nutrition_totals(
     context: UserCoachingContext,
     target_date: Optional[str] = None,
+    today: Optional[date] = None,
 ) -> NutritionTotalsResult:
     """Return confirmed calories, protein, carbs, fat, and remaining gap against goals.
     
     CRITICAL GUARDRAIL: Entries with is_confirmed == False (e.g. unconfirmed photo
     estimates) are STRICTLY excluded from confirmed totals.
     """
+    ref_today = today if today is not None else get_today()
     all_entries = context.food_entries or []
 
     # If no target_date specified, pick today or the latest logged date
@@ -288,9 +295,9 @@ def get_nutrition_totals(
     if not eval_date_str:
         if all_entries:
             dates = [str(_val(e, "loggedDate", "logged_date")) for e in all_entries if _val(e, "loggedDate", "logged_date")]
-            eval_date_str = sorted(dates)[-1] if dates else date.today().isoformat()
+            eval_date_str = sorted(dates)[-1] if dates else ref_today.isoformat()
         else:
-            eval_date_str = date.today().isoformat()
+            eval_date_str = ref_today.isoformat()
 
     confirmed_cal = 0.0
     confirmed_pro = 0.0
@@ -364,10 +371,12 @@ def get_nutrition_totals(
 def get_food_history(
     context: UserCoachingContext,
     days: int = 7,
+    today: Optional[date] = None,
 ) -> FoodHistoryResult:
     """Return recent logged meals, provenance breakdown, and high-protein staple frequency."""
+    ref_today = today if today is not None else get_today()
     entries = context.food_entries or []
-    cutoff = date.today() - timedelta(days=days)
+    cutoff = ref_today - timedelta(days=days)
 
     filtered: List[Dict[str, Any]] = []
     provenance_counts: Dict[str, int] = {
@@ -435,10 +444,12 @@ def get_food_history(
 def get_weekly_training(
     context: UserCoachingContext,
     days: int = 7,
+    today: Optional[date] = None,
 ) -> WeeklyTrainingResult:
     """Return completed gym sessions, total sets, total volume, and target consistency."""
+    ref_today = today if today is not None else get_today()
     sessions = context.workout_sessions or []
-    cutoff = date.today() - timedelta(days=days)
+    cutoff = ref_today - timedelta(days=days)
     target_days = int(_val(context.profile, "trainingDaysPerWeek", "training_days_per_week", default=5))
 
     completed_sessions: List[Dict[str, Any]] = []
@@ -498,6 +509,7 @@ def get_weekly_training(
 def get_exercise_progress(
     context: UserCoachingContext,
     exercise_name: Optional[str] = None,
+    today: Optional[date] = None,
 ) -> ExerciseProgressResult:
     """Return top sets, PRs, and deterministic double-progression status respecting home equipment cap."""
     target_ex = exercise_name.strip() if exercise_name else "Barbell Bench Press"
@@ -607,10 +619,12 @@ def get_exercise_progress(
 def get_activity_history(
     context: UserCoachingContext,
     days: int = 14,
+    today: Optional[date] = None,
 ) -> ActivityHistoryResult:
     """Return logged running, badminton, and calisthenics sessions."""
+    ref_today = today if today is not None else get_today()
     activities = context.activity_sessions or []
-    cutoff = date.today() - timedelta(days=days)
+    cutoff = ref_today - timedelta(days=days)
 
     runs: List[Dict[str, Any]] = []
     badminton: List[Dict[str, Any]] = []
@@ -693,10 +707,12 @@ def get_activity_history(
 def get_weight_trend(
     context: UserCoachingContext,
     days: int = 14,
+    today: Optional[date] = None,
 ) -> WeightTrendResult:
     """Return weigh-in count, latest weight (kg), 7-day rolling average, and weekly delta."""
+    ref_today = today if today is not None else get_today()
     metrics = context.body_metrics or []
-    cutoff = date.today() - timedelta(days=days)
+    cutoff = ref_today - timedelta(days=days)
 
     weight_points: List[WeightPoint] = []
     latest_kg: Optional[float] = None
@@ -718,7 +734,7 @@ def get_weight_trend(
     if not weight_points and _val(context.profile, "weightKg", "weight_kg"):
         # Fallback profile weight as 1 point
         pw = float(_val(context.profile, "weightKg", "weight_kg"))
-        weight_points.append(WeightPoint(logged_date=date.today().isoformat(), weight_kg=pw))
+        weight_points.append(WeightPoint(logged_date=ref_today.isoformat(), weight_kg=pw))
         latest_kg = pw
 
     trend_calc = calculate_weight_trend(weight_points)
@@ -748,10 +764,12 @@ def get_weight_trend(
 def get_recovery_history(
     context: UserCoachingContext,
     days: int = 7,
+    today: Optional[date] = None,
 ) -> RecoveryHistoryResult:
     """Return recent sleep duration, subjective quality, soreness, fatigue, and rules-based readiness."""
+    ref_today = today if today is not None else get_today()
     logs = context.recovery_logs or []
-    cutoff = date.today() - timedelta(days=days)
+    cutoff = ref_today - timedelta(days=days)
 
     valid_logs: List[Dict[str, Any]] = []
     for l in logs:
@@ -837,7 +855,10 @@ def get_recovery_history(
     )
 
 
-def get_user_goals(context: UserCoachingContext) -> UserGoalsResult:
+def get_user_goals(
+    context: UserCoachingContext,
+    today: Optional[date] = None,
+) -> UserGoalsResult:
     """Return user profile baseline, equipment confirmation state, protein reference, and calorie target."""
     prof = context.profile
     age = int(_val(prof, "age", default=20))
@@ -974,26 +995,32 @@ TOOL_METADATA_LIST: List[CoachToolMetadata] = [
 # Deterministic Weekly Review Synthesizer
 # =============================================================================
 
-def generate_weekly_review(context: UserCoachingContext) -> WeeklyReviewReport:
+def generate_weekly_review(
+    context: UserCoachingContext,
+    today: Optional[date] = None,
+    week_start_date: Optional[str] = None,
+    week_end_date: Optional[str] = None,
+) -> WeeklyReviewReport:
     """Generate deterministic weekly review synthesized across all athlete domains.
     
     Operates strictly from allowlisted tool calculations with zero hallucinations.
     """
-    today = date.today()
-    week_start = today - timedelta(days=6)
+    ref_today = today if today is not None else get_today()
+    week_start = (ref_today - timedelta(days=6)) if not week_start_date else (_parse_date(week_start_date) or (ref_today - timedelta(days=6)))
+    week_end = ref_today if not week_end_date else (_parse_date(week_end_date) or ref_today)
     week_start_str = week_start.isoformat()
-    week_end_str = today.isoformat()
+    week_end_str = week_end.isoformat()
 
     # 1. Nutrition Consistency
-    food_hist = get_food_history(context, days=7)
-    today_nutr = get_nutrition_totals(context, target_date=week_end_str)
-    goals = get_user_goals(context)
+    food_hist = get_food_history(context, days=7, today=ref_today)
+    today_nutr = get_nutrition_totals(context, target_date=week_end_str, today=ref_today)
+    goals = get_user_goals(context, today=ref_today)
 
     # Days logging food
     entry_dates = set()
     for e in context.food_entries or []:
         d = _parse_date(_val(e, "loggedDate", "logged_date"))
-        if d and d >= week_start:
+        if d and week_start <= d <= week_end:
             entry_dates.add(d.isoformat())
     days_logged_count = len(entry_dates)
 
@@ -1014,7 +1041,7 @@ def generate_weekly_review(context: UserCoachingContext) -> WeeklyReviewReport:
     }
 
     # 2. Weight Trend Review
-    weight_trend = get_weight_trend(context, days=14)
+    weight_trend = get_weight_trend(context, days=14, today=ref_today)
     weight_trend_review = {
         "status": weight_trend.status,
         "weigh_in_count": weight_trend.weigh_in_count,
@@ -1026,8 +1053,8 @@ def generate_weekly_review(context: UserCoachingContext) -> WeeklyReviewReport:
     }
 
     # 3. Training & Sports Load
-    training = get_weekly_training(context, days=7)
-    activities = get_activity_history(context, days=7)
+    training = get_weekly_training(context, days=7, today=ref_today)
+    activities = get_activity_history(context, days=7, today=ref_today)
     training_and_sports_load = {
         "gym_sessions_completed": training.completed_sessions_count,
         "gym_sessions_target": training.target_sessions_per_week,
@@ -1048,7 +1075,7 @@ def generate_weekly_review(context: UserCoachingContext) -> WeeklyReviewReport:
     }
 
     # 4. Recovery Patterns
-    recovery = get_recovery_history(context, days=7)
+    recovery = get_recovery_history(context, days=7, today=ref_today)
     recovery_patterns = {
         "average_sleep_hours": recovery.average_sleep_hours,
         "average_sleep_quality": recovery.average_sleep_quality,

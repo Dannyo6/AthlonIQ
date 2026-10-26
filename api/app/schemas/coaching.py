@@ -1,5 +1,6 @@
 """Schemas for coaching, deterministic targets preview, and readiness assessment."""
 
+from datetime import date
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -85,12 +86,14 @@ class CoachChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="Athlete query or message")
     conversation_id: Optional[str] = Field(None, description="Optional conversation UUID")
     context: Optional[UserCoachingContext] = Field(None, description="Optional client-side state snapshot")
+    today: Optional[date] = Field(None, description="Optional evaluation date override")
 
 
 class WeeklyReviewRequest(BaseModel):
     """Request payload to synthesize a deterministic weekly review."""
 
     context: Optional[UserCoachingContext] = Field(None, description="User-scoped context snapshot")
+    today: Optional[date] = Field(None, description="Optional evaluation date override")
     week_start_date: Optional[str] = Field(None, description="Optional start date ISO string")
     week_end_date: Optional[str] = Field(None, description="Optional end date ISO string")
 

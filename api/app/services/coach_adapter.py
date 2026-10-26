@@ -10,6 +10,7 @@ Provides:
 
 from __future__ import annotations
 
+from datetime import date
 import json
 import logging
 import re
@@ -169,7 +170,10 @@ class CoachService:
     # =========================================================================
 
     def execute_tools(
-        self, tool_names: List[str], context: UserCoachingContext
+        self,
+        tool_names: List[str],
+        context: UserCoachingContext,
+        today: Optional[date] = None,
     ) -> Dict[str, Any]:
         """Execute selected allowlisted tools against user-scoped context."""
         results: Dict[str, Any] = {}
@@ -177,7 +181,10 @@ class CoachService:
             tool_fn = ALLOWLISTED_TOOLS.get(name)
             if tool_fn:
                 try:
-                    res = tool_fn(context)
+                    kwargs: Dict[str, Any] = {}
+                    if today is not None:
+                        kwargs["today"] = today
+                    res = tool_fn(context, **kwargs)
                     results[name] = res.model_dump() if hasattr(res, "model_dump") else res
                 except Exception as exc:
                     logger.warning(f"Error executing tool {name}: {exc}")
@@ -189,7 +196,10 @@ class CoachService:
     # =========================================================================
 
     async def chat(
-        self, message: str, context: Optional[UserCoachingContext] = None
+        self,
+        message: str,
+        context: Optional[UserCoachingContext] = None,
+        today: Optional[date] = None,
     ) -> CoachTurnResponse:
         """Process chat turn with safety checks, tool scoping, LLM/deterministic synthesis."""
         # 1. Medical safety guardrail
@@ -202,7 +212,7 @@ class CoachService:
 
         # 2. Select and execute scoped tools
         tools_to_run = self.select_tools_for_query(message)
-        tool_outputs = self.execute_tools(tools_to_run, ctx)
+        tool_outputs = self.execute_tools(tools_to_run, ctx, today=today)
 
         # 3. Attempt Gemini LLM Synthesis if key is configured
         if self.api_key:

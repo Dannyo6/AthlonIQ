@@ -130,6 +130,7 @@ async def coach_chat_turn(
     response = await coach_service.chat(
         message=payload.message,
         context=payload.context,
+        today=payload.today,
     )
     return APIResponse(
         success=True,
@@ -148,7 +149,12 @@ async def generate_athlete_weekly_review(
     Protected endpoint requiring Bearer JWT authentication.
     """
     context = payload.context or UserCoachingContext()
-    report = generate_weekly_review(context)
+    report = generate_weekly_review(
+        context,
+        today=payload.today,
+        week_start_date=payload.week_start_date,
+        week_end_date=payload.week_end_date,
+    )
     return APIResponse(
         success=True,
         message="Weekly review synthesized successfully",
