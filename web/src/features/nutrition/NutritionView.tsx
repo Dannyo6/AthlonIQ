@@ -103,10 +103,11 @@ export const NutritionView: React.FC = () => {
 
   const ct = nutrition.confirmedTotals;
 
-  const targetKcal = goals.calorieTargetKcal || 2000;
+  const targetKcal = goals.calorieTargetKcal; // null until onboarding completes — never fabricated
+  const hasCalorieTarget = targetKcal !== null && targetKcal > 0;
   const proteinTarget = goals.proteinTargetG;
-  const carbsTarget = goals.carbsTargetG || Math.round((targetKcal * 0.45) / 4);
-  const fatTarget = goals.fatTargetG || Math.round((targetKcal * 0.25) / 9);
+  const carbsTarget = goals.carbsTargetG ?? null;
+  const fatTarget = goals.fatTargetG ?? null;
 
   const searchResults = useMemo(
     () => (searchQuery.length >= 1 ? searchFoodCatalog(searchQuery) : []),
@@ -410,47 +411,118 @@ export const NutritionView: React.FC = () => {
                 </Badge>
               )}
             </div>
-            <h3 className="text-2xl font-black text-white mt-1 font-mono tabular-nums">
-              {ct.caloriesKcal} / {targetKcal} kcal
-            </h3>
+            {hasCalorieTarget ? (
+              <h3 className="text-2xl font-black text-white mt-1 font-mono tabular-nums">
+                {ct.caloriesKcal} / {targetKcal} kcal
+              </h3>
+            ) : (
+              <h3 className="text-2xl font-black text-white mt-1 font-mono tabular-nums">
+                {ct.caloriesKcal} kcal logged
+              </h3>
+            )}
           </div>
           <Badge variant="lime">LEAN BULK (+250 KCAL SURPLUS)</Badge>
         </div>
 
-        {/* Calorie progress bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs text-slate-400 font-mono tabular-nums">
-            <span>Calories</span>
-            <span>{pct(ct.caloriesKcal, targetKcal)}%</span>
+        {/* Calorie target not set — designed null state */}
+        {!hasCalorieTarget && (
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#1A1F2E] border border-[#252D42] text-sm">
+            <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-white">
+                Calorie target not set — finish onboarding
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Progress bars and remaining kcal will appear once your TDEE is calibrated.
+                <a href="/profile" className="ml-1.5 text-athloniq-lime hover:underline">Go to Profile →</a>
+              </p>
+            </div>
           </div>
-          <div className="h-3 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
-            <div
-              className="h-full bg-gradient-to-r from-athloniq-lime to-lime-300 rounded-full transition-all duration-500"
-              style={{ width: `${pct(ct.caloriesKcal, targetKcal)}%` }}
-            />
+        )}
+
+        {/* Calorie progress bar — only shown when target is set */}
+        {hasCalorieTarget && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-slate-400 font-mono tabular-nums">
+              <span>Calories</span>
+              <span>{pct(ct.caloriesKcal, targetKcal!)}%</span>
+            </div>
+            <div className="h-3 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
+              <div
+                className="h-full bg-gradient-to-r from-athloniq-lime to-lime-300 rounded-full transition-all duration-500"
+                style={{ width: `${pct(ct.caloriesKcal, targetKcal!)}%` }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { label: "Protein", current: ct.proteinG, target: proteinTarget, unit: "g", range: `${goals.proteinMinG}–${goals.proteinMaxG} g/day`, color: "bg-emerald-400", textColor: "text-emerald-400" },
-            { label: "Carbohydrates", current: ct.carbsG, target: carbsTarget, unit: "g", range: "Glycogen Replenishment", color: "bg-amber-400", textColor: "text-amber-400" },
-            { label: "Dietary Fats", current: ct.fatG, target: fatTarget, unit: "g", range: "25% of Energy Balance", color: "bg-purple-400", textColor: "text-purple-400" },
+            {
+              label: "Protein",
+              current: ct.proteinG,
+              target: proteinTarget,
+              unit: "g",
+              range: `${goals.proteinMinG}–${goals.proteinMaxG} g/day`,
+              provBadge: goals.proteinProvenance === "provisional_default" ? "PROVISIONAL DEFAULT" : null,
+              color: "bg-emerald-400",
+              textColor: "text-emerald-400",
+            },
+            {
+              label: "Carbohydrates",
+              current: ct.carbsG,
+              target: carbsTarget,
+              unit: "g",
+              range: "Glycogen Replenishment",
+              provBadge: null,
+              color: "bg-amber-400",
+              textColor: "text-amber-400",
+            },
+            {
+              label: "Dietary Fats",
+              current: ct.fatG,
+              target: fatTarget,
+              unit: "g",
+              range: "25% of Energy Balance",
+              provBadge: null,
+              color: "bg-purple-400",
+              textColor: "text-purple-400",
+            },
           ].map((macro) => (
             <div key={macro.label} className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-1">
                 <span className="text-slate-300 font-semibold">{macro.label}</span>
-                <span className="text-slate-500 font-mono text-[10px]">{macro.range}</span>
+                <div className="flex items-center gap-1.5">
+                  {macro.provBadge && (
+                    <span className="text-[9px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      {macro.provBadge}
+                    </span>
+                  )}
+                  <span className="text-slate-500 font-mono text-[10px]">{macro.range}</span>
+                </div>
               </div>
-              <div className={`font-mono text-xl font-bold tabular-nums ${macro.textColor}`}>
-                {macro.current} / {macro.target} {macro.unit}
-              </div>
-              <div className="h-2 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
-                <div
-                  className={`h-full ${macro.color} rounded-full transition-all duration-500`}
-                  style={{ width: `${pct(macro.current, macro.target)}%` }}
-                />
-              </div>
+              {macro.target !== null ? (
+                <>
+                  <div className={`font-mono text-xl font-bold tabular-nums ${macro.textColor}`}>
+                    {macro.current} / {macro.target} {macro.unit}
+                  </div>
+                  <div className="h-2 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
+                    <div
+                      className={`h-full ${macro.color} rounded-full transition-all duration-500`}
+                      style={{ width: `${pct(macro.current, macro.target)}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={`font-mono text-xl font-bold tabular-nums ${macro.textColor}`}>
+                    {macro.current} {macro.unit} logged
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    Target not set — complete onboarding
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

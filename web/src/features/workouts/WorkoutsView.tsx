@@ -258,11 +258,25 @@ export const WorkoutsView: React.FC = () => {
     if (ex.sets.length === 0) return null;
     const completed = ex.sets.filter((s) => s.isCompleted);
     if (completed.length === 0) return null;
+
+    // If equipment limits are not yet set, refuse to guess — return a typed "not configured" result
+    const maxLoad = freeWeights?.maxLoadKg ?? null;
+    const minIncrement = freeWeights?.minIncrementKg ?? null;
+    if (maxLoad === null || minIncrement === null || !profile.equipmentConfirmed) {
+      return {
+        exerciseName: ex.exerciseName,
+        action: "confirm_equipment_first",
+        explanation: "Set your equipment limits to get load progressions — go to Profile → Equipment.",
+        requiresUserConfirmation: true,
+        provenance: "rules_based_progression",
+      };
+    }
+
     return evaluateProgressionSuggestion(
       ex.exerciseName,
       completed.map((s) => ({ reps: s.reps, loadKg: s.loadKg, rpe: s.rpe, isBodyweight: s.isBodyweight })),
-      freeWeights?.maxLoadKg ?? 70,
-      freeWeights?.minIncrementKg ?? 2.5,
+      maxLoad,
+      minIncrement,
       profile.equipmentConfirmed,
       readiness.status,
       ex.targetRepsMax

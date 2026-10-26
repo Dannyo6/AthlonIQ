@@ -982,8 +982,8 @@ export const ProfileView: React.FC = () => {
                     <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
                       <div className="text-[11px] text-slate-400 font-medium">Daily Target</div>
                       <div className="text-2xl font-black text-athloniq-lime font-mono mt-1 tabular-nums">
-                        {liveEnergy.estimatedKcal || "2,550"}
-                        <span className="text-xs text-slate-400 ml-1">kcal</span>
+                        {liveEnergy.estimatedKcal ?? <span className="text-sm text-slate-500">not set</span>}
+                        {liveEnergy.estimatedKcal && <span className="text-xs text-slate-400 ml-1">kcal</span>}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
@@ -996,15 +996,15 @@ export const ProfileView: React.FC = () => {
                     <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
                       <div className="text-[11px] text-slate-400 font-medium">Carbohydrates</div>
                       <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                        {liveEnergy.macros?.carbsG || 320}
-                        <span className="text-xs text-slate-400 ml-1">g</span>
+                        {liveEnergy.macros?.carbsG ?? <span className="text-sm text-slate-500">not set</span>}
+                        {liveEnergy.macros?.carbsG !== undefined && liveEnergy.macros?.carbsG !== null && <span className="text-xs text-slate-400 ml-1">g</span>}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
                       <div className="text-[11px] text-slate-400 font-medium">Dietary Fats</div>
                       <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                        {liveEnergy.macros?.fatG || 70}
-                        <span className="text-xs text-slate-400 ml-1">g</span>
+                        {liveEnergy.macros?.fatG ?? <span className="text-sm text-slate-500">not set</span>}
+                        {liveEnergy.macros?.fatG !== undefined && liveEnergy.macros?.fatG !== null && <span className="text-xs text-slate-400 ml-1">g</span>}
                       </div>
                     </div>
                   </div>

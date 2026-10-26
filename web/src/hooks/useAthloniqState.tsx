@@ -177,22 +177,18 @@ const DEFAULT_COACH_MESSAGES: EpistemicCoachMessage[] = [
   {
     id: "init-1",
     sender: "coach",
-    text: "Welcome to AthlonIQ. I am your Personal AI Performance & Physique Coach. I analyze your daily training volume, nutrition targets, and recovery check-ins with deterministic transparency. Complete your onboarding setup or log your first session to calibrate your targets.",
+    text: "Welcome to AthlonIQ. I'm your Personal AI Performance Coach. Once you log workouts, meals, and daily check-ins I can answer questions like: How has my protein intake tracked this week? What should I train today given my recovery? Which exercises have I progressed on? Complete your onboarding to calibrate targets and start logging to unlock grounded insights.",
     timestamp: "Just now",
-    toolsUsed: ["get_user_goals", "get_recovery_history"],
-    factsFromTools: [
-      "Athlete baseline: 20yo, 173cm, 55kg (lean_bulk, nonvegetarian).",
-      "Training scope: 5 days/wk home gym, running, badminton, and calisthenics.",
-    ],
-    appCalculations: [
-      "Protein reference band: 88–121 g/day (provisional target: 110 g).",
-    ],
+    toolsUsed: [],
+    factsFromTools: [],
+    appCalculations: [],
     recommendations: [
-      "Complete home gym verification in Profile → Equipment.",
-      "Log your first check-in to generate today's Readiness Score.",
+      "Complete onboarding in Profile to calibrate your calorie and protein targets.",
+      "Log your first recovery check-in to generate today's Readiness Score.",
+      "Confirm your home gym equipment in Profile → Equipment to unlock load progressions.",
     ],
     missingOrUncertain: [
-      "Awaiting athlete onboarding confirmation.",
+      "No logs recorded yet — coach responses are grounded only in data you have logged.",
     ],
     proposedAction: null,
   },
