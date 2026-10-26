@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -434,7 +435,7 @@ export const NutritionView: React.FC = () => {
               </p>
               <p className="text-xs text-slate-400 mt-0.5">
                 Progress bars and remaining kcal will appear once your TDEE is calibrated.
-                <a href="/profile" className="ml-1.5 text-athloniq-lime hover:underline">Go to Profile →</a>
+                <Link to="/profile" className="ml-1.5 text-athloniq-lime hover:underline">Go to Profile →</Link>
               </p>
             </div>
           </div>

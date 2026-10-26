@@ -1,7 +1,8 @@
 """Coaching and deterministic performance intelligence endpoints."""
 
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from app.core.config import settings
 from app.core.security import AuthenticatedUser, get_current_user
 from app.domain.performance import (
     calculate_bmi,
@@ -15,6 +16,7 @@ from app.domain.coach_tools import (
     WeeklyReviewReport,
     UserCoachingContext,
     generate_weekly_review,
+    resolve_server_today,
 )
 from app.domain.adaptive import (
     evaluate_lean_bulk_calibration,
@@ -119,6 +121,7 @@ async def assess_athlete_readiness(
 
 @router.post("/chat", response_model=APIResponse[CoachTurnResponse])
 async def coach_chat_turn(
+    request: Request,
     payload: CoachChatRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[CoachTurnResponse]:
@@ -127,10 +130,16 @@ async def coach_chat_turn(
     Protected endpoint requiring Bearer JWT authentication.
     Enforces epistemic separation and medical safety guardrails.
     """
+    cfg = getattr(request.app.state, "settings", settings)
+    effective_today = resolve_server_today(
+        context=payload.context,
+        client_today=payload.today,
+        environment=cfg.ENVIRONMENT,
+    )
     response = await coach_service.chat(
         message=payload.message,
         context=payload.context,
-        today=payload.today,
+        today=effective_today,
     )
     return APIResponse(
         success=True,
@@ -141,6 +150,7 @@ async def coach_chat_turn(
 
 @router.post("/weekly-review", response_model=APIResponse[WeeklyReviewReport])
 async def generate_athlete_weekly_review(
+    request: Request,
     payload: WeeklyReviewRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[WeeklyReviewReport]:
@@ -148,10 +158,16 @@ async def generate_athlete_weekly_review(
 
     Protected endpoint requiring Bearer JWT authentication.
     """
+    cfg = getattr(request.app.state, "settings", settings)
     context = payload.context or UserCoachingContext()
+    effective_today = resolve_server_today(
+        context=context,
+        client_today=payload.today,
+        environment=cfg.ENVIRONMENT,
+    )
     report = generate_weekly_review(
         context,
-        today=payload.today,
+        today=effective_today,
         week_start_date=payload.week_start_date,
         week_end_date=payload.week_end_date,
     )

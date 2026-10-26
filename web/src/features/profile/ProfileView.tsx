@@ -236,8 +236,8 @@ export const ProfileView: React.FC = () => {
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       age: profile.age || 20,
-      heightCm: profile.heightCm || 173.0,
-      weightKg: profile.weightKg || 55.0,
+      heightCm: profile.onboardingCompleted ? profile.heightCm : (profile.heightCm && profile.heightCm !== 173.0 ? profile.heightCm : undefined),
+      weightKg: profile.onboardingCompleted ? profile.weightKg : (profile.weightKg && profile.weightKg !== 55.0 ? profile.weightKg : undefined),
       sex: profile.sex || "unknown",
       waistCm: profile.waistCm || null,
       primaryGoal: (profile.primaryGoal as any) || "lean_bulk",
@@ -254,8 +254,22 @@ export const ProfileView: React.FC = () => {
     },
   });
 
-  const watchedWeight = watch("weightKg") || 55.0;
-  const watchedHeight = watch("heightCm") || 173.0;
+  const rawWeight = watch("weightKg");
+  const rawHeight = watch("heightCm");
+  const numWeight = typeof rawWeight === "number" ? rawWeight : parseFloat(String(rawWeight));
+  const numHeight = typeof rawHeight === "number" ? rawHeight : parseFloat(String(rawHeight));
+  const hasValidBiometrics =
+    (rawWeight as unknown) !== "" &&
+    (rawHeight as unknown) !== "" &&
+    rawWeight != null &&
+    rawHeight != null &&
+    !isNaN(numWeight) &&
+    numWeight > 0 &&
+    !isNaN(numHeight) &&
+    numHeight > 0;
+
+  const watchedWeight = hasValidBiometrics ? numWeight : null;
+  const watchedHeight = hasValidBiometrics ? numHeight : null;
   const watchedAge = watch("age") || 20;
   const watchedSex = watch("sex");
   const watchedGoal = watch("primaryGoal");
@@ -273,11 +287,11 @@ export const ProfileView: React.FC = () => {
   }, [isDirty, setFormDirty]);
 
   // Live client calculations for preview in wizard
-  const liveBmi = calculateBmi(watchedWeight, watchedHeight);
-  const liveProteinRef = calculateProteinReference(watchedWeight, watchedProtein);
+  const liveBmi = hasValidBiometrics ? calculateBmi(numWeight, numHeight) : null;
+  const liveProteinRef = calculateProteinReference(numWeight || 55.0, watchedProtein);
   const liveEnergy = calculateEnergyEstimate({
-    weightKg: watchedWeight,
-    heightCm: watchedHeight,
+    weightKg: numWeight || 55.0,
+    heightCm: numHeight || 173.0,
     age: watchedAge,
     sex: watchedSex === "unknown" ? null : watchedSex,
     primaryGoal: watchedGoal,
@@ -432,10 +446,11 @@ export const ProfileView: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label htmlFor="profile-age" className="text-xs font-semibold text-slate-300">
                       Age (Years) <span className="text-athloniq-lime">*</span>
                     </label>
                     <input
+                      id="profile-age"
                       type="number"
                       {...register("age")}
                       className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
@@ -446,10 +461,11 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label htmlFor="profile-height" className="text-xs font-semibold text-slate-300">
                       Height (cm) <span className="text-athloniq-lime">*</span>
                     </label>
                     <input
+                      id="profile-height"
                       type="number"
                       step="0.5"
                       {...register("heightCm")}
@@ -461,10 +477,11 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label htmlFor="profile-weight" className="text-xs font-semibold text-slate-300">
                       Weight (kg) <span className="text-athloniq-lime">*</span>
                     </label>
                     <input
+                      id="profile-weight"
                       type="number"
                       step="0.1"
                       {...register("weightKg")}
@@ -519,21 +536,41 @@ export const ProfileView: React.FC = () => {
 
                 {/* Instant BMI Screening Preview */}
                 <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
-                      {liveBmi.bmi}
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-white flex items-center gap-2">
-                        <span>Calculated BMI: {liveBmi.bmi} kg/m²</span>
-                        <Badge variant="amber">{liveBmi.category.toUpperCase()}</Badge>
+                  {liveBmi ? (
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
+                        {liveBmi.bmi}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {liveBmi.disclaimer}
-                      </p>
+                      <div>
+                        <div className="text-xs font-semibold text-white flex items-center gap-2">
+                          <span>Calculated BMI: {liveBmi.bmi} kg/m²</span>
+                          <Badge variant="amber">{liveBmi.category.toUpperCase()}</Badge>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {liveBmi.disclaimer}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <ProvenanceBadge provenance="calculated_estimate" />
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-mono font-bold text-sm">
+                        --
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-300">
+                          Enter height and weight
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Provide your height and weight above to calculate live BMI.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {liveBmi ? (
+                    <ProvenanceBadge provenance="calculated_estimate" />
+                  ) : (
+                    <Badge variant="neutral">NOT SET</Badge>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-4">
@@ -607,7 +644,7 @@ export const ProfileView: React.FC = () => {
                         Daily Protein Reference Target
                       </h4>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Scientific Range for {watchedWeight} kg: {liveProteinRef.proteinMinG}–{liveProteinRef.proteinMaxG} g/day (1.6–2.2 g/kg)
+                        Scientific Range for {watchedWeight ? `${watchedWeight} kg` : "athlete"}: {liveProteinRef.proteinMinG}–{liveProteinRef.proteinMaxG} g/day (1.6–2.2 g/kg)
                       </p>
                     </div>
                     <ProvenanceBadge provenance={liveProteinRef.provenance} />
@@ -1024,7 +1061,7 @@ export const ProfileView: React.FC = () => {
                     <div className="flex justify-between py-1">
                       <span className="text-slate-400">Weight & Height</span>
                       <span className="font-mono text-white font-semibold">
-                        {watchedWeight} kg / {watchedHeight} cm (BMI {liveBmi.bmi})
+                        {watchedWeight ? `${watchedWeight} kg` : "Not set"} / {watchedHeight ? `${watchedHeight} cm` : "Not set"} (BMI {liveBmi ? liveBmi.bmi : "Not set"})
                       </span>
                     </div>
                     <div className="flex justify-between py-1">

@@ -25,6 +25,7 @@ import {
   ArrowRight,
   RotateCcw,
   Zap,
+  WifiOff,
 } from "lucide-react";
 import { usePwa } from "@/features/pwa/usePwa";
 import { PwaOfflineEmptyState } from "@/features/pwa/PwaComponents";
@@ -49,6 +50,7 @@ export const CoachView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReviewReport | null>(null);
   const [isLoadingReview, setIsLoadingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [notificationTestStatus, setNotificationTestStatus] = useState<string | null>(null);
 
   // 7 Grounded Quick-Prompt Chips
@@ -71,6 +73,7 @@ export const CoachView: React.FC = () => {
 
   const handleLoadWeeklyReview = async () => {
     setIsLoadingReview(true);
+    setReviewError(null);
     try {
       const snapshot = getCoachingSnapshot();
       const report = await fetchWeeklyReview(snapshot);
@@ -78,66 +81,75 @@ export const CoachView: React.FC = () => {
         setWeeklyReport(report);
       }
     } catch {
-      // Fallback deterministic client synthesis if backend is offline
+      // Fallback deterministic client synthesis if backend is offline — actual logged counts only (0 when empty)
       const snapshot = getCoachingSnapshot();
+      const foodCount = snapshot.food_entries?.length ? new Set(snapshot.food_entries.map((f: any) => f.loggedDate)).size : 0;
+      const bodyMetricCount = snapshot.body_metrics?.length || 0;
+      const workoutCount = snapshot.workout_sessions?.length || 0;
+      const targetGym = profile.trainingDaysPerWeek || 0;
+      const runningCount = snapshot.activity_sessions?.filter((a: any) => a.activityType === "running").length || 0;
+      const badmintonCount = snapshot.activity_sessions?.filter((a: any) => a.activityType === "badminton").length || 0;
+      const calisthenicsCount = snapshot.activity_sessions?.filter((a: any) => a.activityType === "calisthenics").length || 0;
+
       const fallbackReport: WeeklyReviewReport = {
         week_start_date: new Date(Date.now() - 6 * 86400000).toISOString().split("T")[0],
         week_end_date: new Date().toISOString().split("T")[0],
         generated_at: new Date().toISOString(),
         nutrition_consistency: {
-          days_logging_food: snapshot.food_entries?.length ? 3 : 1,
+          days_logging_food: foodCount,
           days_in_period: 7,
-          logging_consistency_pct: snapshot.food_entries?.length ? 42.9 : 14.3,
+          logging_consistency_pct: Math.round((foodCount / 7) * 1000) / 10,
           protein_target_band: `${goals.proteinMinG}–${goals.proteinMaxG} g`,
           current_protein_target_g: goals.proteinTargetG,
-          latest_confirmed_protein_g: 54.5,
+          latest_confirmed_protein_g: 0,
           is_protein_goal_met_today: false,
-          top_protein_staples: { chicken: 2, eggs: 1, dal: 1 },
-          summary: `Logged food on ${snapshot.food_entries?.length ? 3 : 1}/7 days this week. Daily protein target is ${goals.proteinTargetG} g.`,
+          top_protein_staples: {},
+          summary: foodCount > 0 ? `Logged food on ${foodCount}/7 days this week.` : "No food entries logged this week.",
         },
         weight_trend_review: {
-          status: snapshot.body_metrics?.length >= 3 ? "ok" : "insufficient_data",
-          weigh_in_count: snapshot.body_metrics?.length || 1,
-          latest_weight_kg: profile.weightKg,
-          rolling_7d_kg: snapshot.body_metrics?.length >= 3 ? 55.0 : null,
-          weekly_delta_kg: snapshot.body_metrics?.length >= 3 ? 0.2 : null,
+          status: bodyMetricCount >= 3 ? "ok" : "insufficient_data",
+          weigh_in_count: bodyMetricCount,
+          latest_weight_kg: profile.weightKg || 0,
+          rolling_7d_kg: bodyMetricCount >= 3 ? profile.weightKg : null,
+          weekly_delta_kg: null,
           explanation:
-            snapshot.body_metrics?.length >= 3
-              ? "7-day rolling weight steady at 55.0 kg."
+            bodyMetricCount >= 3
+              ? `7-day rolling weight steady at ${profile.weightKg} kg.`
               : "At least 3 weigh-ins required to calculate a reliable rolling trend.",
           disclaimer:
             "Single-day weight shifts reflect hydration, glycogen, and GI content, not fat or muscle tissue changes.",
         },
         training_and_sports_load: {
-          gym_sessions_completed: snapshot.workout_sessions?.length || 1,
-          gym_sessions_target: profile.trainingDaysPerWeek || 5,
-          gym_consistency_pct: ((snapshot.workout_sessions?.length || 1) / (profile.trainingDaysPerWeek || 5)) * 100,
-          gym_total_sets: 9,
-          gym_total_volume_kg: 2450.0,
-          running_sessions: snapshot.activity_sessions?.filter((a: any) => a.activityType === "running").length || 1,
-          running_total_km: 5.0,
-          badminton_sessions: snapshot.activity_sessions?.filter((a: any) => a.activityType === "badminton").length || 1,
-          badminton_total_min: 60.0,
-          calisthenics_sessions: snapshot.activity_sessions?.filter((a: any) => a.activityType === "calisthenics").length || 1,
-          summary: "Gym: 1/5 sessions completed. Sports: 1 badminton match (60 min) & 1 running session (5.0 km).",
+          gym_sessions_completed: workoutCount,
+          gym_sessions_target: targetGym,
+          gym_consistency_pct: targetGym > 0 ? (workoutCount / targetGym) * 100 : 0,
+          gym_total_sets: 0,
+          gym_total_volume_kg: 0,
+          running_sessions: runningCount,
+          running_total_km: 0,
+          badminton_sessions: badmintonCount,
+          badminton_total_min: 0,
+          calisthenics_sessions: calisthenicsCount,
+          summary: `Gym: ${workoutCount}/${targetGym} sessions completed. Sports: ${badmintonCount} badminton & ${runningCount} running.`,
         },
         recovery_patterns: {
-          average_sleep_hours: 7.5,
-          average_sleep_quality: 4.0,
-          average_soreness: 2.0,
-          average_fatigue: 2.0,
-          readiness_distribution: { Prime: 2, Moderate: 1, Recover: 0 },
-          latest_readiness_score: 82,
-          latest_status: "Prime",
-          summary: "Readiness is Prime (82%). Sleep averaged 7.5h with low systemic soreness.",
+          average_sleep_hours: 0,
+          average_sleep_quality: 0,
+          average_soreness: 0,
+          average_fatigue: 0,
+          readiness_distribution: { Prime: 0, Moderate: 0, Recover: 0 },
+          latest_readiness_score: 0,
+          latest_status: "Moderate",
+          summary: "Recovery patterns calculated from logged check-ins.",
         },
         next_week_priorities: [
           "Log food for at least 5 days next week to establish reliable macro consistency.",
-          "Confirm your 70 kg free-weight home gym equipment setup in Profile to unlock verified load progression.",
-          "Maintain daily protein intake within the 88–121 g reference band (110 g target).",
+          "Confirm your home gym equipment setup in Profile to unlock verified load progression.",
+          `Maintain daily protein intake within the ${goals.proteinMinG}–${goals.proteinMaxG} g reference band.`,
         ],
       };
       setWeeklyReport(fallbackReport);
+      setReviewError("Weekly review needs a connection for full AI synthesis (local offline synthesis active)");
     } finally {
       setIsLoadingReview(false);
     }
@@ -635,6 +647,25 @@ export const CoachView: React.FC = () => {
               Regenerate Review
             </Button>
           </div>
+
+          {reviewError && (
+            <Card className="p-4 bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-amber-300 text-xs">
+                <WifiOff className="h-4 w-4 shrink-0 text-amber-400" />
+                <span>Weekly review needs a connection for live AI coaching. Displaying offline deterministic review from local state.</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadWeeklyReview}
+                disabled={isLoadingReview}
+                className="text-xs shrink-0 self-start sm:self-auto"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1.5 ${isLoadingReview ? "animate-spin" : ""}`} />
+                Retry Review
+              </Button>
+            </Card>
+          )}
 
           {weeklyReport ? (
             <div className="space-y-6">

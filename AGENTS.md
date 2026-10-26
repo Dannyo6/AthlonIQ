@@ -136,7 +136,7 @@ To coordinate work effectively across multi-agent sessions, all agents must adhe
 - Never introduce silent magic fallbacks (`|| 2000`, `?? 70`, `?? 2.5`, `|| "2,550"`). If equipment limits or body metrics are unconfirmed, disable progressions and show clear guidance.
 
 ### 5. Mandatory Provenance Markers
-- Every metric, recommendation, and goal must carry an auditable provenance tag (e.g., `calculated_estimate`, `provisional_default`, `user_logged`, `rules_based_progression`, `awaiting_onboarding`).
+- Every metric, recommendation, and goal must carry an auditable provenance tag chosen strictly from the allowed provenance set: `user_confirmed`, `calculated_estimate`, `provisional_default`, `verified_reference`, `manual_entry`, `user_corrected`, `ai_estimated`.
 - Temporary or unconfirmed values must be clearly badged in the UI so the athlete always knows the origin of their data.
 
 ### 6. Clock & Date Independence

@@ -13,7 +13,8 @@ export const RecoveryView: React.FC = () => {
   const [sleepQuality, setSleepQuality] = useState(todayCheckIn.sleepQuality);
   const [soreness, setSoreness] = useState(todayCheckIn.soreness);
   const [fatigue, setFatigue] = useState(todayCheckIn.fatigue);
-  const [stress, setStress] = useState<number | null>(todayCheckIn.stress ?? 2);
+  const [stress, setStress] = useState<number | null>(null);
+  const [stressTouched, setStressTouched] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSave = () => {
@@ -22,7 +23,7 @@ export const RecoveryView: React.FC = () => {
       sleepQuality: Number(sleepQuality),
       soreness: Number(soreness),
       fatigue: Number(fatigue),
-      stress: stress !== null ? Number(stress) : null,
+      stress: stressTouched && stress !== null ? Number(stress) : null,
     });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
@@ -176,21 +177,64 @@ export const RecoveryView: React.FC = () => {
               </select>
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-300">
-                External Life / Mental Stress (1-5)
-              </label>
-              <select
-                value={stress ?? 2}
-                onChange={(e) => setStress(Number(e.target.value))}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-              >
-                <option value={1}>1 - Low / Calm (+5 pts)</option>
-                <option value={2}>2 - Normal Baseline (0 pts)</option>
-                <option value={3}>3 - Moderate Stress (-5 pts)</option>
-                <option value={4}>4 - High Work/Life Stress (-10 pts)</option>
-                <option value={5}>5 - Severe Acute Stress (-15 pts)</option>
-              </select>
+            <div className="space-y-2 sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="recovery-stress-slider" className="text-xs font-semibold text-slate-300">
+                  External Life / Mental Stress (1-5)
+                </label>
+                <div className="flex items-center gap-2">
+                  {stress === null || !stressTouched ? (
+                    <span className="text-xs font-medium text-slate-400 bg-[#181D2A] px-2 py-0.5 rounded border border-[#1E2330]">
+                      Not set
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-athloniq-lime bg-[#181D2A] px-2 py-0.5 rounded border border-[#1E2330]">
+                      Level {stress} / 5
+                    </span>
+                  )}
+                  {(stressTouched || stress !== null) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStress(null);
+                        setStressTouched(false);
+                      }}
+                      className="text-xs text-rose-400 hover:text-rose-300 underline underline-offset-2 ml-1"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                id="recovery-stress-slider"
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={stress ?? 3}
+                onChange={(e) => {
+                  setStress(Number(e.target.value));
+                  setStressTouched(true);
+                }}
+                className="w-full accent-athloniq-lime cursor-pointer bg-[#181D2A] h-2 rounded-lg appearance-none"
+              />
+              <div className="flex justify-between text-[11px] text-slate-500 font-mono">
+                <span>1 (Low)</span>
+                <span>2 (Baseline)</span>
+                <span>3 (Moderate)</span>
+                <span>4 (High)</span>
+                <span>5 (Severe)</span>
+              </div>
+              {stress !== null && stressTouched && (
+                <div className="text-xs text-slate-400">
+                  {stress === 1 && "1 - Low / Calm (+5 pts)"}
+                  {stress === 2 && "2 - Normal Baseline (0 pts)"}
+                  {stress === 3 && "3 - Moderate Stress (-5 pts)"}
+                  {stress === 4 && "4 - High Work/Life Stress (-10 pts)"}
+                  {stress === 5 && "5 - Severe Acute Stress (-15 pts)"}
+                </div>
+              )}
             </div>
           </div>
 

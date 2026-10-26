@@ -57,6 +57,7 @@ def create_app(custom_settings: Optional[Settings] = None) -> FastAPI:
         openapi_url="/openapi.json",
         lifespan=lifespan,
     )
+    application.state.settings = cfg
 
     # Configure CORS strictly from settings.BACKEND_CORS_ORIGINS
     application.add_middleware(

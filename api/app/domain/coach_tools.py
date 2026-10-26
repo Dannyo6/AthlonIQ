@@ -10,8 +10,12 @@ Enforces:
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Any, Callable, Dict, List, Optional
+from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
+
+from app.core.config import settings
 
 from app.domain.performance import (
     calculate_protein_reference,
@@ -268,9 +272,78 @@ class WeeklyReviewReport(BaseModel):
     next_week_priorities: List[str]
 
 
-def get_today() -> date:
+def resolve_server_today(
+    context: Optional[UserCoachingContext] = None,
+    client_today: Optional[date] = None,
+    *,
+    user_timezone: Optional[str] = None,
+    environment: Optional[str] = None,
+    now: Optional[datetime] = None,
+) -> date:
+    """Compute 'today' server-side from the authenticated user's profile timezone.
+
+    Defaults to 'Asia/Kolkata' only if the stored timezone is NULL (or not set).
+    Accepts a client `today` override ONLY when ENVIRONMENT != 'production';
+    in production, client overrides are strictly rejected with HTTP 400 Bad Request.
+
+    Args:
+        context: Optional user coaching context snapshot containing user profile and preferences.
+        client_today: Optional client-provided evaluation date override.
+        user_timezone: Optional explicit IANA timezone string (e.g. 'Asia/Kolkata', 'America/New_York').
+        environment: Optional deployment environment string ('production', 'development', 'test').
+            Defaults to settings.ENVIRONMENT.
+        now: Optional datetime with or without tzinfo representing the current system clock.
+            Used for testing and deterministic clock injection. Defaults to UTC now.
+
+    Returns:
+        The current date (today) in the resolved user timezone.
+
+    Raises:
+        HTTPException: If client_today is provided when environment is 'production'.
+    """
+    env = environment if environment is not None else settings.ENVIRONMENT
+
+    # 1. Handle client today override
+    if client_today is not None:
+        if env == "production":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Client 'today' override is forbidden in production environment",
+            )
+        return client_today
+
+    # 2. Extract timezone: explicit user_timezone > context.preferences > context.profile
+    tz_str: Optional[str] = user_timezone
+    if tz_str is None and context is not None:
+        if context.preferences and isinstance(context.preferences, dict):
+            tz_str = context.preferences.get("timezone")
+        if not tz_str and context.profile and isinstance(context.profile, dict):
+            tz_str = context.profile.get("timezone")
+
+    # Default to "Asia/Kolkata" only if stored timezone is NULL
+    if not tz_str or not str(tz_str).strip():
+        tz_str = "Asia/Kolkata"
+
+    # 3. Reference clock (UTC)
+    if now is not None:
+        current_time = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    else:
+        current_time = datetime.now(timezone.utc)
+
+    # 4. Convert UTC clock to user's localized date
+    try:
+        tz = ZoneInfo(tz_str)
+    except Exception:
+        # Fallback to Asia/Kolkata if timezone key is invalid or unrecognized
+        tz = ZoneInfo("Asia/Kolkata")
+
+    user_local_dt = current_time.astimezone(tz)
+    return user_local_dt.date()
+
+
+def get_today(context: Optional[UserCoachingContext] = None) -> date:
     """Return the reference calendar date for coaching tools (injectable/monkeypatchable in tests)."""
-    return date.today()
+    return resolve_server_today(context=context)
 
 
 # =============================================================================
