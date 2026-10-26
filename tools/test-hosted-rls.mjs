@@ -20,14 +20,28 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 let publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !publishableKey) {
-  const envPath = path.resolve(__dirname, "../web/.env.local");
+const candidateEnvFiles = [
+  path.resolve(__dirname, "../web/.env.local"),
+  path.resolve(__dirname, ".env.local"),
+  path.resolve(__dirname, "../.env"),
+];
+
+for (const envPath of candidateEnvFiles) {
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, "utf-8");
-    const urlMatch = content.match(/VITE_SUPABASE_URL=(.*)/);
+    const urlMatch = content.match(/VITE_SUPABASE_URL=(.*)/) || content.match(/SUPABASE_URL=(.*)/);
     const keyMatch = content.match(/VITE_SUPABASE_PUBLISHABLE_KEY=(.*)/) || content.match(/VITE_SUPABASE_ANON_KEY=(.*)/);
-    if (urlMatch) supabaseUrl = urlMatch[1].trim();
-    if (keyMatch) publishableKey = keyMatch[1].trim();
+    const emailAMatch = content.match(/TEST_ATHLETE_A_EMAIL=(.*)/);
+    const passAMatch = content.match(/TEST_ATHLETE_A_PASSWORD=(.*)/);
+    const emailBMatch = content.match(/TEST_ATHLETE_B_EMAIL=(.*)/);
+    const passBMatch = content.match(/TEST_ATHLETE_B_PASSWORD=(.*)/);
+
+    if (!supabaseUrl && urlMatch) supabaseUrl = urlMatch[1].trim();
+    if (!publishableKey && keyMatch) publishableKey = keyMatch[1].trim();
+    if (!process.env.TEST_ATHLETE_A_EMAIL && emailAMatch) process.env.TEST_ATHLETE_A_EMAIL = emailAMatch[1].trim();
+    if (!process.env.TEST_ATHLETE_A_PASSWORD && passAMatch) process.env.TEST_ATHLETE_A_PASSWORD = passAMatch[1].trim();
+    if (!process.env.TEST_ATHLETE_B_EMAIL && emailBMatch) process.env.TEST_ATHLETE_B_EMAIL = emailBMatch[1].trim();
+    if (!process.env.TEST_ATHLETE_B_PASSWORD && passBMatch) process.env.TEST_ATHLETE_B_PASSWORD = passBMatch[1].trim();
   }
 }
 
@@ -102,7 +116,8 @@ async function getAuthenticatedClient(email, password, fullName) {
 
 async function runHostedRlsVerification() {
   const nonce = Date.now();
-  const password = "TestAthletePass123!";
+  const passwordA = process.env.TEST_ATHLETE_A_PASSWORD || "TestAthletePass123!";
+  const passwordB = process.env.TEST_ATHLETE_B_PASSWORD || "TestAthletePass123!";
   const emailA = process.env.TEST_ATHLETE_A_EMAIL || `test.athlete.alpha.${nonce}@gmail.com`;
   const emailB = process.env.TEST_ATHLETE_B_EMAIL || `test.athlete.bravo.${nonce}@gmail.com`;
 
@@ -111,11 +126,11 @@ async function runHostedRlsVerification() {
 
   let clientA, userA, clientB, userB;
   try {
-    const authA = await getAuthenticatedClient(emailA, password, "Athlete Alpha");
+    const authA = await getAuthenticatedClient(emailA, passwordA, "Athlete Alpha");
     clientA = authA.client;
     userA = authA.user;
 
-    const authB = await getAuthenticatedClient(emailB, password, "Athlete Bravo");
+    const authB = await getAuthenticatedClient(emailB, passwordB, "Athlete Bravo");
     clientB = authB.client;
     userB = authB.user;
 
