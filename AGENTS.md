@@ -109,3 +109,52 @@ athloniq/
 - **Keep Tests Green**: Run `pytest` in `api/` and `npm run build` in `web/` to confirm zero regressions.
 - **Preserve Comments & Docs**: Do not strip existing explanations or docstrings unless explicitly asked.
 - **Git Hygiene**: Atomic, clearly documented commits using Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+
+---
+
+## 5. Multi-Agent Operational Rules
+
+To coordinate work effectively across multi-agent sessions, all agents must adhere strictly to these operational boundaries:
+
+### 1. Agent Roles & Authority
+- **Claude**: Specifications, UI architecture, component structure, design system alignment, and security/RLS reviews.
+- **Argon**: Backend engine (`api/`), database schemas and migrations (`supabase/`), test harnesses, and CLI verification tooling (`tools/`).
+- **Antigravity**: Primary executor—applies surgical file edits, compiles web bundles, executes test suites, inspects runtimes, and enforces workspace hygiene.
+- **Owner (Human)**: Architectural decision-maker. Only the owner decides scope, approves architectural trade-offs, and authorizes git commits.
+
+### 2. Contract Discipline (Pydantic ↔ Zod / TypeScript)
+- The backend FastAPI Pydantic v2 schemas (`api/app/schemas/`) and frontend TypeScript/Zod schemas (`web/src/types/` and `web/src/lib/validations/`) define an unbroken type contract.
+- Any modification to backend endpoint responses or request payloads must be simultaneously mirrored in the frontend types. Schema drift is strictly forbidden.
+
+### 3. Deterministic Numbers (Zero Runtime LLM Math)
+- All quantitative outputs—including caloric targets, macro splits, 1RM estimations, load progressions, volume loads, fatigue index, and readiness scores—must originate from deterministic, rigorously tested calculation code (`api/app/domain/` or `web/src/lib/calculations.ts`).
+- An LLM must **never** compute or guess numerical targets or progression numbers at runtime. AI models generate explanatory text, behavioral reinforcement, coaching nuance, and context—never unverified calculations.
+
+### 4. Zero Fabricated Defaults (Truth in UI)
+- Unknown or uncalibrated metrics stay `NULL` in the database and `null` in frontend state.
+- The UI must render unknowns explicitly as `"not set"` or display guided onboarding calls-to-action (e.g., *"Calorie target not set — finish onboarding"*).
+- Never introduce silent magic fallbacks (`|| 2000`, `?? 70`, `?? 2.5`, `|| "2,550"`). If equipment limits or body metrics are unconfirmed, disable progressions and show clear guidance.
+
+### 5. Mandatory Provenance Markers
+- Every metric, recommendation, and goal must carry an auditable provenance tag (e.g., `calculated_estimate`, `provisional_default`, `user_logged`, `rules_based_progression`, `awaiting_onboarding`).
+- Temporary or unconfirmed values must be clearly badged in the UI so the athlete always knows the origin of their data.
+
+### 6. Clock & Date Independence
+- No test or domain query may depend on the real system clock.
+- All coach tools, weekly reviews, trend calculations, and fatigue aggregations must take an injectable `today` / frozen clock parameter so test suites remain 100% deterministic and passing in any calendar year.
+
+### 7. Raw Output Required
+- Never report that a test, build, migration, or script passed without providing the actual command line executed along with raw, un-doctored terminal output (exit code, pass counts, warnings, duration).
+
+### 8. Secret Hygiene
+- Never output, log, mock, or commit API keys, service role tokens, JWT secrets, or local environment files (`.env`, `.env.local`). Secrets belong strictly in local untracked environments or deployment secret stores.
+
+### 9. No Commits Without Approval
+- Agents may stage and inspect working tree changes, but must **never** run `git commit` or `git push` without explicit authorization from the human owner.
+
+### 10. High-Risk Identity & PII Restrictions
+- Never request, accept, output, store, format, or attempt to verify national identification numbers, including:
+  - Indian **Aadhaar / Aadhar** (12-digit UIDAI numbers)
+  - South Korean **Resident Registration Numbers (RRN)** (6-7 digit citizen registration)
+  - Japanese **My Number** (12-digit Individual Number)
+- Athletic profiles require only minimal biometric variables (age, height, weight, sex, training preferences). Sensitive national IDs have no place in AthlonIQ.
