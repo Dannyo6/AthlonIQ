@@ -1,4 +1,4 @@
-# AthlonIQ — Personal AI Performance & Physique OS
+# AthlonIQ — Personal AI Athlete & Physique OS
 
 > **AthlonIQ** is an autonomous, high-precision Personal AI Performance & Physique Operating System engineered to synthesize strength training, endurance conditioning, nutrition science, biometric recovery, and physique optimization into a single unified intelligence loop.
 
