@@ -4,7 +4,7 @@ import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
 import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
-import { evaluateProgressionSuggestion } from "@/lib/calculations";
+import { gatedProgressionSuggestion } from "@/lib";
 import {
   WorkoutTemplate,
   ExerciseSet,
@@ -259,27 +259,16 @@ export const WorkoutsView: React.FC = () => {
     const completed = ex.sets.filter((s) => s.isCompleted);
     if (completed.length === 0) return null;
 
-    // If equipment limits are not yet set, refuse to guess — return a typed "not configured" result
     const maxLoad = freeWeights?.maxLoadKg ?? null;
     const minIncrement = freeWeights?.minIncrementKg ?? null;
-    if (maxLoad === null || minIncrement === null || !profile.equipmentConfirmed) {
-      return {
-        exerciseName: ex.exerciseName,
-        action: "confirm_equipment_first",
-        explanation: "Set your equipment limits to get load progressions — go to Profile → Equipment.",
-        requiresUserConfirmation: true,
-        provenance: "rules_based_progression",
-      };
-    }
-
-    return evaluateProgressionSuggestion(
-      ex.exerciseName,
-      completed.map((s) => ({ reps: s.reps, loadKg: s.loadKg, rpe: s.rpe, isBodyweight: s.isBodyweight })),
+    return gatedProgressionSuggestion(
       maxLoad,
       minIncrement,
       profile.equipmentConfirmed,
-      readiness.status,
-      ex.targetRepsMax
+      completed.map((s) => ({ reps: s.reps, loadKg: s.loadKg, rpe: s.rpe, isBodyweight: s.isBodyweight })),
+      ex.targetRepsMax,
+      ex.exerciseName,
+      readiness ? readiness.status : "Moderate"
     );
   };
 
@@ -355,7 +344,7 @@ export const WorkoutsView: React.FC = () => {
                   <h3 className="font-bold text-white">{tmpl.name}</h3>
                   <p className="text-xs text-slate-400 mt-1">{tmpl.focus}</p>
                 </div>
-                <Badge variant="lime">{tmpl.estimatedDurationMin}m</Badge>
+                <Badge variant="lime">Est. {tmpl.estimatedDurationMin}m</Badge>
               </div>
               <div className="space-y-1.5 border-t border-[#1E2330] pt-3">
                 {tmpl.exercises.map((ex, idx) => (

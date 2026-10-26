@@ -7,7 +7,7 @@ import { useAthloniqState } from "@/hooks/useAthloniqState";
 import { Moon, Bed, Activity, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export const RecoveryView: React.FC = () => {
-  const { todayCheckIn, readiness, submitCheckIn } = useAthloniqState();
+  const { todayCheckIn, hasTodayCheckIn, readiness, submitCheckIn } = useAthloniqState();
 
   const [sleepHours, setSleepHours] = useState(todayCheckIn.sleepHours);
   const [sleepQuality, setSleepQuality] = useState(todayCheckIn.sleepQuality);
@@ -49,10 +49,14 @@ export const RecoveryView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={getStatusBadgeVariant(readiness.status)}>
-            READINESS: {readiness.status.toUpperCase()} ({readiness.readinessScore}%)
-          </Badge>
-          <ProvenanceBadge provenance="calculated_estimate" />
+          {hasTodayCheckIn && readiness ? (
+            <Badge variant={getStatusBadgeVariant(readiness.status)}>
+              READINESS: {readiness.status.toUpperCase()} ({readiness.readinessScore}%)
+            </Badge>
+          ) : (
+            <Badge variant="neutral">NO CHECK-IN YET</Badge>
+          )}
+          <ProvenanceBadge provenance={hasTodayCheckIn && readiness ? "calculated_estimate" : "provisional_default"} />
         </div>
       </div>
 
@@ -60,32 +64,32 @@ export const RecoveryView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard
           title="Daily Readiness Score"
-          value={readiness.readinessScore}
-          unit="/ 100"
-          subtitle={`Status: ${readiness.status}`}
+          value={hasTodayCheckIn && readiness ? readiness.readinessScore : "Not set"}
+          unit={hasTodayCheckIn && readiness ? "/ 100" : ""}
+          subtitle={hasTodayCheckIn && readiness ? `Status: ${readiness.status}` : "No check-in yet"}
           icon={<Activity className="h-6 w-6 text-athloniq-lime" />}
-          glow="lime"
+          glow={hasTodayCheckIn && readiness ? "lime" : undefined}
         />
         <StatCard
           title="Sleep Duration"
-          value={todayCheckIn.sleepHours.toFixed(1)}
-          unit="hrs"
-          subtitle="Self-reported duration"
+          value={hasTodayCheckIn ? todayCheckIn.sleepHours.toFixed(1) : "Not set"}
+          unit={hasTodayCheckIn ? "hrs" : ""}
+          subtitle={hasTodayCheckIn ? "Self-reported duration" : "No check-in yet"}
           icon={<Moon className="h-6 w-6 text-purple-400" />}
-          glow="violet"
+          glow={hasTodayCheckIn ? "violet" : undefined}
         />
         <StatCard
           title="Sleep Quality"
-          value={`${todayCheckIn.sleepQuality} / 5`}
-          subtitle="Subjective depth score"
+          value={hasTodayCheckIn ? `${todayCheckIn.sleepQuality} / 5` : "Not set"}
+          subtitle={hasTodayCheckIn ? "Subjective depth score" : "No check-in yet"}
           icon={<Bed className="h-6 w-6 text-emerald-400" />}
-          glow="emerald"
+          glow={hasTodayCheckIn ? "emerald" : undefined}
         />
         <StatCard
           title="Fatigue & Soreness"
-          value={`${todayCheckIn.fatigue} / ${todayCheckIn.soreness}`}
-          unit="(1-5)"
-          subtitle="Fatigue vs DOMS index"
+          value={hasTodayCheckIn ? `${todayCheckIn.fatigue} / ${todayCheckIn.soreness}` : "Not set"}
+          unit={hasTodayCheckIn ? "(1-5)" : ""}
+          subtitle={hasTodayCheckIn ? "Fatigue vs DOMS index" : "No check-in yet"}
           icon={<ShieldCheck className="h-6 w-6 text-amber-400" />}
         />
       </div>
@@ -258,21 +262,27 @@ export const RecoveryView: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
             <div className="text-xs text-slate-400 font-medium">Readiness Guidance:</div>
             <div className="text-xs text-slate-200 leading-relaxed font-medium">
-              {readiness.guidance}
+              {hasTodayCheckIn && readiness
+                ? readiness.guidance
+                : "Complete your daily subjective check-in to calculate your readiness score and personalized training guidance."}
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="text-xs font-semibold text-slate-300">Active Deterministic Triggers:</div>
             <div className="space-y-1.5 max-h-60 overflow-y-auto">
-              {readiness.triggers.map((trigger, idx) => (
-                <div
-                  key={idx}
-                  className="p-2.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-xs font-mono tabular-nums text-slate-300 flex items-center justify-between"
-                >
-                  <span>{trigger}</span>
-                </div>
-              ))}
+              {hasTodayCheckIn && readiness ? (
+                readiness.triggers.map((trigger, idx) => (
+                  <div
+                    key={idx}
+                    className="p-2.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-xs font-mono tabular-nums text-slate-300 flex items-center justify-between"
+                  >
+                    <span>{trigger}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500 italic p-2.5">No triggers evaluated yet.</p>
+              )}
             </div>
           </div>
 

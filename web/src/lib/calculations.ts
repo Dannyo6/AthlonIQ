@@ -554,6 +554,40 @@ export function evaluateProgressionSuggestion(
   };
 }
 
+/**
+ * Gated progression suggestion engine with strict equipment limits verification.
+ * Refuses to guess or synthesize load progression if equipment caps/increments are unknown or unconfirmed.
+ */
+export function gatedProgressionSuggestion(
+  maxLoad: number | null,
+  minIncrement: number | null,
+  equipmentConfirmed: boolean,
+  sets: PreviousSetInput[] = [{ reps: 10, loadKg: 40, rpe: 8, isBodyweight: false }],
+  targetRepsMax: number = 10,
+  exerciseName: string = "Barbell Bench Press",
+  readinessStatus: "Prime" | "Moderate" | "Recover" = "Prime"
+): ProgressionSuggestion {
+  if (maxLoad === null || minIncrement === null || !equipmentConfirmed) {
+    return {
+      exerciseName,
+      action: "confirm_equipment_first",
+      explanation:
+        "Set your equipment limits to get load progressions — go to Profile → Equipment.",
+      requiresUserConfirmation: true,
+      provenance: "rules_based_progression",
+    };
+  }
+  return evaluateProgressionSuggestion(
+    exerciseName,
+    sets,
+    maxLoad,
+    minIncrement,
+    equipmentConfirmed,
+    readinessStatus,
+    targetRepsMax
+  );
+}
+
 // =============================================================================
 // Phase 2: Weight Trend (7-day rolling average)
 // =============================================================================

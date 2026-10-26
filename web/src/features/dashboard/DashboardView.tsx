@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +38,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     goals,
     updateGoals,
     todayCheckIn,
+    hasTodayCheckIn,
     readiness,
     submitCheckIn,
     foodEntries,
@@ -225,36 +227,62 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       )}
 
       {/* 2. Top Hero: Deterministic Readiness Snapshot */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#12151E] border border-[#1E2330] p-6 sm:p-8">
+      <div
+        data-testid="today-readiness-card"
+        className="relative overflow-hidden rounded-3xl bg-[#12151E] border border-[#1E2330] p-6 sm:p-8"
+      >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Badge variant="lime">DETERMINISTIC READINESS ENGINE</Badge>
-              <ProvenanceBadge provenance={readiness.provenance} />
+              <Badge variant={hasTodayCheckIn && readiness ? "lime" : "neutral"}>
+                DETERMINISTIC READINESS ENGINE
+              </Badge>
+              <ProvenanceBadge
+                provenance={hasTodayCheckIn && readiness ? readiness.provenance : "provisional_default"}
+              />
             </div>
 
             <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
               Daily Readiness:{" "}
-              <span className="text-gradient-lime font-mono tabular-nums">
-                {readiness.readinessScore}% ({readiness.status})
-              </span>
+              {hasTodayCheckIn && readiness ? (
+                <span className="text-gradient-lime font-mono tabular-nums">
+                  {readiness.readinessScore}% ({readiness.status})
+                </span>
+              ) : (
+                <span className="text-slate-400 font-normal text-2xl sm:text-3xl">
+                  No check-in yet
+                </span>
+              )}
             </h1>
 
             <p className="max-w-2xl text-slate-300 text-sm leading-relaxed">
-              {readiness.guidance}
+              {hasTodayCheckIn && readiness
+                ? readiness.guidance
+                : "No recovery check-in recorded for today. Log sleep, soreness, and fatigue to calculate your deterministic readiness score."}
             </p>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[11px] text-slate-400 font-medium">Active Triggers:</span>
-              {readiness.triggers.slice(0, 3).map((trigger, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-[#181D2A] border border-[#1E2330] text-slate-300 tabular-nums"
+            {hasTodayCheckIn && readiness ? (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] text-slate-400 font-medium">Active Triggers:</span>
+                {readiness.triggers.slice(0, 3).map((trigger, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-[#181D2A] border border-[#1E2330] text-slate-300 tabular-nums"
+                  >
+                    {trigger}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="pt-1">
+                <Link
+                  to="/recovery"
+                  className="inline-flex items-center text-sm font-semibold text-athloniq-lime hover:underline gap-1"
                 >
-                  {trigger}
-                </span>
-              ))}
-            </div>
+                  Log recovery check-in →
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -287,7 +315,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               onClick={() => setCheckInOpen(!checkInOpen)}
             >
               <Sliders className="h-4 w-4 text-athloniq-lime" />
-              <span>{checkInOpen ? "Close Check-in" : "Log Check-in"}</span>
+              <span>{checkInOpen ? "Close Check-in" : hasTodayCheckIn ? "Update Check-in" : "Log Check-in"}</span>
             </Button>
 
             <Button
@@ -625,15 +653,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   {latestWeight ? `Weight (${latestWeight.loggedDate})` : "Body Weight"}
                 </span>
                 <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                  {(latestWeight ? latestWeight.weightKg : profile.weightKg).toFixed(1)}
-                  <span className="text-xs text-slate-400 ml-1">kg</span>
+                  {(latestWeight ? latestWeight.weightKg : profile.weightKg) != null
+                    ? (latestWeight ? latestWeight.weightKg : profile.weightKg)!.toFixed(1)
+                    : "Not set"}
+                  {(latestWeight || profile.weightKg != null) && (
+                    <span className="text-xs text-slate-400 ml-1">kg</span>
+                  )}
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
                 <span className="text-[11px] text-slate-400">Height</span>
                 <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                  {profile.heightCm}
-                  <span className="text-xs text-slate-400 ml-1">cm</span>
+                  {profile.heightCm != null ? profile.heightCm : "Not set"}
+                  {profile.heightCm != null && (
+                    <span className="text-xs text-slate-400 ml-1">cm</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -721,7 +755,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   Training Scope:
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {profile.trainingScope.map((scope, idx) => (
+                  {(profile.trainingScope || []).map((scope, idx) => (
                     <span
                       key={idx}
                       className="px-2 py-0.5 rounded bg-[#12151E] border border-[#1E2330] text-[10px] font-mono text-slate-300 uppercase"

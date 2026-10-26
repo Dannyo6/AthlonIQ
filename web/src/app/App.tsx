@@ -6,6 +6,7 @@ import {
   useLocation,
   useInRouterContext,
   BrowserRouter,
+  Link,
 } from "react-router-dom";
 import { BRAND_CONFIG } from "@/config/brand";
 import { AthloniqProvider, useAthloniqState } from "@/hooks/useAthloniqState";
@@ -117,6 +118,7 @@ const AppShell: React.FC = () => {
   const {
     profile,
     readiness,
+    hasTodayCheckIn,
     toast,
     hideToast,
     isDemoFixtureActive,
@@ -468,23 +470,44 @@ const AppShell: React.FC = () => {
         </div>
 
         {/* Athlete Live Readiness Card (Desktop) */}
-        <div className="hidden md:block mb-6 p-3 rounded-xl bg-[#12151E] border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-            <span>Readiness State</span>
-            <span className="text-athloniq-lime font-bold tabular-nums">{readiness.readinessScore}/100</span>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full bg-athloniq-lime rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, Math.max(10, readiness.readinessScore))}%` }}
-              />
-            </div>
-            <Badge variant="lime" className="text-[9px] py-0 px-1.5">
-              {readiness.status.toUpperCase()}
-            </Badge>
-          </div>
-          <p className="text-[11px] text-slate-400 line-clamp-1">{readiness.guidance}</p>
+        <div
+          data-testid="sidebar-readiness-widget"
+          className="hidden md:block mb-6 p-3 rounded-xl bg-[#12151E] border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
+        >
+          {hasTodayCheckIn && readiness ? (
+            <>
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+                <span>Readiness State</span>
+                <span className="text-athloniq-lime font-bold tabular-nums">{readiness.readinessScore}/100</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className="h-full bg-athloniq-lime rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(10, readiness.readinessScore))}%` }}
+                  />
+                </div>
+                <Badge variant="lime" className="text-[9px] py-0 px-1.5">
+                  {readiness.status.toUpperCase()}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-slate-400 line-clamp-1">{readiness.guidance}</p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+                <span>Readiness State</span>
+                <span className="text-slate-500 font-mono text-[11px]">Not set</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mb-2">No check-in yet</p>
+              <Link
+                to="/recovery"
+                className="inline-flex items-center text-xs font-semibold text-athloniq-lime hover:underline"
+              >
+                Log check-in →
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Navigation Links */}

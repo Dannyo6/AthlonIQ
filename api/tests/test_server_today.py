@@ -100,6 +100,58 @@ def test_server_today_2330_ist_injected_clock() -> None:
     assert today_edge == date(2026, 10, 20)
 
 
+def test_null_timezone_resolves_to_asia_kolkata_and_not_new_york() -> None:
+    """Verify that a NULL stored timezone resolves to Asia/Kolkata while stored America/New_York does not.
+
+    Lane A3 requirement:
+    Add a test that a NULL timezone resolves to Asia/Kolkata and a stored 'America/New_York' does not.
+    """
+    # 19:00 UTC on 2026-10-19 corresponds to:
+    # - Asia/Kolkata (UTC+5:30): 00:30 on 2026-10-20 (next calendar day)
+    # - America/New_York (UTC-4:00 EDT): 15:00 on 2026-10-19 (previous calendar day)
+    frozen_clock = datetime(2026, 10, 19, 19, 0, 0, tzinfo=timezone.utc)
+
+    # 1. Stored timezone is NULL via context.preferences
+    ctx_null = UserCoachingContext(preferences={"timezone": None})
+    today_from_null = resolve_server_today(
+        context=ctx_null,
+        now=frozen_clock,
+        environment="development",
+    )
+
+    # 2. Stored timezone is explicitly Asia/Kolkata
+    ctx_kolkata = UserCoachingContext(preferences={"timezone": "Asia/Kolkata"})
+    today_from_kolkata = resolve_server_today(
+        context=ctx_kolkata,
+        now=frozen_clock,
+        environment="development",
+    )
+
+    # 3. Stored timezone is America/New_York
+    ctx_new_york = UserCoachingContext(preferences={"timezone": "America/New_York"})
+    today_from_ny = resolve_server_today(
+        context=ctx_new_york,
+        now=frozen_clock,
+        environment="development",
+    )
+
+    # Assert that NULL resolves to 2026-10-20, exactly matching Asia/Kolkata
+    assert today_from_null == date(2026, 10, 20)
+    assert today_from_kolkata == date(2026, 10, 20)
+    assert today_from_null == today_from_kolkata
+
+    # Assert that America/New_York resolves to 2026-10-19, and NOT 2026-10-20
+    assert today_from_ny == date(2026, 10, 19)
+    assert today_from_null != today_from_ny
+
+    # Also test via direct user_timezone argument
+    direct_null = resolve_server_today(user_timezone=None, now=frozen_clock)
+    direct_ny = resolve_server_today(user_timezone="America/New_York", now=frozen_clock)
+    assert direct_null == date(2026, 10, 20)
+    assert direct_ny == date(2026, 10, 19)
+    assert direct_null != direct_ny
+
+
 # =============================================================================
 # Unit Tests: Client 'today' Override Rules
 # =============================================================================

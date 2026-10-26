@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Progression Fallback Guard Tests (Step 3)
  *
  * Verifies that evaluateProgressionSuggestion never returns a numeric
@@ -8,8 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { evaluateProgressionSuggestion } from "@/lib/calculations";
-import type { ProgressionSuggestion } from "@/types";
+import { gatedProgressionSuggestion, evaluateProgressionSuggestion } from "@/lib";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -17,35 +16,6 @@ import type { ProgressionSuggestion } from "@/types";
 
 const baseSet = { reps: 10, loadKg: 40, rpe: 8, isBodyweight: false };
 const bwSet = { reps: 10, loadKg: 0, rpe: 8, isBodyweight: true };
-
-/** Simulates the guard added to WorkoutsView.getProgressionSuggestion */
-function gatedProgressionSuggestion(
-  maxLoad: number | null,
-  minIncrement: number | null,
-  equipmentConfirmed: boolean,
-  sets = [baseSet],
-  targetRepsMax = 10
-): ProgressionSuggestion {
-  if (maxLoad === null || minIncrement === null || !equipmentConfirmed) {
-    return {
-      exerciseName: "Barbell Bench Press",
-      action: "confirm_equipment_first",
-      explanation:
-        "Set your equipment limits to get load progressions — go to Profile → Equipment.",
-      requiresUserConfirmation: true,
-      provenance: "rules_based_progression",
-    };
-  }
-  return evaluateProgressionSuggestion(
-    "Barbell Bench Press",
-    sets,
-    maxLoad,
-    minIncrement,
-    equipmentConfirmed,
-    "Prime",
-    targetRepsMax
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Tests

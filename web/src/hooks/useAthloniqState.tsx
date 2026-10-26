@@ -201,7 +201,8 @@ export interface AthloniqContextType {
   goals: UserGoals;
   preferences: UserPreferences;
   todayCheckIn: RecoveryCheckIn;
-  readiness: ReadinessResult;
+  hasTodayCheckIn: boolean;
+  readiness: ReadinessResult | null;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateEquipmentItem: (id: string, updates: Partial<EquipmentItem>) => void;
   confirmEquipment: (confirmedItems: EquipmentItem[]) => void;
@@ -286,6 +287,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [goals, setGoals] = useState<UserGoals>(DEFAULT_GOALS);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [todayCheckIn, setTodayCheckIn] = useState<RecoveryCheckIn>(DEFAULT_CHECKIN);
+  const [hasTodayCheckIn, setHasTodayCheckIn] = useState<boolean>(false);
 
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
@@ -323,14 +325,16 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setToast(null);
   }, []);
 
-  // Readiness engine
-  const readiness = calculateRulesReadiness(
-    todayCheckIn.sleepHours,
-    todayCheckIn.sleepQuality,
-    todayCheckIn.soreness,
-    todayCheckIn.fatigue,
-    todayCheckIn.stress
-  );
+  // Readiness engine: calculated strictly from self-reported check-in metrics when present
+  const readiness: ReadinessResult | null = hasTodayCheckIn
+    ? calculateRulesReadiness(
+        todayCheckIn.sleepHours,
+        todayCheckIn.sleepQuality,
+        todayCheckIn.soreness,
+        todayCheckIn.fatigue,
+        todayCheckIn.stress
+      )
+    : null;
 
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
@@ -342,6 +346,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setGoals(DEFAULT_GOALS);
     setPreferences(DEFAULT_PREFERENCES);
     setTodayCheckIn(DEFAULT_CHECKIN);
+    setHasTodayCheckIn(false);
     setFoodEntries([]);
     setWorkoutSessions([]);
     setActivitySessions([]);
@@ -430,6 +435,10 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setActivitySessions(cloudActivities || []);
       setBodyMetrics(cloudMetrics || []);
       setTodayCheckIn(cloudRecovery && cloudRecovery.length > 0 ? cloudRecovery[0] : DEFAULT_CHECKIN);
+      const hasCloudToday = Boolean(
+        cloudRecovery && cloudRecovery.length > 0 && cloudRecovery[0].date === todayISO()
+      );
+      setHasTodayCheckIn(hasCloudToday);
       setCoachMessages(cloudMessages && cloudMessages.length > 0 ? cloudMessages : DEFAULT_COACH_MESSAGES);
       setProgressPhotos(cloudPhotos || []);
 
@@ -734,11 +743,16 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       executeOptimisticMutation(
         () => {
           const prev = todayCheckIn;
+          const prevHas = hasTodayCheckIn;
           setTodayCheckIn(merged);
+          setHasTodayCheckIn(true);
           showToast("Daily Check-In Saved — Readiness Score Updated", "success");
-          return prev;
+          return { prev, prevHas };
         },
-        (prev) => setTodayCheckIn(prev),
+        ({ prev, prevHas }) => {
+          setTodayCheckIn(prev);
+          setHasTodayCheckIn(prevHas);
+        },
         async () => {
           if (!user?.id) return;
           await recoveryRepo.upsertLog(user.id, merged, {
@@ -806,6 +820,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setGoals(DEFAULT_GOALS);
     setPreferences(DEFAULT_PREFERENCES);
     setTodayCheckIn(DEFAULT_CHECKIN);
+    setHasTodayCheckIn(false);
     setFoodEntries([]);
     setWorkoutSessions([]);
     setActivitySessions([]);
@@ -822,6 +837,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWorkoutSessions(fixture.workoutSessions);
     setActivitySessions(fixture.activitySessions);
     setTodayCheckIn(fixture.todayCheckIn);
+    setHasTodayCheckIn(true);
     setProgressPhotos(fixture.progressPhotos);
     setGoals(fixture.goals);
     setProfile((prev) => ({
@@ -835,6 +851,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const resetDemoFixture = useCallback(() => {
     setIsDemoFixtureActive(false);
+    setHasTodayCheckIn(false);
     if (user?.id) {
       loadCloudState(user.id);
     } else {
@@ -1349,18 +1366,20 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         loggedDate: b.loggedDate,
         weightKg: b.weightKg,
       })),
-      recovery_logs: [
-        {
-          loggedDate: todayCheckIn.date,
-          sleepHours: todayCheckIn.sleepHours,
-          sleepQuality: todayCheckIn.sleepQuality,
-          soreness: todayCheckIn.soreness,
-          fatigue: todayCheckIn.fatigue,
-          stress: todayCheckIn.stress,
-        },
-      ],
+      recovery_logs: hasTodayCheckIn
+        ? [
+            {
+              loggedDate: todayCheckIn.date,
+              sleepHours: todayCheckIn.sleepHours,
+              sleepQuality: todayCheckIn.sleepQuality,
+              soreness: todayCheckIn.soreness,
+              fatigue: todayCheckIn.fatigue,
+              stress: todayCheckIn.stress,
+            },
+          ]
+        : [],
     };
-  }, [profile, equipment, goals, preferences, todayCheckIn, foodEntries, workoutSessions, activitySessions, bodyMetrics]);
+  }, [profile, equipment, goals, preferences, todayCheckIn, hasTodayCheckIn, foodEntries, workoutSessions, activitySessions, bodyMetrics]);
 
   return (
     <AthloniqContext.Provider
@@ -1370,6 +1389,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         goals,
         preferences,
         todayCheckIn,
+        hasTodayCheckIn,
         readiness,
         updateProfile,
         updateEquipmentItem,

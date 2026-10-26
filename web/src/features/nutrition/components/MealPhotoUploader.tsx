@@ -118,6 +118,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<CandidateFoodItem[] | null>(null);
   const [analysisStep, setAnalysisStep] = useState<string>("");
+  const [visionProvider, setVisionProvider] = useState<string>("Vision Engine");
 
   const { setFormDirty } = useUnsavedWork();
 
@@ -136,6 +137,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
     setAnalysisError(null);
     setCandidates(null);
     setAnalysisStep("");
+    setVisionProvider("Vision Engine");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -164,18 +166,20 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
     setAnalysisStep("Uploading meal photo...");
 
     try {
-      setAnalysisStep("ATHLONIQ Vision is analyzing your meal with Gemini 2.5 Flash...");
+      setAnalysisStep("ATHLONIQ Vision is analyzing your meal photo...");
       const result = await analyzeMealPhotoApi(file);
 
       if (result && result.candidates && result.candidates.length > 0) {
         setCandidates(result.candidates);
+        setVisionProvider((result as any)?.provider || "Live Vision API");
       } else {
         throw new Error("No recognizable food items could be identified in the image.");
       }
     } catch (err: any) {
       console.warn("Vision API failed or server unreachable, falling back to simulated analysis:", err);
       // If API fails due to server offline or test env, provide mock analysis for seamless UX
-      setAnalysisStep("Formatting deterministic catalog candidates...");
+      setVisionProvider("Mock / Fallback");
+      setAnalysisStep("Formatting deterministic catalog candidates (mock/fallback)...");
       setTimeout(() => {
         // Fallback to first demo preset if server is unreachable
         setCandidates(DEMO_MEAL_PRESETS[0].candidates);
@@ -211,6 +215,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
   const handleSelectPreset = (preset: typeof DEMO_MEAL_PRESETS[0]) => {
     setIsAnalyzing(true);
+    setVisionProvider("Demo Preset");
     setAnalysisStep("ATHLONIQ Vision is analyzing demo meal...");
     setAnalysisError(null);
     setTimeout(() => {
@@ -249,8 +254,17 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
             <div>
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 AthlonIQ Vision AI
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Gemini 2.5 Flash
+                <span
+                  data-testid="vision-provider-badge"
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                    visionProvider === "Live Vision API"
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                      : visionProvider === "Mock / Fallback"
+                      ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                      : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                  }`}
+                >
+                  {visionProvider}
                 </span>
               </h3>
               <p className="text-xs text-slate-400">

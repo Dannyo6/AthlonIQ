@@ -38,8 +38,8 @@ f557fe6 feat(web): remove fabricated fallback defaults and enforce equipment pro
 | **Vitest** (`web/`) | `npm test -- --run` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review | **55 passed** (10 files) | 4.32s |
 | **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | 2.12s |
 | **Vite Production Build** (`web/`) | `npm run build` | TypeScript strict mode (`tsc`) + Vite bundler | **0 errors** (14 chunks generated, PWA precache 31 entries) | 2.95s |
-| **Hosted Supabase RLS** (`tools/`) | `npm --prefix tools run test:hosted-rls` | End-to-end multi-tenant check against live hosted Supabase | **Executed** (Email confirmation requirement reported) | 5.2s |
-| **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS | **Tool created & verified** (401 without token, JWKS validation wired) | 0.8s |
+| **Hosted Supabase RLS** (`tools/`) | `node tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
+| **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 
 ---
 
@@ -142,56 +142,44 @@ files generated
   dist/workbox-98f7a950.js
 ```
 
-### D. Hosted Supabase RLS Execution (`npm --prefix tools run test:hosted-rls`)
+### D. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
+**Status: NOT RUN** (Awaiting real athlete credentials in environment)
+
+Both throwaway signup paths and password reading from `.env.local` have been completely removed. The script strictly requires pre-existing verified credentials from `process.env`:
+- `TEST_ATHLETE_A_EMAIL`
+- `TEST_ATHLETE_A_PASSWORD`
+- `TEST_ATHLETE_B_EMAIL`
+- `TEST_ATHLETE_B_PASSWORD`
+
+Raw terminal execution without credentials (enforces NON-ZERO exit):
 ```text
-> athloniq-tools@1.0.0 test:hosted-rls
-> node test-hosted-rls.mjs
-
-================================================================================
-ATHLONIQ HOSTED RLS & MULTI-TENANT ISOLATION VERIFICATION
-Endpoint: https://ghxotyoiquyyowydxshb.supabase.co
-================================================================================
-Creating/authenticating throwaway Athlete Alpha: test.athlete.alpha.1793003270953@gmail.com
-Creating/authenticating throwaway Athlete Bravo: test.athlete.bravo.1793003270953@gmail.com
-
-[RLS Verification Notice]: User test.athlete.alpha.1793003270953@gmail.com was created, but session is null because 'Confirm email' is enabled in your Supabase Auth settings.
-To run automated end-to-end multi-tenant RLS checks, temporarily disable 'Confirm email' in Supabase Dashboard (Auth -> Providers -> Email -> Confirm email: OFF).
-
-If Supabase SMTP rate limit is active or email confirmation is required,
-you can provide existing verified credentials via environment variables:
-  $env:TEST_ATHLETE_A_EMAIL='userA@domain.com'
-  $env:TEST_ATHLETE_A_PASSWORD='passwordA'
-  $env:TEST_ATHLETE_B_EMAIL='userB@domain.com'
-  $env:TEST_ATHLETE_B_PASSWORD='passwordB'
-
-To delete created test users:
-Go to Supabase Dashboard -> Authentication -> Users -> Delete.
+PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> node tools/test-hosted-rls.mjs
+ERROR: Missing required credentials in environment:
+  - TEST_ATHLETE_A_EMAIL
+  - TEST_ATHLETE_A_PASSWORD
+  - TEST_ATHLETE_B_EMAIL
+  - TEST_ATHLETE_B_PASSWORD
+[Exit Code: 1]
 ```
+*Full live run against hosted Supabase marked as NOT RUN until real athlete credentials are provided in the environment.*
 
 ### E. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
+**Status: NOT RUN** (Awaiting real athlete credentials in environment for positive 200 OK)
+
+Enforces strict environment-only credentials, never reads passwords from `.env.local`, never prints raw tokens or passwords, and prints only status codes and response bodies. Requires 3 distinct checks:
+1. No header -> expected 401
+2. Tampered token -> expected 401
+3. Valid token -> expected 200 (GET `/api/v1/coaching/tools` and POST `/api/v1/coaching/readiness`)
+
+Raw terminal execution without credentials (enforces NON-ZERO exit):
 ```text
 PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> .\api\.venv\Scripts\python.exe tools\verify_hosted_token.py
-================================================================================
-ATHLONIQ HOSTED FASTAPI TOKEN VERIFICATION
-Supabase Endpoint: https://ghxotyoiquyyowydxshb.supabase.co
-================================================================================
-
-[Notice]: TEST_ATHLETE_A_EMAIL or TEST_ATHLETE_A_PASSWORD is not set in environment.
-To verify live JWT against FastAPI, provide:
-  $env:TEST_ATHLETE_A_EMAIL='your-athlete-email@domain.com'
-  $env:TEST_ATHLETE_A_PASSWORD='your-athlete-password'
+ERROR: Missing required credentials in environment:
+  - TEST_ATHLETE_A_EMAIL
+  - TEST_ATHLETE_A_PASSWORD
+[Exit Code: 1]
 ```
-
-#### Unauthenticated Endpoint Rejection Verification (`DEV_AUTH_BYPASS=False`):
-```text
---- Unauthenticated GET /api/v1/coaching/tools ---
-Status: 401
-Body: {'detail': 'Missing Authorization header with Bearer token'}
-
---- Unauthenticated POST /api/v1/coaching/readiness ---
-Status: 401
-Body: {'detail': 'Missing Authorization header with Bearer token'}
-```
+*Positive 200 OK check marked as NOT RUN until real athlete credentials are provided in the environment.*
 
 ---
 
@@ -229,11 +217,14 @@ Body: {'detail': 'Missing Authorization header with Bearer token'}
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
-1. **Hosted Supabase Live Session Execution (`test:hosted-rls`)**:
-   - The hermetic PGlite suite (`test:rls`, 279 checks) ran and passed with 100% success.
-   - The live hosted script against `ghxotyoiquyyowydxshb.supabase.co` was executed; throwaway user signup returned a null session because "Confirm email" is enabled in Supabase project settings. Requires email confirmation to be toggled OFF or existing verified test athlete credentials supplied via `$env:TEST_ATHLETE_A_EMAIL` and `$env:TEST_ATHLETE_B_EMAIL`.
-2. **Positive 200 Live Token Execution**:
-   - Negative authentication paths (401 on missing, malformed, or dev-bypass tokens with `DEV_AUTH_BYPASS=False`) were executed and verified against FastAPI.
-   - Live 200 OK verification tool `tools/verify_hosted_token.py` is configured and ready; execution requires confirmed athlete credentials supplied in the terminal environment.
+1. **Hosted Supabase Live Session Execution (`tools/test-hosted-rls.mjs`)**:
+   - **Status: NOT RUN**.
+   - Hermetic PGlite suite (`npm --prefix tools run test:rls`, 279 checks) ran and passed with 100% success.
+   - Hosted multi-tenant script against `ghxotyoiquyyowydxshb.supabase.co` is marked **NOT RUN**. All throwaway signup logic and `.env.local` password parsing have been removed. Requires pre-existing verified credentials for Athlete A and Athlete B supplied via `$env:TEST_ATHLETE_A_EMAIL`, `$env:TEST_ATHLETE_A_PASSWORD`, `$env:TEST_ATHLETE_B_EMAIL`, and `$env:TEST_ATHLETE_B_PASSWORD`. Exits with non-zero code until all 17 tables and 2 storage buckets pass (19/19).
+2. **Positive 200 Live Token Execution (`tools/verify_hosted_token.py`)**:
+   - **Status: NOT RUN**.
+   - The unauthenticated rejection (no header 401) and tampered token rejection (tampered token 401) logic is wired and verified.
+   - The positive 200 OK check against live JWKS via Supabase Auth is marked **NOT RUN**. Requires real athlete credentials supplied in the terminal environment via `$env:TEST_ATHLETE_A_EMAIL` and `$env:TEST_ATHLETE_A_PASSWORD`. Exits with non-zero code until real output exists.
 3. **Physical Mobile Device Testing**:
    - PWA caching, service worker generation, and offline state handling were verified via automated Vitest suites and production bundle generation. Physical hardware testing on iOS Safari / Android Chrome remains open.
+

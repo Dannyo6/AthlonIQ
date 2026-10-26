@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,6 +30,7 @@ import {
   FileJson,
   Trash2,
   AlertTriangle,
+  Globe,
 } from "lucide-react";
 
 // Zod Schema for Onboarding Wizard
@@ -38,6 +39,7 @@ const onboardingSchema = z.object({
   age: z.coerce.number().min(12).max(120),
   heightCm: z.coerce.number().min(100).max(250),
   weightKg: z.coerce.number().min(30).max(300),
+  timezone: z.string().min(1).default("Asia/Kolkata"),
   sex: z.enum(["male", "female", "other", "unknown"]).optional().nullable(),
   waistCm: z.coerce.number().min(40).max(200).optional().nullable(),
 
@@ -99,9 +101,18 @@ export const ProfileView: React.FC = () => {
     updateEquipmentItem,
     confirmEquipment,
     updateGoals,
+    updatePreferences,
     completeOnboarding,
     resetToDefaults,
   } = useAthloniqState();
+
+  const detectedTimezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+    } catch {
+      return "Asia/Kolkata";
+    }
+  }, []);
 
   const [currentStep, setCurrentStep] = useState<number>(profile.onboardingStep || 1);
   const [isEditingAfterCompletion, setIsEditingAfterCompletion] = useState<boolean>(
@@ -251,6 +262,7 @@ export const ProfileView: React.FC = () => {
       weeklyRunningSessions: profile.weeklyRunningSessions ?? 1,
       sleepBaselineHours: profile.sleepBaselineHours ?? 7.5,
       exerciseLimitations: profile.exerciseLimitations || "",
+      timezone: preferences.timezone || detectedTimezone || "Asia/Kolkata",
     },
   });
 
@@ -330,6 +342,13 @@ export const ProfileView: React.FC = () => {
     };
 
     completeOnboarding(finalProfile);
+
+    // Save confirmed timezone to user_preferences repo
+    if (data.timezone) {
+      updatePreferences({
+        timezone: data.timezone,
+      });
+    }
 
     if (data.customProteinG) {
       updateGoals({
@@ -1102,6 +1121,37 @@ export const ProfileView: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Timezone Confirmation Card */}
+                <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+                  <div className="flex justify-between items-center border-b border-[#1E2330] pb-1.5 font-bold text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <Globe className="h-4 w-4 text-athloniq-lime" />
+                      TIMEZONE CONFIRMATION
+                    </span>
+                    <Badge variant="lime">CAPTURED FROM DEVICE</Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    <div>
+                      <div className="text-xs text-slate-400">Detected IANA Timezone:</div>
+                      <div className="text-xs font-mono text-white font-bold mt-0.5" data-testid="detected-timezone-display">
+                        {watch("timezone") || detectedTimezone}
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-64">
+                      <input
+                        type="text"
+                        {...register("timezone")}
+                        data-testid="onboarding-timezone-input"
+                        className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                        placeholder="e.g. Asia/Kolkata, America/New_York"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    AthlonIQ computes evaluation dates and daily boundaries server-side from your confirmed timezone.
+                  </p>
                 </div>
 
                 <div className="flex justify-between pt-4">

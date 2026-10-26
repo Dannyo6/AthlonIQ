@@ -130,13 +130,18 @@ export async function sendCoachChatTurn(
   token?: string
 ) {
   const authHeaders = await getAuthHeaders(token);
+  // CRITICAL: The client must never send 'today' override to coaching endpoints.
+  // Evaluation date is strictly computed server-side from user profile timezone.
+  const payload: Record<string, any> = { message, context };
+  delete payload.today;
+
   const res = await fetch(`${getApiBaseUrl()}/coaching/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...authHeaders,
     },
-    body: JSON.stringify({ message, context }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -156,13 +161,17 @@ export async function sendCoachChatTurn(
 
 export async function fetchWeeklyReview(context?: any, token?: string) {
   const authHeaders = await getAuthHeaders(token);
+  // CRITICAL: The client must never send 'today' override to coaching endpoints.
+  const payload: Record<string, any> = { context };
+  delete payload.today;
+
   const res = await fetch(`${getApiBaseUrl()}/coaching/weekly-review`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...authHeaders,
     },
-    body: JSON.stringify({ context }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {

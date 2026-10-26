@@ -124,7 +124,7 @@ const AthleteStateInspector: React.FC = () => {
         {state.workoutSessions.map((w) => w.title).join(", ")}
       </div>
       <div data-testid="recovery-notes">{state.todayCheckIn.notes || ""}</div>
-      <div data-testid="recovery-readiness">{state.readiness.readinessScore}</div>
+      <div data-testid="recovery-readiness">{state.readiness ? state.readiness.readinessScore : "none"}</div>
       <button data-testid="sign-out-btn" onClick={() => signOut()}>
         Sign Out
       </button>

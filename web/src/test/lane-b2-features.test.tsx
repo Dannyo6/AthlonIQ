@@ -60,6 +60,7 @@ vi.mock("@/hooks/useAthloniqState", () => ({
     goals: { proteinMinG: 88, proteinMaxG: 121, proteinTargetG: 110 },
     preferences: { weightUnit: "kg", distanceUnit: "km" },
     todayCheckIn: mockTodayCheckIn,
+    hasTodayCheckIn: true,
     readiness: mockReadiness,
     submitCheckIn: mockSubmitCheckIn,
     completeOnboarding: mockCompleteOnboarding,

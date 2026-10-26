@@ -6,10 +6,11 @@
 import { useAthloniqState } from "./useAthloniqState";
 
 export function useReadiness() {
-  const { todayCheckIn, readiness, submitCheckIn } = useAthloniqState();
+  const { todayCheckIn, hasTodayCheckIn, readiness, submitCheckIn } = useAthloniqState();
 
   return {
     todayCheckIn,
+    hasTodayCheckIn,
     readiness,
     submitCheckIn,
   };

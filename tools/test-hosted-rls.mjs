@@ -7,6 +7,13 @@
  * 3. Athlete A CANNOT update Athlete B's rows (UPDATE affects 0 rows).
  * 4. Athlete A CANNOT delete Athlete B's rows (DELETE affects 0 rows).
  * 5. Athlete A CANNOT read, upload to, or delete Athlete B's storage paths.
+ * 
+ * Rules:
+ * - Must use only existing credentials from process.env.
+ * - Stops reading passwords from .env.local.
+ * - No signup path (zero throwaway users).
+ * - If any credential is missing, prints which names are missing (never values) and exits with non-zero code.
+ * - Success (exit 0) only after every table (17) and both buckets (2) pass.
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -16,9 +23,9 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Read credentials from web/.env.local or environment
+// Read public endpoint & anon key (from env or web/.env.local)
 let supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-let publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+let publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 const candidateEnvFiles = [
   path.resolve(__dirname, "../web/.env.local"),
@@ -30,23 +37,32 @@ for (const envPath of candidateEnvFiles) {
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, "utf-8");
     const urlMatch = content.match(/VITE_SUPABASE_URL=(.*)/) || content.match(/SUPABASE_URL=(.*)/);
-    const keyMatch = content.match(/VITE_SUPABASE_PUBLISHABLE_KEY=(.*)/) || content.match(/VITE_SUPABASE_ANON_KEY=(.*)/);
-    const emailAMatch = content.match(/TEST_ATHLETE_A_EMAIL=(.*)/);
-    const passAMatch = content.match(/TEST_ATHLETE_A_PASSWORD=(.*)/);
-    const emailBMatch = content.match(/TEST_ATHLETE_B_EMAIL=(.*)/);
-    const passBMatch = content.match(/TEST_ATHLETE_B_PASSWORD=(.*)/);
+    const keyMatch = content.match(/VITE_SUPABASE_PUBLISHABLE_KEY=(.*)/) || content.match(/VITE_SUPABASE_ANON_KEY=(.*)/) || content.match(/SUPABASE_ANON_KEY=(.*)/);
 
     if (!supabaseUrl && urlMatch) supabaseUrl = urlMatch[1].trim();
     if (!publishableKey && keyMatch) publishableKey = keyMatch[1].trim();
-    if (!process.env.TEST_ATHLETE_A_EMAIL && emailAMatch) process.env.TEST_ATHLETE_A_EMAIL = emailAMatch[1].trim();
-    if (!process.env.TEST_ATHLETE_A_PASSWORD && passAMatch) process.env.TEST_ATHLETE_A_PASSWORD = passAMatch[1].trim();
-    if (!process.env.TEST_ATHLETE_B_EMAIL && emailBMatch) process.env.TEST_ATHLETE_B_EMAIL = emailBMatch[1].trim();
-    if (!process.env.TEST_ATHLETE_B_PASSWORD && passBMatch) process.env.TEST_ATHLETE_B_PASSWORD = passBMatch[1].trim();
   }
 }
 
-if (!supabaseUrl || !publishableKey) {
-  console.error("ERROR: Could not find VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY in web/.env.local");
+// Credentials must come strictly from process.env
+const emailA = process.env.TEST_ATHLETE_A_EMAIL;
+const passwordA = process.env.TEST_ATHLETE_A_PASSWORD;
+const emailB = process.env.TEST_ATHLETE_B_EMAIL;
+const passwordB = process.env.TEST_ATHLETE_B_PASSWORD;
+
+const missingCreds = [];
+if (!supabaseUrl) missingCreds.push("VITE_SUPABASE_URL (or SUPABASE_URL)");
+if (!publishableKey) missingCreds.push("VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY)");
+if (!emailA) missingCreds.push("TEST_ATHLETE_A_EMAIL");
+if (!passwordA) missingCreds.push("TEST_ATHLETE_A_PASSWORD");
+if (!emailB) missingCreds.push("TEST_ATHLETE_B_EMAIL");
+if (!passwordB) missingCreds.push("TEST_ATHLETE_B_PASSWORD");
+
+if (missingCreds.length > 0) {
+  console.error("ERROR: Missing required credentials in environment:");
+  for (const name of missingCreds) {
+    console.error(`  - ${name}`);
+  }
   process.exit(1);
 }
 
@@ -75,76 +91,42 @@ const TABLES_TO_TEST = [
   "progress_photos",
 ];
 
-async function getAuthenticatedClient(email, password, fullName) {
+async function getAuthenticatedClient(email, password) {
   const client = createClient(supabaseUrl, publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Attempt sign in first (if user exists)
-  let { data: signInData, error: signInError } = await client.auth.signInWithPassword({
+  const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (!signInError && signInData?.session) {
-    return { client, user: signInData.user, session: signInData.session };
+  if (error || !data?.session || !data?.user) {
+    throw new Error(`Authentication failed for ${email}: ${error?.message || "No session returned"}`);
   }
 
-  // Attempt sign up
-  const { data: signUpData, error: signUpError } = await client.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-    },
-  });
-
-  if (signUpError) {
-    throw new Error(`Failed to create throwaway user ${email}: ${signUpError.message}`);
-  }
-
-  if (signUpData.session) {
-    return { client, user: signUpData.user, session: signUpData.session };
-  }
-
-  // If email confirmation is required by Supabase project settings
-  throw new Error(
-    `User ${email} was created, but session is null because 'Confirm email' is enabled in your Supabase Auth settings.\n` +
-    `To run automated end-to-end multi-tenant RLS checks, temporarily disable 'Confirm email' in Supabase Dashboard (Auth -> Providers -> Email -> Confirm email: OFF).`
-  );
+  return { client, user: data.user, session: data.session };
 }
 
 async function runHostedRlsVerification() {
-  const nonce = Date.now();
-  const passwordA = process.env.TEST_ATHLETE_A_PASSWORD || "TestAthletePass123!";
-  const passwordB = process.env.TEST_ATHLETE_B_PASSWORD || "TestAthletePass123!";
-  const emailA = process.env.TEST_ATHLETE_A_EMAIL || `test.athlete.alpha.${nonce}@gmail.com`;
-  const emailB = process.env.TEST_ATHLETE_B_EMAIL || `test.athlete.bravo.${nonce}@gmail.com`;
-
-  console.log(`Creating/authenticating throwaway Athlete Alpha: ${emailA}`);
-  console.log(`Creating/authenticating throwaway Athlete Bravo: ${emailB}`);
+  console.log(`Authenticating Athlete Alpha: ${emailA}`);
+  console.log(`Authenticating Athlete Bravo: ${emailB}`);
 
   let clientA, userA, clientB, userB;
   try {
-    const authA = await getAuthenticatedClient(emailA, passwordA, "Athlete Alpha");
+    const authA = await getAuthenticatedClient(emailA, passwordA);
     clientA = authA.client;
     userA = authA.user;
 
-    const authB = await getAuthenticatedClient(emailB, passwordB, "Athlete Bravo");
+    const authB = await getAuthenticatedClient(emailB, passwordB);
     clientB = authB.client;
     userB = authB.user;
 
     console.log(`✓ Authenticated Athlete Alpha ID: ${userA.id}`);
     console.log(`✓ Authenticated Athlete Bravo ID: ${userB.id}\n`);
   } catch (err) {
-    console.warn(`\n[RLS Verification Notice]: ${err.message}`);
-    console.log("\nIf Supabase SMTP rate limit is active or email confirmation is required,");
-    console.log("you can provide existing verified credentials via environment variables:");
-    console.log("  $env:TEST_ATHLETE_A_EMAIL='userA@domain.com'");
-    console.log("  $env:TEST_ATHLETE_B_EMAIL='userB@domain.com'");
-    console.log("\nTo delete created test users:");
-    console.log("Go to Supabase Dashboard -> Authentication -> Users -> Delete.");
-    return { verified: false, reason: err.message };
+    console.error(`\n[RLS Verification Error]: ${err.message}`);
+    process.exit(1);
   }
 
   let passedTests = 0;
@@ -278,7 +260,10 @@ async function runHostedRlsVerification() {
 
       // 1. User B uploads to their own storage folder
       const bravoPath = `${userB.id}/test-bravo-photo.png`;
-      await clientB.storage.from(bucketName).upload(bravoPath, testFileContent, { upsert: true });
+      const { error: upErrB } = await clientB.storage.from(bucketName).upload(bravoPath, testFileContent, { upsert: true });
+      if (upErrB) {
+        throw new Error(`Athlete B failed to upload baseline file: ${upErrB.message}`);
+      }
 
       // 2. User A attempts to read User B's file
       const { data: downloadA, error: downErrA } = await clientA.storage.from(bucketName).download(bravoPath);
@@ -305,7 +290,8 @@ async function runHostedRlsVerification() {
       // Clean up User B's uploaded test file
       await clientB.storage.from(bucketName).remove([bravoPath]);
     } catch (err) {
-      console.log(`  [INFO] Storage bucket check (${bucketName}): ${err.message}`);
+      storageSuccess = false;
+      console.error(`  [FAIL] Storage bucket check (${bucketName}): ${err.message}`);
     }
 
     if (storageSuccess) {
@@ -314,16 +300,21 @@ async function runHostedRlsVerification() {
     }
   }
 
+  const expectedTotal = TABLES_TO_TEST.length + 2;
   console.log("\n================================================================================");
   console.log(`RESULTS: ${passedTests}/${totalTests} security isolation checks PASSED.`);
   console.log("================================================================================");
-  console.log("\nATTENTION: Please delete the throwaway test users from your Supabase Dashboard:");
-  console.log(`  1. User Alpha: ${emailA} (ID: ${userA?.id})`);
-  console.log(`  2. User Bravo: ${emailB} (ID: ${userB?.id})`);
-  console.log("Location: Supabase Dashboard -> Authentication -> Users -> Delete User.");
-  console.log("================================================================================\n");
 
-  return { verified: true, passedTests, totalTests };
+  if (passedTests === expectedTotal && totalTests === expectedTotal) {
+    console.log("ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.\n");
+    process.exit(0);
+  } else {
+    console.error(`FAILED: Only ${passedTests}/${totalTests} checks passed (expected ${expectedTotal}).\n`);
+    process.exit(1);
+  }
 }
 
-runHostedRlsVerification().catch(console.error);
+runHostedRlsVerification().catch((err) => {
+  console.error("FATAL ERROR:", err.message);
+  process.exit(1);
+});
