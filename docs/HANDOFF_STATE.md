@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-03 18:28 IST  
+**Timestamp**: 2026-11-03 23:45 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -12,19 +12,18 @@
 
 ### Existing Recent Commits (`git log --oneline -n 6`)
 ```text
+4fe82bb feat(web): typed vision response with provider and mode badge, remove unsafe cast" -m "Badge shows Provider not reported when the API gives no provider or mode. Removed the any cast and the default live label. New tests cover live, fallback, demo and missing values." -m "Tests: 75 passing, build clean in the last reported run. Not verified: real-device UI. Fallback message and manual-entry button are still to do.
+0a1e144 chore: stop tracking env backup; ignore .env*; refresh handoff state" -m "Hosted RLS and token checks still NOT RUN.
+785922d .gitignore and docs only
 958beaf test(api): NULL timezone resolves to Asia/Kolkata, stored zone respected feat(web): honest null states, timezone onboarding, shared progression gate" -m "No default readiness score without a check-in. Onboarding captures and confirms device timezone. Meal-photo badge no longer hard-codes a model name. gatedProgressionSuggestion moved to lib and tested. Client never sends 'today' to coaching endpoints. Not verified: real-device UI, live vision API.
 8ce72d5 HOSTED RLS + LIVE 200 JWT CHECK + COACH OFFLINE FALLBACK FIX
-06930bb Lane A2 — api/ and AGENTS.md only, Lane B2 — web/ only\
-3e2a02c SYNC AGENTS.md and docs/HANDOFF_STATE.md
-f557fe6 feat(web): remove fabricated fallback defaults and enforce equipment progression gating
-4ef4fc3 Merge branch 'main' of https://github.com/Dannyo6/AthlonIQ
+06930bb Lane A2 — api/ and AGENTS.md only, Lane B2 — web/ only
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
- M .gitignore
+ M README.md
  M docs/HANDOFF_STATE.md
-?? web/.gitignore
 ```
 *(Zero unapproved agent commits. All working tree changes staged/inspected without auto-commit).*
 
@@ -34,10 +33,10 @@ f557fe6 feat(web): remove fabricated fallback defaults and enforce equipment pro
 
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest** (`api/`) | `cd api; .\.venv\Scripts\python.exe -m pytest -v` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback, coach tools | **133 passed**, 2 warnings | 7.33s |
-| **Vitest** (`web/`) | `npm test` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states | **63 passed** (11 files) | 12.37s |
+| **Pytest** (`api/`) | `cd api; .\.venv\Scripts\python.exe -m pytest` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 4.03s |
+| **Vitest** (`web/`) | `npm test` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, Lane B4 MealPhotoUploader | **75 passed** (12 files) | 11.45s |
 | **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~2s |
-| **Vite Production Build** (`web/`) | `npm run build` | TypeScript strict mode (`tsc`) + Vite bundler | **0 errors** (18 chunks generated, PWA precache 31 entries) | 5.12s |
+| **Vite Production Build** (`web/`) | `npm run build` | TypeScript strict mode (`tsc`) + Vite bundler | **0 errors** (18 chunks generated, PWA precache 31 entries) | 3.73s |
 | **Hosted Supabase RLS** (`tools/`) | `node tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 | **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 
@@ -54,16 +53,16 @@ configfile: pyproject.toml
 testpaths: tests
 plugins: anyio-4.15.1, asyncio-1.4.0
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 133 items
+collected 154 items
 
 tests\test_cors_config.py .....                                          [  3%]
-tests\test_health.py ..........                                          [ 11%]
-tests\test_jwt_security.py ............                                  [ 20%]
-tests\test_phase2_tracking.py .......................................... [ 51%]
-..............                                                           [ 62%]
-tests\test_phase3_vision.py ..............                               [ 72%]
-tests\test_phase4_coach.py ................                              [ 84%]
-tests\test_phase5_acceptance.py ............                             [ 93%]
+tests\test_health.py ..........                                          [  9%]
+tests\test_jwt_security.py ............                                  [ 17%]
+tests\test_phase2_tracking.py .......................................... [ 44%]
+.......................                                                  [ 59%]
+tests\test_phase3_vision.py ..........................                   [ 76%]
+tests\test_phase4_coach.py ................                              [ 87%]
+tests\test_phase5_acceptance.py ............                             [ 94%]
 tests\test_server_today.py ........                                      [100%]
 
 ============================== warnings summary ===============================
@@ -76,7 +75,7 @@ tests\test_server_today.py ........                                      [100%]
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================= 133 passed, 2 warnings in 7.33s =======================
+======================= 154 passed, 2 warnings in 4.03s =======================
 ```
 
 ### B. Vitest Output (`web/`)
@@ -87,9 +86,9 @@ tests\test_server_today.py ........                                      [100%]
 
  RUN  v2.1.9 C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web
 
- ✓ src/test/legacy-import.test.ts (2 tests) 6ms
- ✓ src/test/pwa-caching.test.ts (8 tests) 15ms
- ✓ src/test/progression-fallbacks.test.ts (9 tests) 9ms
+ ✓ src/test/legacy-import.test.ts (2 tests) 5ms
+ ✓ src/test/pwa-caching.test.ts (8 tests) 25ms
+ ✓ src/test/progression-fallbacks.test.ts (9 tests) 12ms
  ✓ src/test/repo-zod.test.ts (9 tests) 22ms
 stderr | src/test/optimistic-rollback.test.tsx > Optimistic Updates and Rollback Behavior > applies optimistic update immediately, then rolls back and shows AthlonToast on repository failure
 [AthlonIQ Repo Sync Failed]: Error: Database connection dropped (Network Failure)
@@ -104,74 +103,27 @@ stderr | src/test/optimistic-rollback.test.tsx > Optimistic Updates and Rollback
     at runFiles (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1262:5)
     at startTests (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1271:3)
 
- ✓ src/test/optimistic-rollback.test.tsx (2 tests) 131ms
- ✓ src/test/signout-isolation.test.tsx (1 test) 171ms
- ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1028ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 705ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 321ms
- ✓ src/test/lane-b2-features.test.tsx (4 tests) 1050ms
-   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 555ms
-stderr | src/test/auth-gate.test.tsx > Application Session Gate > renders authenticated application workspace when session is present
-Warning: An update to AppShell inside a test was not wrapped in act(...).
+ ✓ src/test/optimistic-rollback.test.tsx (2 tests) 162ms
+ ✓ src/test/signout-isolation.test.tsx (1 test) 208ms
+ ✓ src/test/meal-photo-uploader.test.tsx (12 tests) 517ms
+ ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1253ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 879ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 371ms
+ ✓ src/test/lane-b2-features.test.tsx (4 tests) 1190ms
+   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 655ms
+ ✓ src/test/lane-b3.test.tsx (8 tests) 1298ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 593ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false 433ms
+ ✓ src/test/routes-navigation.test.tsx (15 tests) 2643ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 501ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 804ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /nutrition view directly 389ms
+ ✓ src/test/auth-gate.test.tsx (3 tests) 257ms
 
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AppShell (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:87:69)
-    at UnsavedWorkProvider (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\features\navigation\UnsavedWorkContext.tsx:10:32)
-    at Router (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7134:13)
-    at BrowserRouter (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:10493:3)
-    at EnsureRouter (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:1443:25)
-    at AthloniqProvider (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\hooks\useAthloniqState.tsx:147:29)
-    at EnsureAthloniqProvider (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:1421:35)
-    at App
-
- ✓ src/test/auth-gate.test.tsx (3 tests) 737ms
-   ✓ Application Session Gate > gates application and renders SignInView when athlete is unauthenticated 376ms
-stderr | src/test/lane-b3.test.tsx > Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false
-Warning: An update to AppShell inside a test was not wrapped in act(...).
-
-When testing, code that causes React state updates should be wrapped into act(...):
-
-act(() => {
-  /* fire events that update state */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-    at AppShell (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:87:69)
-    at UnsavedWorkProvider (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\features\navigation\UnsavedWorkContext.tsx:10:32)
-    at EnsureRouter (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:1443:25)
-    at EnsureAthloniqProvider (C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\app\App.tsx:1421:35)
-    at App
-    at Router (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7134:13)
-    at MemoryRouter (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/react-router/dist/development/chunk-OB3PAWPO.mjs:7044:3)
-Warning: A suspended resource finished loading inside a test, but the event was not wrapped in act(...).
-
-When testing, code that resolves suspended data should be wrapped into act(...):
-
-act(() => {
-  /* finish loading suspended data */
-});
-/* assert on the output */
-
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
-
- ✓ src/test/lane-b3.test.tsx (8 tests) 867ms
-   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 416ms
- ✓ src/test/routes-navigation.test.tsx (15 tests) 1726ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 407ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 576ms
-
- Test Files  11 passed (11)
-      Tests  63 passed (63)
-   Start at  18:23:35
-   Duration  12.37s (transform 3.13s, setup 13.43s, collect 11.68s, tests 5.76s, environment 47.83s, prepare 5.88s)
+ Test Files  12 passed (12)
+      Tests  75 passed (75)
+   Start at  23:36:43
+   Duration  11.45s (transform 3.66s, setup 11.46s, collect 11.47s, tests 7.59s, environment 39.66s, prepare 2.51s)
 ```
 
 ### C. Web Production Build (`web/`)
@@ -185,28 +137,28 @@ transforming...
 rendering chunks...
 computing gzip size...
 dist/manifest.webmanifest                          0.59 kB
-dist/index.html                                    2.20 kB │ gzip:  0.95 kB
-dist/assets/index-CPsX5d6Q.css                    51.71 kB │ gzip:  8.92 kB
-dist/assets/Button-CuzURBVn.js                     1.95 kB │ gzip:  0.80 kB
+dist/index.html                                    2.20 kB │ gzip:  0.94 kB
+dist/assets/index-BtoGtpEJ.css                    52.10 kB │ gzip:  9.00 kB
+dist/assets/Button-Bxyd8gVH.js                     1.95 kB │ gzip:  0.80 kB
 dist/assets/workbox-window.prod.es5-BqEJf4Xk.js    5.71 kB │ gzip:  2.34 kB
-dist/assets/RecoveryView-CO08Q-QA.js              10.83 kB │ gzip:  3.17 kB
-dist/assets/ActivitiesView-C-SGA1Ka.js            13.15 kB │ gzip:  3.45 kB
-dist/assets/WorkoutsView-wygAZxx7.js              20.55 kB │ gzip:  5.57 kB
-dist/assets/DashboardView-C9oiyGnI.js             23.06 kB │ gzip:  5.75 kB
+dist/assets/RecoveryView-WLhFXcO-.js              10.83 kB │ gzip:  3.17 kB
+dist/assets/ActivitiesView-zSpuAO_X.js            13.15 kB │ gzip:  3.45 kB
+dist/assets/WorkoutsView-Cr05ZdVY.js              20.55 kB │ gzip:  5.57 kB
+dist/assets/DashboardView-RgFO4Lri.js             23.06 kB │ gzip:  5.75 kB
 dist/assets/vendor-icons-DeLAjw6t.js              28.04 kB │ gzip:  5.70 kB
-dist/assets/CoachView-BEIn5boC.js                 28.84 kB │ gzip:  7.61 kB
-dist/assets/ProgressView-BymR-AKh.js              31.32 kB │ gzip:  6.81 kB
+dist/assets/CoachView-hcOFnVdD.js                 28.84 kB │ gzip:  7.61 kB
+dist/assets/ProgressView-B3giETRo.js              31.32 kB │ gzip:  6.81 kB
 dist/assets/vendor-query-DG3adNQi.js              36.35 kB │ gzip: 11.32 kB
-dist/assets/NutritionView-KV9fcjcz.js             36.55 kB │ gzip:  8.98 kB
-dist/assets/ProfileView-BsC0FNvt.js               75.29 kB │ gzip: 21.38 kB
+dist/assets/NutritionView-BD_zS83r.js             36.98 kB │ gzip:  9.14 kB
+dist/assets/ProfileView-BCgPlZV_.js               75.29 kB │ gzip: 21.38 kB
 dist/assets/vendor-router-BCYiucz2.js            172.63 kB │ gzip: 56.86 kB
-dist/assets/index--1g24LHl.js                    203.03 kB │ gzip: 53.76 kB
+dist/assets/index-BGfu2kEx.js                    203.03 kB │ gzip: 53.77 kB
 dist/assets/vendor-supabase-f4bNl52y.js          227.07 kB │ gzip: 58.98 kB
-✓ built in 5.12s
+✓ built in 3.73s
 
 PWA v2.0.0
 mode      generateSW
-precache  31 entries (1207.61 KiB)
+precache  31 entries (1208.41 KiB)
 files generated
   dist/sw.js
   dist/workbox-98f7a950.js
@@ -346,37 +298,25 @@ ERROR: Missing required credentials in environment:
 
 ## 4. Completed Scope Summary
 
-### Lane A & A2: Deterministic Backend Tests & CORS/DEBUG Configuration
-1. **Clock Decoupling & Server-Side Timezone**:
-   - `resolve_server_today(user_id, client_override, environment)`: Resolves date based on user profile timezone (defaulting to `"Asia/Kolkata"` when NULL).
-   - In production (`ENVIRONMENT="production"`): Client date overrides are rejected with HTTP 400.
-   - Comprehensive test suite in `api/tests/test_server_today.py` (8 tests: 00:30 IST, 23:30 IST, NULL resolution, and prod rejection).
-2. **Environment-Driven CORS & DEBUG**:
-   - `BACKEND_CORS_ORIGINS` and `DEBUG` parsed safely from `api/.env`.
-   - Startup security guard checks reject wildcard `*` origins and warn on `DEBUG=True` when `ENVIRONMENT=production`.
+### Lane A5 & A6: Schema Typing, Vision Fallback Honesty & Rate Limiting Behind Trusted Proxies
+1. **Vision AI Fallback Honesty & Demo Mode**:
+   - `FALLBACK_CANDIDATES = []`: On Gemini API error, network failure, or unparseable output, the API returns `candidates: []`, `provider: "mock"`, `mode: "fallback"`, and `message: "Vision unavailable — log manually"`. Zero fabricated food defaults are emitted.
+   - Demo mode (`?mode=demo`) returns sample candidates (Whole Wheat Roti, Toor Dal Tadka).
+   - In production (`ENVIRONMENT="production"`), client `force_mode` overrides (`?mode=...` or `?force_mode=...`) are strictly rejected with HTTP 400 Bad Request.
+2. **Rate Limiting with Trusted Proxy Support**:
+   - `/api/v1/tracking/foods` rate limit keys on client IP extracted from `X-Forwarded-For` (first hop) when connecting via configured `TRUSTED_PROXIES`.
+   - Untrusted peers connecting directly cannot spoof `X-Forwarded-For`.
+   - Documented the in-memory rate limiting limitation (enforced per worker process).
+3. **Tracking Endpoints Schema Typing**:
+   - Fully replaced raw dicts with typed Pydantic v2 response models across tracking endpoints.
+   - Re-exported [`docs/openapi.json`](openapi.json).
 
-### Lane B, B2 & B3: Removal of Fabricated Fallbacks & Honest Null States
-1. **Calorie Target Nullability**:
-   - Removed `goals.calorieTargetKcal || 2000` from `NutritionView.tsx`.
-   - Null targets render cleanly as `"Calorie target not set — finish onboarding"` with `<Link to="/profile">`.
-2. **Equipment Progression Gating**:
-   - Removed `?? 70` and `?? 2.5` fallbacks from `WorkoutsView.tsx`.
-   - If equipment is unconfirmed or limits are null, the app displays `"Set your equipment limits to get load progressions"` without emitting guessed progression numbers. Shared logic cleanly isolated in `web/src/lib/gatedProgression.ts`.
-3. **Recovery Stress Slider & Null State**:
-   - Initial stress state initialized to `null`.
-   - Range slider input with `"Not set"` status indicator badge when untouched.
-   - Interactive `"Clear"` control resetting stress to `null`.
-   - Only submits numeric stress when the slider is explicitly touched.
-4. **Profile Live BMI Validation & Timezone Onboarding**:
-   - Removed fallback seed values `|| 55.0` and `|| 173.0`.
-   - Strictly validates height and weight; renders `"Enter height and weight"` with `"NOT SET"` badge when empty or invalid.
-   - Onboarding explicitly captures and confirms device timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`).
-5. **Readiness Score Honesty**:
-   - No default readiness score is synthesized when today's check-in has not been performed; UI presents an explicit prompt with link to log recovery check-in.
-6. **CoachView Offline Catch Block**:
-   - Removed fabricated numbers (`|| 1`, `|| 5`, `54.5`, `2450.0`, `chicken: 2`).
-   - Uses actual snapshot logged counts (`0` when empty) and displays an offline status notification with `"Retry Review"` button.
-   - Client requests never send `today` parameter to coaching endpoints.
+### Lane B4: Strongly Typed Vision UI & Badge Transparency
+1. **MealPhotoUploader Badge**:
+   - Removed `(result as any)` cast and `"Live Vision API"` hardcoded default.
+   - Added typed `MealAnalysisResponse` frontend interface matching backend Pydantic models.
+   - Renders dynamic badge `${provider} (${mode})` with fallback to `"Provider not reported"` when missing.
+   - Vitest suite in `web/src/test/meal-photo-uploader.test.tsx` (12 tests) covers live, fallback, demo, and missing states.
 
 ---
 
