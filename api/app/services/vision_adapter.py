@@ -3,6 +3,9 @@
 Integrates with Google GenAI SDK (gemini-2.5-flash) to perform multimodal
 image analysis on meal photos, extracting candidate food items with portion
 estimations and confidence ratings.
+
+Returns a VisionAnalysisRaw dataclass carrying both the parsed candidates
+and auditable provider/mode metadata.
 """
 
 from __future__ import annotations
@@ -10,7 +13,8 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Dict, List
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from google import genai
@@ -27,6 +31,26 @@ SYSTEM_INSTRUCTION = (
     "Return ONLY a valid JSON array of objects with keys: "
     "`food_name` (string), `estimated_serving` (string), `confidence` ('high', 'medium', 'low')."
 )
+
+# Reference sets for non-live branches
+# Sample candidates only for mode "demo"
+DEMO_CANDIDATES: List[Dict[str, Any]] = [
+    {"food_name": "Whole Wheat Roti", "estimated_serving": "2 rotis", "confidence": "high"},
+    {"food_name": "Toor Dal Tadka", "estimated_serving": "1 katori (150g)", "confidence": "high"},
+]
+
+# Fallback mode returns NO candidates to avoid fabricating false defaults (Truth in UI)
+FALLBACK_CANDIDATES: List[Dict[str, Any]] = []
+
+
+@dataclass
+class VisionAnalysisRaw:
+    """Raw vision analysis result with provider/mode metadata."""
+
+    candidates: List[Dict[str, Any]]
+    provider: str = "gemini"   # "gemini" | "mock"
+    mode: str = "live"         # "live" | "fallback" | "demo"
+    model_name: Optional[str] = None
 
 
 def get_gemini_client() -> genai.Client:
@@ -50,21 +74,27 @@ def _clean_json_text(raw_text: str) -> str:
     return text
 
 
-def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> List[Dict[str, Any]]:
+def analyze_meal_image(
+    image_bytes: bytes,
+    mime_type: str = "image/jpeg",
+    *,
+    force_mode: Optional[str] = None,
+    allow_fallback: bool = False,
+) -> VisionAnalysisRaw:
     """Analyze a meal image using Gemini 2.5 Flash and return detected candidate foods.
 
     Parameters:
       image_bytes: Raw binary bytes of uploaded image
       mime_type: MIME type of image (e.g. 'image/jpeg', 'image/png')
+      force_mode: Optional override to test 'demo' or 'fallback' branches directly
+      allow_fallback: If True, falls back to deterministic mock when Gemini call fails
 
     Returns:
-      List of dicts: [
-        {"food_name": "...", "estimated_serving": "...", "confidence": "high"|"medium"|"low"},
-        ...
-      ]
+      VisionAnalysisRaw with candidates list and provider/mode metadata.
 
     Raises:
-      HTTPException on missing API key, network failure, or invalid JSON output.
+      HTTPException on missing API key, network failure, invalid JSON output,
+      or client force_mode rejected in production.
     """
     if not image_bytes:
         raise HTTPException(
@@ -72,10 +102,36 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
             detail="Image bytes cannot be empty",
         )
 
-    client = get_gemini_client()
+    # In production, reject client force_mode overrides
+    if settings.ENVIRONMENT.lower() == "production" and force_mode:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Client force_mode override is rejected in production",
+        )
+
+    # Branch: Demo Mode (Sample candidates)
+    if force_mode == "demo":
+        return VisionAnalysisRaw(
+            candidates=list(DEMO_CANDIDATES),
+            provider="mock",
+            mode="demo",
+            model_name=None,
+        )
+
+    # Branch: Forced Fallback Mode (NO candidates)
+    if force_mode == "fallback":
+        return VisionAnalysisRaw(
+            candidates=[],
+            provider="mock",
+            mode="fallback",
+            model_name=None,
+        )
+
+    # Branch: Live Gemini Call
+    model_name = settings.GEMINI_MODEL or "gemini-2.5-flash"
 
     try:
-        model_name = settings.GEMINI_MODEL or "gemini-2.5-flash"
+        client = get_gemini_client()
         response = client.models.generate_content(
             model=model_name,
             contents=[
@@ -89,8 +145,22 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
             ),
         )
     except HTTPException:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         raise
     except Exception as exc:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         logger.error(f"Gemini Vision API generation error: {exc}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -101,6 +171,13 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
     cleaned_json = _clean_json_text(raw_text)
 
     if not cleaned_json:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Gemini Vision returned an empty response",
@@ -109,6 +186,13 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
     try:
         parsed = json.loads(cleaned_json)
     except json.JSONDecodeError as err:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         logger.error(f"Failed to parse Gemini response as JSON: {raw_text}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -120,7 +204,6 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
     if isinstance(parsed, list):
         candidates_list = parsed
     elif isinstance(parsed, dict):
-        # In case the model wrapped it in a key like {"foods": [...]} or {"items": [...]}
         for key in ("foods", "items", "candidates", "food_items", "meals"):
             if key in parsed and isinstance(parsed[key], list):
                 candidates_list = parsed[key]
@@ -129,11 +212,25 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
             if "food_name" in parsed:
                 candidates_list = [parsed]
             else:
+                if allow_fallback:
+                    return VisionAnalysisRaw(
+                        candidates=[],
+                        provider="mock",
+                        mode="fallback",
+                        model_name=None,
+                    )
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
                     detail="Gemini Vision response did not contain a list of candidate items",
                 )
     else:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Gemini Vision response must be a JSON array",
@@ -158,9 +255,21 @@ def analyze_meal_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> Lis
         })
 
     if not sanitized:
+        if allow_fallback:
+            return VisionAnalysisRaw(
+                candidates=[],
+                provider="mock",
+                mode="fallback",
+                model_name=None,
+            )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No recognizable food items could be identified in the image",
         )
 
-    return sanitized
+    return VisionAnalysisRaw(
+        candidates=sanitized,
+        provider="gemini",
+        mode="live",
+        model_name=model_name,
+    )

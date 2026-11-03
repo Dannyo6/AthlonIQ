@@ -61,4 +61,41 @@ AthlonIQ strictly segregates static user interface code from confidential athlet
 - **Function Permissions**: The hosted project's `rls_auto_enable()` function had `EXECUTE` revoked from `public`, `anon`, and `authenticated` (`REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`), preventing unauthorized execution of schema automation routines.
 - **Search Path Isolation**: All trigger functions (including `handle_updated_at()` and `handle_new_athlete_signup()`) strictly enforce `SET search_path = public` to eliminate search-path injection vulnerabilities.
 
+---
 
+## 7. Public Reference Catalog vs. Authenticated Telemetry (`/tracking/foods`)
+
+### Architecture Decision: Public with Rate Limiting
+The endpoint `GET /api/v1/tracking/foods` is **public with IP-based rate limiting (60 requests per minute)**.
+
+#### Security & Epistemic Separation Rationale
+1. **Public Reference Data**: The 22+ item Indian & Athletic Food Catalog contains only verified, static nutritional benchmarks sourced from ICMR (2017) and published sports nutrition science. It contains zero athlete PII, zero tenant records, and zero private biometric data.
+2. **Pre-Authentication UX & PWA Precache**: Making this endpoint accessible without a session token allows unauthenticated food searches during athlete onboarding, guest meal exploratory flows, and offline service worker precaching.
+3. **Denial-of-Service & Scraping Protection**: To prevent scraping abuse and ASGI worker saturation, `/tracking/foods` enforces an in-memory sliding-window rate limit of 60 requests per minute per client IP. Requests exceeding this threshold receive HTTP 429 (`Too Many Requests`).
+4. **Strict Isolation from Athlete Mutations**: In contrast to the read-only catalog, all endpoints that read or write athlete data (`/tracking/nutrition-summary`, `/tracking/running-pace`, `/tracking/progression-suggestion`, `/tracking/weight-trend`, `/vision/analyze-meal`, `/coaching/*`) strictly require cryptographic JWT validation via Supabase Auth (`Depends(get_current_user)`).
+
+### Trusted Proxy Resolution (`X-Forwarded-For`)
+- **First Hop Keying**: When requests arrive via a reverse proxy or load balancer, the rate limiter inspects the `X-Forwarded-For` header and extracts the **first hop** (the true client IP).
+- **Trusted Proxy Guardrail**: The `X-Forwarded-For` header is only inspected if the immediate connection peer (`request.client.host`) matches the configurable `TRUSTED_PROXIES` setting (e.g. `["127.0.0.1", "::1"]`). Untrusted direct callers cannot spoof `X-Forwarded-For` to bypass or pollute rate limits.
+
+### Rate Limiter Limitation (Per-Process Isolation)
+> [!NOTE] In-Memory Rate Limiting Architecture Limitation
+> The rate limiter state is currently maintained in ASGI process memory (`_food_catalog_rate_limits: Dict[str, List[float]]`).
+>
+> In multi-process deployments (e.g. `uvicorn --workers 4`) or multi-instance container environments (e.g. multiple Kubernetes pods or Cloud Run instances behind a load balancer), rate limits are enforced **per process** rather than cluster-wide. A client connecting across multiple workers may theoretically issue up to `workers * 60` requests per minute before being fully blocked.
+>
+> For enterprise distributed deployments where global rate enforcement is required, a centralized cache (such as Redis or Supabase PostgreSQL atomic counters) should replace the in-memory dictionary.
+
+---
+
+## 8. Production Environment Checklist
+
+Before deploying the FastAPI backend and connecting live clients, verify the following mandatory production settings:
+
+| Variable | Required Setting | Production Security Guarantee |
+| :--- | :--- | :--- |
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` | **Required**. Authoritative endpoint used by PyJWKClient to fetch public JWKS keys (`/auth/v1/.well-known/jwks.json`) and verify token issuer claims (`/auth/v1`). |
+| `BACKEND_CORS_ORIGINS` | Explicit origin list (e.g., `["https://app.athloniq.io", "https://athloniq.app"]`) | **Must include the deployed frontend origin**. Wildcard (`*`) is strictly forbidden to prevent credentialed cross-origin attacks. |
+| `ENVIRONMENT` | `production` | **Required**. Enforces production security guarantees: rejects client test overrides (e.g. `force_mode` on `/vision/analyze-meal`), enforces strict CORS origin checks, and disables debug tooling. |
+| `DEBUG` | `false` | **Required**. Disables debug tracebacks, interactive exception reporting, and prevents internal error leakage to clients. |
+| `DEV_AUTH_BYPASS` | `false` | **Required**. Strictly requires genuine cryptographic JWT verification against Supabase Auth for all protected endpoints; disables any mock user bypasses. |

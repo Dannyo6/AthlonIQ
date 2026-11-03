@@ -3,7 +3,7 @@ import { CandidateReviewForm } from "./CandidateReviewForm";
 import { analyzeMealPhotoApi } from "@/services/api";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
 import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
-import { CandidateFoodItem, FoodEntry, MealSlot } from "@/types";
+import { CandidateFoodItem, FoodEntry, MealSlot, MealAnalysisResponse } from "@/types";
 import {
   Camera,
   X,
@@ -21,6 +21,21 @@ interface MealPhotoUploaderProps {
   selectedDate: string;
   selectedSlot: MealSlot;
   onEntryAdded?: () => void;
+}
+
+/**
+ * Format vision provider and mode into a human-readable badge label.
+ * Returns 'Provider not reported' when both provider and mode are absent/empty.
+ */
+export function formatVisionBadge(provider?: string | null, mode?: string | null): string {
+  const cleanProvider = provider?.trim();
+  const cleanMode = mode?.trim();
+  if (cleanProvider && cleanMode) {
+    return `${cleanProvider} (${cleanMode})`;
+  }
+  if (cleanProvider) return cleanProvider;
+  if (cleanMode) return cleanMode;
+  return "Provider not reported";
 }
 
 // Fallback demo meals for quick browser testing if the user has no image file ready
@@ -167,18 +182,20 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
     try {
       setAnalysisStep("ATHLONIQ Vision is analyzing your meal photo...");
-      const result = await analyzeMealPhotoApi(file);
+      const result: MealAnalysisResponse = await analyzeMealPhotoApi(file);
 
       if (result && result.candidates && result.candidates.length > 0) {
         setCandidates(result.candidates);
-        setVisionProvider((result as any)?.provider || "Live Vision API");
+        const provider = result.provider || result.vision_meta?.provider;
+        const mode = result.mode || result.vision_meta?.mode;
+        setVisionProvider(formatVisionBadge(provider, mode));
       } else {
         throw new Error("No recognizable food items could be identified in the image.");
       }
     } catch (err: any) {
       console.warn("Vision API failed or server unreachable, falling back to simulated analysis:", err);
       // If API fails due to server offline or test env, provide mock analysis for seamless UX
-      setVisionProvider("Mock / Fallback");
+      setVisionProvider(formatVisionBadge("mock", "fallback"));
       setAnalysisStep("Formatting deterministic catalog candidates (mock/fallback)...");
       setTimeout(() => {
         // Fallback to first demo preset if server is unreachable
@@ -215,7 +232,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
   const handleSelectPreset = (preset: typeof DEMO_MEAL_PRESETS[0]) => {
     setIsAnalyzing(true);
-    setVisionProvider("Demo Preset");
+    setVisionProvider(formatVisionBadge("mock", "demo"));
     setAnalysisStep("ATHLONIQ Vision is analyzing demo meal...");
     setAnalysisError(null);
     setTimeout(() => {
@@ -257,10 +274,14 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 <span
                   data-testid="vision-provider-badge"
                   className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                    visionProvider === "Live Vision API"
+                    visionProvider.toLowerCase().includes("live")
                       ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                      : visionProvider === "Mock / Fallback"
+                      : visionProvider.toLowerCase().includes("fallback")
                       ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                      : visionProvider.toLowerCase().includes("demo")
+                      ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                      : visionProvider === "Provider not reported"
+                      ? "bg-slate-500/20 text-slate-300 border-slate-500/30"
                       : "bg-purple-500/20 text-purple-300 border-purple-500/30"
                   }`}
                 >

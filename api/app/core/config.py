@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # Rate Limiting & Trusted Proxy Configuration
+    TRUSTED_PROXIES: Union[List[str], str] = [
+        "127.0.0.1",
+        "::1",
+        "testclient",
+    ]
+
     @field_validator("BACKEND_CORS_ORIGINS")
     @classmethod
     def assemble_cors_origins(cls, v: Any) -> List[str]:
@@ -50,6 +57,23 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, tuple)):
             return [str(item).strip() for item in v]
         return v
+
+    @field_validator("TRUSTED_PROXIES")
+    @classmethod
+    def assemble_trusted_proxies(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            val = v.strip()
+            if val.startswith("[") and val.endswith("]"):
+                try:
+                    parsed = json.loads(val)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed]
+                except json.JSONDecodeError:
+                    pass
+            return [item.strip() for item in val.split(",") if item.strip()]
+        elif isinstance(v, (list, tuple, set)):
+            return [str(item).strip() for item in v]
+        return ["127.0.0.1", "::1", "testclient"]
 
     model_config = SettingsConfigDict(
         env_file=(str(API_DIR / ".env"), ".env"),

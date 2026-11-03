@@ -9,6 +9,10 @@ Tests:
   6. Provenance and confirmation guardrails: all returned candidates have is_confirmed=False
      and provenance="ai_estimated"
   7. Rejection of invalid / empty file uploads
+  8. Vision response carries typed provider/mode metadata (gemini/live, mock/demo, mock/fallback)
+  9. Gemini failure returns NO candidates, provider mock, mode fallback, and message
+ 10. Demo mode returns sample candidates
+ 11. Client force_mode override rejected in production environment
 """
 
 import io
@@ -20,9 +24,11 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.api.v1.vision import estimate_quantity_multiplier, match_food_to_catalog
+from app.core.config import settings
+from app.core.security import AuthenticatedUser, get_current_user
 from app.domain.tracking import INDIAN_FOOD_CATALOG
 from app.main import app
-from app.services.vision_adapter import analyze_meal_image
+from app.services.vision_adapter import VisionAnalysisRaw, analyze_meal_image
 
 client = TestClient(app)
 
@@ -51,13 +57,32 @@ class TestVisionAdapter:
         mock_client.models.generate_content.return_value = mock_response
         mock_get_client.return_value = mock_client
 
-        results = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg")
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg")
 
-        assert len(results) == 2
-        assert results[0]["food_name"] == "Whole Wheat Roti"
-        assert results[0]["estimated_serving"] == "2 rotis"
-        assert results[0]["confidence"] == "high"
-        assert results[1]["food_name"] == "Dal Tadka"
+        assert isinstance(result, VisionAnalysisRaw)
+        assert len(result.candidates) == 2
+        assert result.candidates[0]["food_name"] == "Whole Wheat Roti"
+        assert result.candidates[0]["estimated_serving"] == "2 rotis"
+        assert result.candidates[0]["confidence"] == "high"
+        assert result.candidates[1]["food_name"] == "Dal Tadka"
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_image_returns_gemini_live_metadata(self, mock_get_client):
+        """Successful Gemini call sets provider=gemini, mode=live."""
+        mock_response = MagicMock()
+        mock_response.text = json.dumps([
+            {"food_name": "Rice", "estimated_serving": "1 katori", "confidence": "high"},
+        ])
+        mock_client = MagicMock()
+        mock_client.models.generate_content.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg")
+
+        assert result.provider == "gemini"
+        assert result.mode == "live"
+        assert result.model_name is not None
+        assert "gemini" in result.model_name
 
     @patch("app.services.vision_adapter.get_gemini_client")
     def test_analyze_meal_image_handles_markdown_code_fence(self, mock_get_client):
@@ -74,11 +99,11 @@ class TestVisionAdapter:
         mock_client.models.generate_content.return_value = mock_response
         mock_get_client.return_value = mock_client
 
-        results = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg")
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg")
 
-        assert len(results) == 1
-        assert results[0]["food_name"] == "Cooked Steamed Rice"
-        assert results[0]["estimated_serving"] == "150g"
+        assert len(result.candidates) == 1
+        assert result.candidates[0]["food_name"] == "Cooked Steamed Rice"
+        assert result.candidates[0]["estimated_serving"] == "150g"
 
     def test_analyze_meal_image_empty_bytes_raises_400(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -98,9 +123,131 @@ class TestVisionAdapter:
         assert exc_info.value.status_code == 502
         assert "valid JSON" in exc_info.value.detail
 
+    def test_analyze_meal_image_force_mode_demo(self):
+        """Demo mode returns sample candidates."""
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", force_mode="demo")
+        assert result.provider == "mock"
+        assert result.mode == "demo"
+        assert len(result.candidates) == 2
+
+    def test_analyze_meal_image_force_mode_fallback(self):
+        """Fallback mode returns NO candidates (zero fabricated defaults)."""
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", force_mode="fallback")
+        assert result.provider == "mock"
+        assert result.mode == "fallback"
+        assert len(result.candidates) == 0
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_image_allow_fallback_on_gemini_error(self, mock_get_client):
+        """When Gemini call fails and allow_fallback=True, return empty candidates with mock/fallback."""
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception("API quota exceeded")
+        mock_get_client.return_value = mock_client
+
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", allow_fallback=True)
+        assert result.provider == "mock"
+        assert result.mode == "fallback"
+        assert len(result.candidates) == 0
+
+    def test_vision_adapter_rejects_force_mode_in_production(self, monkeypatch):
+        """Adapter itself rejects force_mode overrides when ENVIRONMENT is production."""
+        monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+        with pytest.raises(HTTPException) as exc_info:
+            analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", force_mode="demo")
+        assert exc_info.value.status_code == 400
+        assert "rejected in production" in exc_info.value.detail
+
 
 # =============================================================================
-# 2. Catalog Mapping & Portion Scaler Tests
+# 2. Vision Provider/Mode Metadata Tests
+# =============================================================================
+
+
+class TestVisionProviderMode:
+    """Tests for provider/mode metadata in endpoint responses."""
+
+    @patch("app.api.v1.vision.analyze_meal_image")
+    def test_gemini_live_mode_in_response(self, mock_analyze):
+        """When adapter returns provider=gemini, mode=live, the response reflects it."""
+        mock_analyze.return_value = VisionAnalysisRaw(
+            candidates=[
+                {"food_name": "Roti", "estimated_serving": "2 rotis", "confidence": "high"},
+            ],
+            provider="gemini",
+            mode="live",
+            model_name="gemini-2.5-flash",
+        )
+
+        file_payload = {"file": ("meal.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+        response = client.post(
+            "/api/v1/vision/analyze-meal",
+            headers=TEST_AUTH_HEADERS,
+            files=file_payload,
+        )
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["vision_meta"]["provider"] == "gemini"
+        assert data["vision_meta"]["mode"] == "live"
+        assert data["vision_meta"]["model_name"] == "gemini-2.5-flash"
+
+    @patch("app.api.v1.vision.analyze_meal_image")
+    def test_mock_demo_mode_in_response(self, mock_analyze):
+        """Mock/demo path sets provider=mock, mode=demo."""
+        mock_analyze.return_value = VisionAnalysisRaw(
+            candidates=[
+                {"food_name": "Paneer Cubes", "estimated_serving": "100g", "confidence": "high"},
+            ],
+            provider="mock",
+            mode="demo",
+            model_name=None,
+        )
+
+        file_payload = {"file": ("test.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+        response = client.post(
+            "/api/v1/vision/analyze-meal",
+            headers=TEST_AUTH_HEADERS,
+            files=file_payload,
+        )
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["vision_meta"]["provider"] == "mock"
+        assert data["vision_meta"]["mode"] == "demo"
+        assert data["vision_meta"]["model_name"] is None
+
+    @patch("app.api.v1.vision.analyze_meal_image")
+    def test_mock_fallback_mode_in_response(self, mock_analyze):
+        """Fallback path after Gemini failure sets provider=mock, mode=fallback, 0 candidates, and message."""
+        mock_analyze.return_value = VisionAnalysisRaw(
+            candidates=[],
+            provider="mock",
+            mode="fallback",
+            model_name=None,
+        )
+
+        file_payload = {"file": ("fallback.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+        response = client.post(
+            "/api/v1/vision/analyze-meal",
+            headers=TEST_AUTH_HEADERS,
+            files=file_payload,
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["message"] == "Vision unavailable — log manually"
+        data = body["data"]
+        assert data["candidates"] == []
+        assert data["detected_item_count"] == 0
+        assert data["provider"] == "mock"
+        assert data["mode"] == "fallback"
+        assert data["notes"] == "Vision unavailable — log manually"
+        assert data["vision_meta"]["provider"] == "mock"
+        assert data["vision_meta"]["mode"] == "fallback"
+
+
+# =============================================================================
+# 3. Catalog Mapping & Portion Scaler Tests
 # =============================================================================
 
 
@@ -141,7 +288,7 @@ class TestCatalogMapping:
 
 
 # =============================================================================
-# 3. API Endpoint Integration Tests
+# 4. API Endpoint Integration Tests
 # =============================================================================
 
 
@@ -156,10 +303,15 @@ class TestVisionEndpoint:
 
     @patch("app.api.v1.vision.analyze_meal_image")
     def test_analyze_meal_authorized_with_catalog_mapping(self, mock_analyze):
-        mock_analyze.return_value = [
-            {"food_name": "Whole Wheat Roti", "estimated_serving": "2 rotis", "confidence": "high"},
-            {"food_name": "Toor Dal Tadka", "estimated_serving": "1 katori (150g)", "confidence": "high"},
-        ]
+        mock_analyze.return_value = VisionAnalysisRaw(
+            candidates=[
+                {"food_name": "Whole Wheat Roti", "estimated_serving": "2 rotis", "confidence": "high"},
+                {"food_name": "Toor Dal Tadka", "estimated_serving": "1 katori (150g)", "confidence": "high"},
+            ],
+            provider="gemini",
+            mode="live",
+            model_name="gemini-2.5-flash",
+        )
 
         file_payload = {"file": ("thali.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
         response = client.post(
@@ -194,6 +346,10 @@ class TestVisionEndpoint:
         assert c2["provenance"] == "ai_estimated"
         assert c2["is_confirmed"] is False  # CRITICAL GUARDRAIL
 
+        # Vision metadata is present
+        assert data["vision_meta"]["provider"] == "gemini"
+        assert data["vision_meta"]["mode"] == "live"
+
     def test_analyze_meal_invalid_file_type_rejected(self):
         # Plain text file should be rejected with 400
         file_payload = {"file": ("data.txt", io.BytesIO(b"Hello world"), "text/plain")}
@@ -214,3 +370,125 @@ class TestVisionEndpoint:
         )
         assert response.status_code == 400
         assert "empty" in response.json()["detail"]
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_on_gemini_failure_returns_fallback_and_message(self, mock_get_client):
+        """Lane A6: On Gemini failure, return NO candidates, provider mock, mode fallback, and message."""
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception("Service unavailable / Quota exhausted")
+        mock_get_client.return_value = mock_client
+
+        file_payload = {"file": ("food.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+        response = client.post(
+            "/api/v1/vision/analyze-meal",
+            headers=TEST_AUTH_HEADERS,
+            files=file_payload,
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["success"] is True
+        assert body["message"] == "Vision unavailable — log manually"
+
+        data = body["data"]
+        assert data["candidates"] == []
+        assert data["detected_item_count"] == 0
+        assert data["provider"] == "mock"
+        assert data["mode"] == "fallback"
+        assert data["notes"] == "Vision unavailable — log manually"
+        assert data["vision_meta"]["provider"] == "mock"
+        assert data["vision_meta"]["mode"] == "fallback"
+
+    def test_analyze_meal_demo_mode_returns_samples(self):
+        """Lane A6: Demo mode returns sample candidates only."""
+        file_payload = {"file": ("demo.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+        response = client.post(
+            "/api/v1/vision/analyze-meal?mode=demo",
+            headers=TEST_AUTH_HEADERS,
+            files=file_payload,
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["success"] is True
+        assert "candidate food items" in body["message"]
+
+        data = body["data"]
+        assert len(data["candidates"]) == 2
+        assert data["detected_item_count"] == 2
+        assert data["provider"] == "mock"
+        assert data["mode"] == "demo"
+        assert data["vision_meta"]["provider"] == "mock"
+        assert data["vision_meta"]["mode"] == "demo"
+
+        names = [c["food_name"] for c in data["candidates"]]
+        assert "Whole Wheat Roti" in names
+        assert "Toor Dal Tadka" in names
+
+    def test_analyze_meal_rejects_client_force_mode_in_production(self, monkeypatch):
+        """Lane A6: When ENVIRONMENT == 'production', client force_mode is rejected."""
+        monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+        app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+            user_id="prod-athlete-01", email="athlete@prod.io"
+        )
+        try:
+            file_payload = {"file": ("meal.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+
+            # Test ?mode=demo
+            resp_demo = client.post(
+                "/api/v1/vision/analyze-meal?mode=demo",
+                headers=TEST_AUTH_HEADERS,
+                files=file_payload,
+            )
+            assert resp_demo.status_code == 400
+            assert "rejected in production" in resp_demo.json()["detail"]
+
+            # Test ?mode=fallback
+            file_payload = {"file": ("meal.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+            resp_fallback = client.post(
+                "/api/v1/vision/analyze-meal?mode=fallback",
+                headers=TEST_AUTH_HEADERS,
+                files=file_payload,
+            )
+            assert resp_fallback.status_code == 400
+            assert "rejected in production" in resp_fallback.json()["detail"]
+
+            # Test ?force_mode=demo
+            file_payload = {"file": ("meal.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+            resp_force = client.post(
+                "/api/v1/vision/analyze-meal?force_mode=demo",
+                headers=TEST_AUTH_HEADERS,
+                files=file_payload,
+            )
+            assert resp_force.status_code == 400
+            assert "rejected in production" in resp_force.json()["detail"]
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+    @patch("app.api.v1.vision.analyze_meal_image")
+    def test_analyze_meal_allows_request_without_force_mode_in_production(self, mock_analyze, monkeypatch):
+        """Lane A6: When ENVIRONMENT == 'production', request without force_mode succeeds."""
+        monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+        app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+            user_id="prod-athlete-01", email="athlete@prod.io"
+        )
+        try:
+            mock_analyze.return_value = VisionAnalysisRaw(
+                candidates=[{"food_name": "Rice", "estimated_serving": "150g", "confidence": "high"}],
+                provider="gemini",
+                mode="live",
+                model_name="gemini-2.5-flash",
+            )
+
+            file_payload = {"file": ("meal.jpg", io.BytesIO(SAMPLE_JPEG_BYTES), "image/jpeg")}
+            response = client.post(
+                "/api/v1/vision/analyze-meal",
+                headers=TEST_AUTH_HEADERS,
+                files=file_payload,
+            )
+            assert response.status_code == 200
+            data = response.json()["data"]
+            assert data["provider"] == "gemini"
+            assert data["mode"] == "live"
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)

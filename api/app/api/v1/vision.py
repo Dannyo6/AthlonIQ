@@ -13,12 +13,20 @@ import re
 import uuid
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
 
+from app.core.config import settings
 from app.core.security import AuthenticatedUser, get_current_user
 from app.domain.tracking import INDIAN_FOOD_CATALOG
 from app.schemas.common import APIResponse
+from app.schemas.vision import (
+    CandidateFoodItem,
+    MealAnalysisResponse,
+    VisionMeta,
+    VisionMode,
+    VisionProvider,
+)
 from app.services.vision_adapter import analyze_meal_image
 
 logger = logging.getLogger(__name__)
@@ -112,35 +120,6 @@ CATALOG_SYNONYMS: Dict[str, str] = {
     "oil": "cooking-oil-tbsp",
     "cooking oil": "cooking-oil-tbsp",
 }
-
-
-# =============================================================================
-# Response Schemas (Pydantic v2)
-# =============================================================================
-
-
-class CandidateFoodItem(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    catalog_id: Optional[str] = None
-    food_name: str
-    matched_catalog_name: Optional[str] = None
-    estimated_serving: str
-    serving_label: str = "1 serving"
-    quantity: float = 1.0
-    calories_kcal: float
-    protein_g: float
-    carbs_g: float
-    fat_g: float
-    confidence: str = "medium"  # "high" | "medium" | "low"
-    provenance: str = "ai_estimated"
-    is_confirmed: bool = False
-
-
-class MealAnalysisResponse(BaseModel):
-    candidates: List[CandidateFoodItem]
-    detected_item_count: int
-    provenance: str = "ai_estimated"
-    notes: Optional[str] = None
 
 
 # =============================================================================
@@ -242,6 +221,8 @@ def estimate_quantity_multiplier(
 )
 async def analyze_meal_photo(
     file: UploadFile = File(...),
+    mode: Optional[str] = Query(default=None, description="Optional override: 'live', 'fallback', or 'demo'"),
+    force_mode: Optional[str] = Query(default=None, description="Alternative parameter for mode override"),
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[MealAnalysisResponse]:
     """Accepts meal photo upload, detects food items using Gemini Vision AI,
@@ -252,6 +233,14 @@ async def analyze_meal_photo(
     and is_confirmed=False. They require explicit athlete confirmation before
     joining daily totals.
     """
+    # 0. Check production environment restriction on client force_mode
+    requested_mode = force_mode or mode
+    if settings.ENVIRONMENT.lower() == "production" and requested_mode:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Client force_mode override is rejected in production",
+        )
+
     # 1. Validate file MIME type and extension
     content_type = file.content_type or ""
     filename = (file.filename or "").lower()
@@ -281,13 +270,18 @@ async def analyze_meal_photo(
 
     mime_type = content_type if content_type.startswith("image/") else "image/jpeg"
 
-    # 3. Call Vision Adapter
-    raw_candidates = analyze_meal_image(image_bytes=image_bytes, mime_type=mime_type)
+    # 3. Call Vision Adapter (returns VisionAnalysisRaw with metadata; allow_fallback=True)
+    raw_result = analyze_meal_image(
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        force_mode=requested_mode,
+        allow_fallback=True,
+    )
 
     # 4. Map candidates to INDIAN_FOOD_CATALOG
     processed_candidates: List[CandidateFoodItem] = []
 
-    for raw in raw_candidates:
+    for raw in raw_result.candidates:
         detected_name = raw["food_name"]
         serving_str = raw["estimated_serving"]
         confidence = raw["confidence"]
@@ -339,15 +333,38 @@ async def analyze_meal_photo(
 
         processed_candidates.append(candidate)
 
+    # 5. Build vision metadata from adapter result
+    vision_meta = VisionMeta(
+        provider=VisionProvider(raw_result.provider),
+        mode=VisionMode(raw_result.mode),
+        model_name=raw_result.model_name,
+    )
+
+    is_fallback = raw_result.mode == "fallback"
+    message = (
+        "Vision unavailable — log manually"
+        if is_fallback
+        else f"Identified {len(processed_candidates)} candidate food items from meal photo"
+    )
+    notes = (
+        "Vision unavailable — log manually"
+        if is_fallback
+        else "Portions estimated from visual scale. User review and confirmation required."
+    )
+
     response_payload = MealAnalysisResponse(
         candidates=processed_candidates,
         detected_item_count=len(processed_candidates),
+        provider=vision_meta.provider,
+        mode=vision_meta.mode,
+        model_name=vision_meta.model_name,
         provenance="ai_estimated",
-        notes="Portions estimated from visual scale. User review and confirmation required.",
+        notes=notes,
+        vision_meta=vision_meta,
     )
 
     return APIResponse(
         success=True,
-        message=f"Identified {len(processed_candidates)} candidate food items from meal photo",
+        message=message,
         data=response_payload,
     )

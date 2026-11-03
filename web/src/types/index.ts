@@ -303,11 +303,24 @@ export interface CandidateFoodItem {
   isConfirmed?: boolean;
 }
 
+export type VisionProvider = "gemini" | "mock" | string;
+export type VisionMode = "live" | "fallback" | "demo" | string;
+
+export interface VisionMeta {
+  provider: VisionProvider;
+  mode: VisionMode;
+  model_name?: string | null;
+}
+
 export interface MealAnalysisResponse {
   candidates: CandidateFoodItem[];
   detected_item_count: number;
-  provenance: "ai_estimated";
+  provider?: VisionProvider;
+  mode?: VisionMode;
+  model_name?: string | null;
+  provenance: "ai_estimated" | string;
   notes?: string | null;
+  vision_meta?: VisionMeta;
 }
 
 export interface DailyMacroTotals {

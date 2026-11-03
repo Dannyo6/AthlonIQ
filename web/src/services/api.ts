@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import type { MealAnalysisResponse } from "@/types";
 
 export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -94,7 +95,7 @@ export async function submitReadinessCheckIn(payload: any, token?: string) {
   }
 }
 
-export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
+export async function analyzeMealPhotoApi(imageFile: File, token?: string): Promise<MealAnalysisResponse> {
   const authHeaders = await getAuthHeaders(token);
   const formData = new FormData();
   formData.append("file", imageFile);
@@ -121,7 +122,7 @@ export async function analyzeMealPhotoApi(imageFile: File, token?: string) {
   }
 
   const json = await res.json();
-  return json.data; // MealAnalysisResponse
+  return json.data as MealAnalysisResponse;
 }
 
 export async function sendCoachChatTurn(

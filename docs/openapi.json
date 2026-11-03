@@ -389,7 +389,7 @@
           "tracking"
         ],
         "summary": "Search Indian & Athletic Food Reference Catalog",
-        "description": "Search the 22+ item Indian & Athletic food reference catalog.\n\nDoes NOT require authentication \u2014 the catalog is read-only reference data.",
+        "description": "Search the 22+ item Indian & Athletic food reference catalog.\n\nDoes NOT require authentication \u2014 the catalog is read-only reference data.\nProtected by a 60 req/min rate limit per IP.\nSee docs/SECURITY.md \u00a77 for the security architecture decision.",
         "operationId": "get_food_catalog_api_v1_tracking_foods_get",
         "parameters": [
           {
@@ -435,7 +435,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_List_Dict_str__Any___"
+                  "$ref": "#/components/schemas/APIResponse_List_FoodCatalogItem__"
                 }
               }
             }
@@ -477,7 +477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                  "$ref": "#/components/schemas/APIResponse_NutritionSummaryResponse_"
                 }
               }
             }
@@ -524,7 +524,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                  "$ref": "#/components/schemas/APIResponse_RunningPaceResponse_"
                 }
               }
             }
@@ -571,7 +571,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                  "$ref": "#/components/schemas/APIResponse_ProgressionSuggestionResponse_"
                 }
               }
             }
@@ -618,7 +618,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse_Dict_str__Any__"
+                  "$ref": "#/components/schemas/APIResponse_WeightTrendResponse_"
                 }
               }
             }
@@ -649,15 +649,58 @@
         "summary": "Analyze meal photo using Gemini Vision and map to verified catalog",
         "description": "Accepts meal photo upload, detects food items using Gemini Vision AI,\nmaps candidates to the verified Indian Food Catalog, and calculates\nestimated macros.\n\nCRITICAL GUARDRAIL: Returned items are marked provenance=\"ai_estimated\"\nand is_confirmed=False. They require explicit athlete confirmation before\njoining daily totals.",
         "operationId": "analyze_meal_photo_api_v1_vision_analyze_meal_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional override: 'live', 'fallback', or 'demo'",
+              "title": "Mode"
+            },
+            "description": "Optional override: 'live', 'fallback', or 'demo'"
+          },
+          {
+            "name": "force_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Alternative parameter for mode override",
+              "title": "Force Mode"
+            },
+            "description": "Alternative parameter for mode override"
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_analyze_meal_photo_api_v1_vision_analyze_meal_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -680,12 +723,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     }
   },
@@ -722,40 +760,6 @@
         },
         "type": "object",
         "title": "APIResponse[CoachTurnResponse]"
-      },
-      "APIResponse_Dict_str__Any__": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "title": "APIResponse[Dict[str, Any]]"
       },
       "APIResponse_FatigueAdvisoryResult_": {
         "properties": {
@@ -889,7 +893,7 @@
         "type": "object",
         "title": "APIResponse[List[CoachToolMetadata]]"
       },
-      "APIResponse_List_Dict_str__Any___": {
+      "APIResponse_List_FoodCatalogItem__": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -911,8 +915,7 @@
             "anyOf": [
               {
                 "items": {
-                  "additionalProperties": true,
-                  "type": "object"
+                  "$ref": "#/components/schemas/FoodCatalogItem"
                 },
                 "type": "array"
               },
@@ -924,7 +927,7 @@
           }
         },
         "type": "object",
-        "title": "APIResponse[List[Dict[str, Any]]]"
+        "title": "APIResponse[List[FoodCatalogItem]]"
       },
       "APIResponse_MealAnalysisResponse_": {
         "properties": {
@@ -958,6 +961,70 @@
         "type": "object",
         "title": "APIResponse[MealAnalysisResponse]"
       },
+      "APIResponse_NutritionSummaryResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NutritionSummaryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[NutritionSummaryResponse]"
+      },
+      "APIResponse_ProgressionSuggestionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressionSuggestionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[ProgressionSuggestionResponse]"
+      },
       "APIResponse_ReadinessCheckInResponse_": {
         "properties": {
           "success": {
@@ -989,6 +1056,38 @@
         },
         "type": "object",
         "title": "APIResponse[ReadinessCheckInResponse]"
+      },
+      "APIResponse_RunningPaceResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunningPaceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[RunningPaceResponse]"
       },
       "APIResponse_TargetsPreviewResponse_": {
         "properties": {
@@ -1053,6 +1152,38 @@
         },
         "type": "object",
         "title": "APIResponse[WeeklyReviewReport]"
+      },
+      "APIResponse_WeightTrendResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightTrendResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "APIResponse[WeightTrendResponse]"
       },
       "Body_analyze_meal_photo_api_v1_vision_analyze_meal_post": {
         "properties": {
@@ -1148,6 +1279,7 @@
         },
         "type": "object",
         "required": [
+          "id",
           "food_name",
           "estimated_serving",
           "calories_kcal",
@@ -1155,7 +1287,8 @@
           "carbs_g",
           "fat_g"
         ],
-        "title": "CandidateFoodItem"
+        "title": "CandidateFoodItem",
+        "description": "A single candidate food item detected by vision analysis."
       },
       "CoachChatRequest": {
         "properties": {
@@ -1470,6 +1603,65 @@
         "title": "FatigueAdvisoryResult",
         "description": "Workload fatigue advisory across strength, badminton, and running disciplines."
       },
+      "FoodCatalogItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "serving_label": {
+            "type": "string",
+            "title": "Serving Label"
+          },
+          "serving_weight_g": {
+            "type": "number",
+            "title": "Serving Weight G"
+          },
+          "calories_kcal": {
+            "type": "number",
+            "title": "Calories Kcal"
+          },
+          "protein_g": {
+            "type": "number",
+            "title": "Protein G"
+          },
+          "carbs_g": {
+            "type": "number",
+            "title": "Carbs G"
+          },
+          "fat_g": {
+            "type": "number",
+            "title": "Fat G"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "verified_reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "serving_label",
+          "serving_weight_g",
+          "calories_kcal",
+          "protein_g",
+          "carbs_g",
+          "fat_g"
+        ],
+        "title": "FoodCatalogItem",
+        "description": "A single item from the Indian & Athletic Food Reference Catalog."
+      },
       "FoodEntryRequest": {
         "properties": {
           "food_name": {
@@ -1743,6 +1935,40 @@
         "title": "LeanBulkCalibrationResult",
         "description": "Calibrated energy target evaluation with audit provenance and confirmation gating."
       },
+      "MacroTotalsResponse": {
+        "properties": {
+          "calories_kcal": {
+            "type": "number",
+            "title": "Calories Kcal"
+          },
+          "protein_g": {
+            "type": "number",
+            "title": "Protein G"
+          },
+          "carbs_g": {
+            "type": "number",
+            "title": "Carbs G"
+          },
+          "fat_g": {
+            "type": "number",
+            "title": "Fat G"
+          },
+          "entry_count": {
+            "type": "integer",
+            "title": "Entry Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "calories_kcal",
+          "protein_g",
+          "carbs_g",
+          "fat_g",
+          "entry_count"
+        ],
+        "title": "MacroTotalsResponse",
+        "description": "Summed macro totals for a group of food entries."
+      },
       "MealAnalysisResponse": {
         "properties": {
           "candidates": {
@@ -1755,6 +1981,26 @@
           "detected_item_count": {
             "type": "integer",
             "title": "Detected Item Count"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/VisionProvider",
+            "description": "'gemini' or 'mock'"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/VisionMode",
+            "description": "'live', 'fallback', or 'demo'"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name",
+            "description": "Model identifier when provider is gemini"
           },
           "provenance": {
             "type": "string",
@@ -1771,14 +2017,22 @@
               }
             ],
             "title": "Notes"
+          },
+          "vision_meta": {
+            "$ref": "#/components/schemas/VisionMeta",
+            "description": "Provider/mode metadata for auditing the analysis source"
           }
         },
         "type": "object",
         "required": [
           "candidates",
-          "detected_item_count"
+          "detected_item_count",
+          "provider",
+          "mode",
+          "vision_meta"
         ],
-        "title": "MealAnalysisResponse"
+        "title": "MealAnalysisResponse",
+        "description": "Complete meal analysis result with typed provenance metadata."
       },
       "NutritionSummaryRequest": {
         "properties": {
@@ -1796,6 +2050,33 @@
           "entries"
         ],
         "title": "NutritionSummaryRequest"
+      },
+      "NutritionSummaryResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "confirmed_totals": {
+            "$ref": "#/components/schemas/MacroTotalsResponse"
+          },
+          "unconfirmed_estimates": {
+            "$ref": "#/components/schemas/MacroTotalsResponse"
+          },
+          "guardrail_note": {
+            "type": "string",
+            "title": "Guardrail Note",
+            "default": "Unconfirmed photo estimates (is_confirmed=False) are tabulated separately and excluded from confirmed_totals by design."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "confirmed_totals",
+          "unconfirmed_estimates"
+        ],
+        "title": "NutritionSummaryResponse",
+        "description": "Daily nutrition totals with confirmed/unconfirmed guardrail separation."
       },
       "PreviousSetRequest": {
         "properties": {
@@ -1885,6 +2166,63 @@
           "previous_sets"
         ],
         "title": "ProgressionRequest"
+      },
+      "ProgressionSuggestionResponse": {
+        "properties": {
+          "exercise_name": {
+            "type": "string",
+            "title": "Exercise Name"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "increase_load | increase_reps_or_tempo | maintain_or_deload | confirm_equipment_first | maintain"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "new_load_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Load Kg"
+          },
+          "new_reps_suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Reps Suggestion"
+          },
+          "requires_user_confirmation": {
+            "type": "boolean",
+            "title": "Requires User Confirmation",
+            "default": true
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "rules_based_progression"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exercise_name",
+          "action",
+          "explanation"
+        ],
+        "title": "ProgressionSuggestionResponse",
+        "description": "Rules-based progressive overload suggestion."
       },
       "ProposedAction": {
         "properties": {
@@ -2026,6 +2364,40 @@
           "duration_minutes"
         ],
         "title": "RunningPaceRequest"
+      },
+      "RunningPaceResponse": {
+        "properties": {
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "title": "Duration Minutes"
+          },
+          "pace_decimal_min_per_km": {
+            "type": "number",
+            "title": "Pace Decimal Min Per Km"
+          },
+          "pace_formatted": {
+            "type": "string",
+            "title": "Pace Formatted"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "calculated_deterministic"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distance_km",
+          "duration_minutes",
+          "pace_decimal_min_per_km",
+          "pace_formatted"
+        ],
+        "title": "RunningPaceResponse",
+        "description": "Deterministic running pace calculation result."
       },
       "TargetsPreviewRequest": {
         "properties": {
@@ -2303,6 +2675,56 @@
         ],
         "title": "ValidationError"
       },
+      "VisionMeta": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/VisionProvider",
+            "description": "Which backend produced the result ('gemini' | 'mock')"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/VisionMode",
+            "description": "How the result was obtained ('live' | 'fallback' | 'demo')"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name",
+            "description": "Model identifier when provider is gemini"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "mode"
+        ],
+        "title": "VisionMeta",
+        "description": "Metadata about the vision analysis provenance."
+      },
+      "VisionMode": {
+        "type": "string",
+        "enum": [
+          "live",
+          "fallback",
+          "demo"
+        ],
+        "title": "VisionMode",
+        "description": "How the analysis was obtained."
+      },
+      "VisionProvider": {
+        "type": "string",
+        "enum": [
+          "gemini",
+          "mock"
+        ],
+        "title": "VisionProvider",
+        "description": "Which backend produced the vision analysis."
+      },
       "WeeklyReviewReport": {
         "properties": {
           "week_start_date": {
@@ -2434,6 +2856,36 @@
         ],
         "title": "WeightPointRequest"
       },
+      "WeightTrendEntry": {
+        "properties": {
+          "logged_date": {
+            "type": "string",
+            "title": "Logged Date"
+          },
+          "weight_kg": {
+            "type": "number",
+            "title": "Weight Kg"
+          },
+          "rolling_7d_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rolling 7D Kg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logged_date",
+          "weight_kg"
+        ],
+        "title": "WeightTrendEntry",
+        "description": "A single data point in the weight trend chart."
+      },
       "WeightTrendRequest": {
         "properties": {
           "entries": {
@@ -2450,6 +2902,55 @@
           "entries"
         ],
         "title": "WeightTrendRequest"
+      },
+      "WeightTrendResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "'insufficient_data' or 'ok'"
+          },
+          "rolling_7d_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rolling 7D Kg"
+          },
+          "weekly_delta_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Delta Kg"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/WeightTrendEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "explanation"
+        ],
+        "title": "WeightTrendResponse",
+        "description": "7-day rolling weight trend with data-gate."
       }
     },
     "securitySchemes": {

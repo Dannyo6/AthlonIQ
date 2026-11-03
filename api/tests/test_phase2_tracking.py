@@ -12,6 +12,11 @@ Tests:
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
+from app.api.v1.tracking import (
+    FOOD_CATALOG_RATE_LIMIT,
+    reset_food_catalog_rate_limiter,
+)
 from app.domain.tracking import (
     FoodEntryInput,
     PreviousSet,
@@ -23,6 +28,13 @@ from app.domain.tracking import (
     search_food_catalog,
 )
 from app.main import app
+from app.schemas.tracking import (
+    FoodCatalogItem,
+    NutritionSummaryResponse,
+    ProgressionSuggestionResponse,
+    RunningPaceResponse,
+    WeightTrendResponse,
+)
 
 
 # =============================================================================
@@ -425,6 +437,12 @@ class TestWeightTrend:
 
 class TestTrackingAPIEndpoints:
 
+    @pytest.fixture(autouse=True)
+    def reset_rate_limiter(self):
+        reset_food_catalog_rate_limiter()
+        yield
+        reset_food_catalog_rate_limiter()
+
     def test_get_foods_no_auth_returns_200(self):
         """Food catalog is public — no auth required."""
         resp = client.get("/api/v1/tracking/foods")
@@ -587,3 +605,141 @@ class TestTrackingAPIEndpoints:
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["status"] == "ok"
+
+    def test_get_foods_rate_limit_enforced_at_60(self):
+        """Exceeding 60 requests per minute triggers 429 Too Many Requests."""
+        for _ in range(FOOD_CATALOG_RATE_LIMIT):
+            r = client.get("/api/v1/tracking/foods")
+            assert r.status_code == 200
+
+        blocked = client.get("/api/v1/tracking/foods")
+        assert blocked.status_code == 429
+        assert "Rate limit exceeded" in blocked.json()["detail"]
+
+    def test_foods_rate_limit_keys_on_xff_first_hop_when_trusted_proxy(self):
+        """Lane A6: Rate limit keys on client IP from X-Forwarded-For first hop behind trusted proxy."""
+        for _ in range(FOOD_CATALOG_RATE_LIMIT):
+            r = client.get(
+                "/api/v1/tracking/foods",
+                headers={"X-Forwarded-For": "203.0.113.10, 10.0.0.1, 10.0.0.2"},
+            )
+            assert r.status_code == 200
+
+        blocked = client.get(
+            "/api/v1/tracking/foods",
+            headers={"X-Forwarded-For": "203.0.113.10, 10.0.0.1"},
+        )
+        assert blocked.status_code == 429
+        assert "Rate limit exceeded" in blocked.json()["detail"]
+
+        allowed = client.get(
+            "/api/v1/tracking/foods",
+            headers={"X-Forwarded-For": "203.0.113.11, 10.0.0.1"},
+        )
+        assert allowed.status_code == 200
+
+    def test_foods_rate_limit_ignores_xff_from_untrusted_peer(self, monkeypatch):
+        """Lane A6: When peer is not in TRUSTED_PROXIES, X-Forwarded-For is ignored to prevent spoofing."""
+        monkeypatch.setattr(settings, "TRUSTED_PROXIES", ["192.0.2.1"])
+
+        for _ in range(FOOD_CATALOG_RATE_LIMIT):
+            r = client.get(
+                "/api/v1/tracking/foods",
+                headers={"X-Forwarded-For": "198.51.100.1"},
+            )
+            assert r.status_code == 200
+
+        blocked = client.get(
+            "/api/v1/tracking/foods",
+            headers={"X-Forwarded-For": "198.51.100.2"},
+        )
+        assert blocked.status_code == 429
+
+    def test_foods_rate_limit_configurable_trusted_proxies(self, monkeypatch):
+        """Lane A6: TRUSTED_PROXIES can be configured dynamically (e.g. wildcard or IP list)."""
+        monkeypatch.setattr(settings, "TRUSTED_PROXIES", ["*"])
+
+        for _ in range(FOOD_CATALOG_RATE_LIMIT):
+            r = client.get(
+                "/api/v1/tracking/foods",
+                headers={"X-Forwarded-For": "192.0.2.55"},
+            )
+            assert r.status_code == 200
+
+        blocked = client.get(
+            "/api/v1/tracking/foods",
+            headers={"X-Forwarded-For": "192.0.2.55"},
+        )
+        assert blocked.status_code == 429
+
+    def test_food_catalog_items_validate_typed_schema(self):
+        resp = client.get("/api/v1/tracking/foods")
+        assert resp.status_code == 200
+        items = resp.json()["data"]
+        assert len(items) >= 22
+        for item in items:
+            FoodCatalogItem.model_validate(item)
+
+    def test_nutrition_summary_validates_typed_schema(self):
+        payload = {
+            "entries": [
+                {
+                    "food_name": "Chicken Breast",
+                    "calories_kcal": 247.0,
+                    "protein_g": 46.5,
+                    "carbs_g": 0.0,
+                    "fat_g": 5.5,
+                    "quantity": 1.0,
+                    "is_confirmed": True,
+                    "provenance": "verified_reference",
+                }
+            ]
+        }
+        resp = client.post(
+            "/api/v1/tracking/nutrition-summary",
+            json=payload,
+            headers=TEST_AUTH_HEADERS,
+        )
+        assert resp.status_code == 200
+        NutritionSummaryResponse.model_validate(resp.json()["data"])
+
+    def test_running_pace_validates_typed_schema(self):
+        resp = client.post(
+            "/api/v1/tracking/running-pace",
+            json={"distance_km": 5.0, "duration_minutes": 27.5},
+            headers=TEST_AUTH_HEADERS,
+        )
+        assert resp.status_code == 200
+        RunningPaceResponse.model_validate(resp.json()["data"])
+
+    def test_progression_suggestion_validates_typed_schema(self):
+        resp = client.post(
+            "/api/v1/tracking/progression-suggestion",
+            json={
+                "exercise_name": "Bench Press",
+                "previous_sets": [{"reps": 10, "load_kg": 60.0, "rpe": 7.5}],
+                "equipment_max_load_kg": 70.0,
+                "equipment_min_increment_kg": 2.5,
+                "equipment_confirmed": True,
+                "readiness_status": "Prime",
+                "target_reps_max": 10,
+            },
+            headers=TEST_AUTH_HEADERS,
+        )
+        assert resp.status_code == 200
+        ProgressionSuggestionResponse.model_validate(resp.json()["data"])
+
+    def test_weight_trend_validates_typed_schema(self):
+        resp = client.post(
+            "/api/v1/tracking/weight-trend",
+            json={
+                "entries": [
+                    {"logged_date": "2026-10-01", "weight_kg": 55.0},
+                    {"logged_date": "2026-10-02", "weight_kg": 55.2},
+                    {"logged_date": "2026-10-03", "weight_kg": 55.4},
+                ]
+            },
+            headers=TEST_AUTH_HEADERS,
+        )
+        assert resp.status_code == 200
+        WeightTrendResponse.model_validate(resp.json()["data"])
