@@ -21,6 +21,7 @@ interface MealPhotoUploaderProps {
   selectedDate: string;
   selectedSlot: MealSlot;
   onEntryAdded?: () => void;
+  onOpenManualEntry?: () => void;
 }
 
 /**
@@ -122,6 +123,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   selectedDate,
   selectedSlot,
   onEntryAdded,
+  onOpenManualEntry,
 }) => {
   const { addFoodEntry } = useAthloniqState();
   const { isOnline } = usePwa();
@@ -134,6 +136,9 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   const [candidates, setCandidates] = useState<CandidateFoodItem[] | null>(null);
   const [analysisStep, setAnalysisStep] = useState<string>("");
   const [visionProvider, setVisionProvider] = useState<string>("Vision Engine");
+  const [emptyMessage, setEmptyMessage] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   const { setFormDirty } = useUnsavedWork();
 
@@ -153,6 +158,9 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
     setCandidates(null);
     setAnalysisStep("");
     setVisionProvider("Vision Engine");
+    setEmptyMessage(null);
+    setIsDemoMode(false);
+    setIsFallbackMode(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -184,23 +192,40 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
       setAnalysisStep("ATHLONIQ Vision is analyzing your meal photo...");
       const result: MealAnalysisResponse = await analyzeMealPhotoApi(file);
 
-      if (result && result.candidates && result.candidates.length > 0) {
-        setCandidates(result.candidates);
-        const provider = result.provider || result.vision_meta?.provider;
-        const mode = result.mode || result.vision_meta?.mode;
-        setVisionProvider(formatVisionBadge(provider, mode));
+      const provider = result?.provider || result?.vision_meta?.provider || null;
+      const mode = result?.mode || result?.vision_meta?.mode || null;
+      setVisionProvider(formatVisionBadge(provider, mode));
+
+      const isDemo = mode === "demo";
+      const isFallback = mode === "fallback";
+      setIsDemoMode(Boolean(isDemo));
+      setIsFallbackMode(Boolean(isFallback));
+
+      if (result && Array.isArray(result.candidates) && result.candidates.length > 0) {
+        if (isFallback) {
+          // Never prefill any food from mock/fallback!
+          setCandidates([]);
+          setEmptyMessage(result.message || "Vision unavailable — log manually");
+        } else {
+          setCandidates(result.candidates);
+          setEmptyMessage(null);
+        }
       } else {
-        throw new Error("No recognizable food items could be identified in the image.");
+        setCandidates([]);
+        const msg =
+          result?.message ||
+          (isFallback
+            ? "Vision unavailable — log manually"
+            : "No recognizable food items could be identified in the image.");
+        setEmptyMessage(msg);
       }
     } catch (err: any) {
-      console.warn("Vision API failed or server unreachable, falling back to simulated analysis:", err);
-      // If API fails due to server offline or test env, provide mock analysis for seamless UX
+      console.warn("Vision API failed or server unreachable:", err);
       setVisionProvider(formatVisionBadge("mock", "fallback"));
-      setAnalysisStep("Formatting deterministic catalog candidates (mock/fallback)...");
-      setTimeout(() => {
-        // Fallback to first demo preset if server is unreachable
-        setCandidates(DEMO_MEAL_PRESETS[0].candidates);
-      }, 750);
+      setIsFallbackMode(true);
+      setIsDemoMode(false);
+      setCandidates([]);
+      setEmptyMessage("Vision unavailable — log manually");
     } finally {
       setIsAnalyzing(false);
     }
@@ -233,6 +258,9 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   const handleSelectPreset = (preset: typeof DEMO_MEAL_PRESETS[0]) => {
     setIsAnalyzing(true);
     setVisionProvider(formatVisionBadge("mock", "demo"));
+    setIsDemoMode(true);
+    setIsFallbackMode(false);
+    setEmptyMessage(null);
     setAnalysisStep("ATHLONIQ Vision is analyzing demo meal...");
     setAnalysisError(null);
     setTimeout(() => {
@@ -342,13 +370,54 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 </div>
               </div>
             </div>
-          ) : candidates ? (
-            /* STATE 2: Candidate Review Form */
+          ) : candidates && candidates.length === 0 ? (
+            /* STATE 2A: Empty Candidates / Fallback Mode */
+            <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-5" data-testid="vision-empty-state">
+              <div className="h-16 w-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <AlertCircle className="h-8 w-8" />
+              </div>
+
+              <div className="space-y-2 max-w-md">
+                <h4 className="text-base font-bold text-white tracking-tight">
+                  {isFallbackMode ? "Vision unavailable — log manually" : "No Food Items Identified"}
+                </h4>
+                <p className="text-sm text-slate-400" data-testid="vision-empty-message">
+                  {emptyMessage || (isFallbackMode ? "Vision unavailable — log manually" : "No recognizable food items could be identified in the image.")}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  data-testid="manual-entry-button"
+                  onClick={() => {
+                    handleClose();
+                    onOpenManualEntry?.();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-purple-600/30 transition-all flex items-center gap-2"
+                >
+                  <UtensilsCrossed className="h-4 w-4" />
+                  Log Manually
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="vision-try-again-button"
+                  onClick={() => resetState()}
+                  className="px-4 py-2.5 rounded-xl bg-[#181D2A] hover:bg-[#1E2330] border border-[#2A3142] text-slate-300 hover:text-white font-semibold text-xs transition-all"
+                >
+                  Try Another Photo
+                </button>
+              </div>
+            </div>
+          ) : candidates && candidates.length > 0 ? (
+            /* STATE 2B: Candidate Review Form */
             <CandidateReviewForm
               candidates={candidates}
               previewUrl={previewUrl}
               selectedDate={selectedDate}
               selectedSlot={selectedSlot}
+              isDemo={isDemoMode || visionProvider.toLowerCase().includes("demo")}
               onConfirm={handleConfirmReview}
               onCancel={handleClose}
               onRetake={() => {

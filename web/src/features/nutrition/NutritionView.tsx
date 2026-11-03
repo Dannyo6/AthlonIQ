@@ -650,6 +650,10 @@ export const NutritionView: React.FC = () => {
         onClose={() => setShowPhotoModal(false)}
         selectedDate={selectedDate}
         selectedSlot={selectedSlot}
+        onOpenManualEntry={() => {
+          setShowPhotoModal(false);
+          setShowAddPanel(true);
+        }}
       />
     </div>
   );

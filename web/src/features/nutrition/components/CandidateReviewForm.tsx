@@ -34,6 +34,7 @@ interface CandidateReviewFormProps {
   previewUrl: string | null;
   selectedDate: string;
   selectedSlot: MealSlot;
+  isDemo?: boolean;
   onConfirm: (confirmedEntries: Omit<FoodEntry, "id">[]) => void;
   onCancel: () => void;
   onRetake?: () => void;
@@ -44,6 +45,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
   previewUrl,
   selectedDate,
   selectedSlot: initialSlot,
+  isDemo,
   onConfirm,
   onCancel,
   onRetake,
@@ -141,6 +143,14 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
             <div className="text-sm font-bold text-white flex items-center gap-2">
               <span>AthlonIQ Vision Guardrail Active</span>
               <ProvenanceBadge provenance="ai_estimated" />
+              {isDemo && (
+                <span
+                  data-testid="demo-sample-badge"
+                  className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold"
+                >
+                  DEMO SAMPLES
+                </span>
+              )}
             </div>
             <p className="text-xs text-purple-300/90 leading-relaxed mt-0.5">
               AI estimates require explicit athlete confirmation before joining daily totals.
@@ -275,6 +285,14 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                       <h4 className="text-base font-bold text-white">
                         {item.matched_catalog_name || item.food_name}
                       </h4>
+                      {isDemo && (
+                        <span
+                          data-testid="demo-sample-label"
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold"
+                        >
+                          DEMO SAMPLE
+                        </span>
+                      )}
                       {item.isModifiedByUser ? (
                         <ProvenanceBadge provenance="user_corrected" />
                       ) : (

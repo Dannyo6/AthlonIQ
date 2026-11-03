@@ -314,12 +314,13 @@ export interface VisionMeta {
 
 export interface MealAnalysisResponse {
   candidates: CandidateFoodItem[];
-  detected_item_count: number;
+  detected_item_count?: number;
   provider?: VisionProvider;
   mode?: VisionMode;
   model_name?: string | null;
-  provenance: "ai_estimated" | string;
+  provenance?: "ai_estimated" | string;
   notes?: string | null;
+  message?: string | null;
   vision_meta?: VisionMeta;
 }
 

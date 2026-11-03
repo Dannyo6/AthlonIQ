@@ -8,9 +8,10 @@ import * as apiModule from "@/services/api";
 import { CandidateFoodItem, MealAnalysisResponse } from "@/types";
 
 // Mock useAthloniqState for isolated component testing
+const mockAddFoodEntry = vi.fn();
 vi.mock("@/hooks/useAthloniqState", () => ({
   useAthloniqState: () => ({
-    addFoodEntry: vi.fn(),
+    addFoodEntry: mockAddFoodEntry,
   }),
 }));
 
@@ -216,6 +217,215 @@ describe("Lane B4: MealPhotoUploader Provider & Mode Handling", () => {
       fireEvent.click(demoBtn);
 
       expect(badge).toHaveTextContent("mock (demo)");
+    });
+  });
+
+  // =========================================================================
+  // 3. Lane B5: Fallback Handling, Demo Labeling, and Live Confirmation
+  // =========================================================================
+
+  describe("Lane B5: Vision Fallback, Demo Labeling & Live Confirmation", () => {
+    const uploadDummyFile = (container: HTMLElement) => {
+      const file = new File(["dummy image bytes"], "meal.jpg", { type: "image/jpeg" });
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(fileInput).toBeInTheDocument();
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    };
+
+    it("empty fallback shows the message and the manual-entry button", async () => {
+      const mockResponse: MealAnalysisResponse = {
+        candidates: [],
+        detected_item_count: 0,
+        provider: "mock",
+        mode: "fallback",
+        provenance: "ai_estimated",
+        message: "Vision unavailable — log manually",
+        vision_meta: {
+          provider: "mock",
+          mode: "fallback",
+        },
+      };
+
+      vi.spyOn(apiModule, "analyzeMealPhotoApi").mockResolvedValue(mockResponse);
+
+      const onOpenManualEntry = vi.fn();
+      const onClose = vi.fn();
+
+      const { container } = render(
+        <MealPhotoUploader
+          isOpen={true}
+          onClose={onClose}
+          selectedDate="2026-11-03"
+          selectedSlot="lunch"
+          onOpenManualEntry={onOpenManualEntry}
+        />
+      );
+
+      const badge = screen.getByTestId("vision-provider-badge");
+      uploadDummyFile(container);
+
+      await waitFor(() => {
+        expect(badge).toHaveTextContent("mock (fallback)");
+      });
+
+      // Verify the fallback message is rendered
+      const emptyMessage = await screen.findByTestId("vision-empty-message");
+      expect(emptyMessage).toHaveTextContent("Vision unavailable — log manually");
+
+      // Verify manual entry button is present
+      const manualEntryBtn = screen.getByTestId("manual-entry-button");
+      expect(manualEntryBtn).toBeInTheDocument();
+      expect(manualEntryBtn).toHaveTextContent("Log Manually");
+
+      // Clicking manual entry button invokes callbacks and closes modal
+      fireEvent.click(manualEntryBtn);
+      expect(onOpenManualEntry).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      // Verify NO candidates were prefilled
+      expect(screen.queryByText("Detected Foods")).not.toBeInTheDocument();
+      expect(screen.queryByText("Whole Wheat Roti")).not.toBeInTheDocument();
+    });
+
+    it("handles API error by showing fallback message and manual-entry button without prefilling foods", async () => {
+      vi.spyOn(apiModule, "analyzeMealPhotoApi").mockRejectedValue(new Error("Network Error"));
+
+      const onOpenManualEntry = vi.fn();
+      const onClose = vi.fn();
+
+      const { container } = render(
+        <MealPhotoUploader
+          isOpen={true}
+          onClose={onClose}
+          selectedDate="2026-11-03"
+          selectedSlot="lunch"
+          onOpenManualEntry={onOpenManualEntry}
+        />
+      );
+
+      const badge = screen.getByTestId("vision-provider-badge");
+      uploadDummyFile(container);
+
+      await waitFor(() => {
+        expect(badge).toHaveTextContent("mock (fallback)");
+      });
+
+      // Verify fallback message is rendered on error
+      const emptyMessage = await screen.findByTestId("vision-empty-message");
+      expect(emptyMessage).toHaveTextContent("Vision unavailable — log manually");
+
+      // Verify manual entry button is present
+      const manualEntryBtn = screen.getByTestId("manual-entry-button");
+      expect(manualEntryBtn).toBeInTheDocument();
+
+      // Verify NO food was prefilled from mock presets
+      expect(screen.queryByText("Detected Foods")).not.toBeInTheDocument();
+      expect(screen.queryByText("Whole Wheat Roti")).not.toBeInTheDocument();
+    });
+
+    it("demo shows labelled samples", async () => {
+      const mockResponse: MealAnalysisResponse = {
+        candidates: [mockCandidate],
+        detected_item_count: 1,
+        provider: "mock",
+        mode: "demo",
+        provenance: "ai_estimated",
+        vision_meta: {
+          provider: "mock",
+          mode: "demo",
+        },
+      };
+
+      vi.spyOn(apiModule, "analyzeMealPhotoApi").mockResolvedValue(mockResponse);
+
+      const { container } = render(
+        <MealPhotoUploader
+          isOpen={true}
+          onClose={vi.fn()}
+          selectedDate="2026-11-03"
+          selectedSlot="lunch"
+        />
+      );
+
+      uploadDummyFile(container);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("vision-provider-badge")).toHaveTextContent("mock (demo)");
+      });
+
+      // Verify demo banner badge
+      const demoBadge = await screen.findByTestId("demo-sample-badge");
+      expect(demoBadge).toHaveTextContent("DEMO SAMPLES");
+
+      // Verify demo sample label next to candidate food name
+      const demoLabels = screen.getAllByTestId("demo-sample-label");
+      expect(demoLabels.length).toBeGreaterThan(0);
+      expect(demoLabels[0]).toHaveTextContent("DEMO SAMPLE");
+    });
+
+    it("live shows candidates needing confirmation (ai_estimated until the user confirms)", async () => {
+      const mockResponse: MealAnalysisResponse = {
+        candidates: [
+          {
+            ...mockCandidate,
+            is_confirmed: false,
+            provenance: "ai_estimated",
+          },
+        ],
+        detected_item_count: 1,
+        provider: "gemini",
+        mode: "live",
+        provenance: "ai_estimated",
+        vision_meta: {
+          provider: "gemini",
+          mode: "live",
+        },
+      };
+
+      vi.spyOn(apiModule, "analyzeMealPhotoApi").mockResolvedValue(mockResponse);
+
+      const { container } = render(
+        <MealPhotoUploader
+          isOpen={true}
+          onClose={vi.fn()}
+          selectedDate="2026-11-03"
+          selectedSlot="lunch"
+        />
+      );
+
+      uploadDummyFile(container);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("vision-provider-badge")).toHaveTextContent("gemini (live)");
+      });
+
+      // Guardrail active banner
+      expect(screen.getByText("AthlonIQ Vision Guardrail Active")).toBeInTheDocument();
+
+      // Demo badges must NOT appear in live mode
+      expect(screen.queryByTestId("demo-sample-badge")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("demo-sample-label")).not.toBeInTheDocument();
+
+      // Candidate is ai_estimated before confirmation
+      const aiBadges = screen.getAllByText(/ai estimated/i);
+      expect(aiBadges.length).toBeGreaterThan(0);
+
+      // Find confirm button
+      const confirmBtn = screen.getByRole("button", { name: /Confirm & Log/i });
+      expect(confirmBtn).toBeInTheDocument();
+
+      // Athlete explicitly confirms
+      fireEvent.click(confirmBtn);
+
+      // Verify addFoodEntry was called with confirmed flags
+      expect(mockAddFoodEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          foodName: "Whole Wheat Roti",
+          isConfirmed: true,
+          is_confirmed: true,
+          provenance: "ai_estimated",
+        })
+      );
     });
   });
 });
