@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -11,6 +15,7 @@ jobs:
   scan-secrets:
     name: Secret Hygiene Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -19,6 +24,11 @@ jobs:
         uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Run secret scanner test suite
+        run: npm run test:scan
 
       - name: Scan tracked files for secrets
         run: npm run scan:secrets
@@ -26,6 +36,7 @@ jobs:
   api-pytest:
     name: Backend Pytest (Python 3.12)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       ENVIRONMENT: test
       DEBUG: "false"
@@ -56,6 +67,7 @@ jobs:
   web-ci:
     name: Frontend (npm ci + build + vitest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -78,6 +90,11 @@ jobs:
         working-directory: web
         run: npm ci
 
+      - name: Audit production dependencies (non-blocking)
+        working-directory: web
+        run: npm audit --omit=dev
+        continue-on-error: true
+
       - name: Build web application
         working-directory: web
         run: npm run build
@@ -89,6 +106,7 @@ jobs:
   tools-rls:
     name: Database Hermetic RLS (PGlite)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -106,4 +124,5 @@ jobs:
 
       - name: Run RLS isolation tests
         run: npm run test:rls
+
 

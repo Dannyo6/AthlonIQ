@@ -17,6 +17,7 @@ Rules:
 - Never prints the token or password; prints only status codes and response bodies.
 """
 
+import base64
 import json
 import os
 import sys
@@ -113,8 +114,16 @@ def verify_hosted_token():
 
     # 2. Check: Tampered token -> expect 401
     print("\n--- 2. Testing GET /api/v1/coaching/tools (Tampered Token) ---")
+    fake_header = base64.urlsafe_b64encode(
+        json.dumps({"alg": "ES256", "typ": "JWT"}).encode("utf-8")
+    ).rstrip(b"=").decode("ascii")
+    fake_payload = base64.urlsafe_b64encode(
+        json.dumps({"sub": "tampered-user", "role": "authenticated"}).encode("utf-8")
+    ).rstrip(b"=").decode("ascii")
+    fake_signature = "fixed_fake_tampered_signature"
+    tampered_token = f"{fake_header}.{fake_payload}.{fake_signature}"
     tampered_headers = {
-        "Authorization": "Bearer invalid.tampered.token"
+        "Authorization": f"Bearer {tampered_token}"
     }
     resp_tampered = client.get("/api/v1/coaching/tools", headers=tampered_headers)
     print(f"Status Code: {resp_tampered.status_code}")
