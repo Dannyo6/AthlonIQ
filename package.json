@@ -3,6 +3,7 @@
   "private": true,
   "description": "AthlonIQ — Personal AI Performance & Physique OS",
   "scripts": {
+    "scan:secrets": "node tools/scan-secrets.mjs",
     "test:rls": "npm --prefix tools run test:rls",
     "audit:migrations": "npm --prefix tools run audit"
   }

@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  scan-secrets:
+    name: Secret Hygiene Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+
+      - name: Scan tracked files for secrets
+        run: npm run scan:secrets
+
+  api-pytest:
+    name: Backend Pytest (Python 3.12)
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: test
+      DEBUG: "false"
+      DEV_AUTH_BYPASS: "false"
+      SUPABASE_URL: https://ghxotyoiquyyowydxshb.supabase.co
+      SUPABASE_JWT_SECRET: athloniq-super-secret-test-key-32chars!!
+      BACKEND_CORS_ORIGINS: '["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api/requirements.txt
+
+      - name: Run pytest
+        working-directory: api
+        run: pytest
+
+  web-ci:
+    name: Frontend (npm ci + build + vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Ensure .env.local is absent
+        run: |
+          if [ -f web/.env.local ]; then
+            echo "Error: web/.env.local must not be present in CI"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build web application
+        working-directory: web
+        run: npm run build
+
+      - name: Run vitest suite
+        working-directory: web
+        run: npm test
+
+  tools-rls:
+    name: Database Hermetic RLS (PGlite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install dependencies
+        working-directory: tools
+        run: npm ci
+
+      - name: Run RLS isolation tests
+        run: npm run test:rls
+

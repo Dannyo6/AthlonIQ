@@ -114,7 +114,7 @@ def verify_hosted_token():
     # 2. Check: Tampered token -> expect 401
     print("\n--- 2. Testing GET /api/v1/coaching/tools (Tampered Token) ---")
     tampered_headers = {
-        "Authorization": "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.invalidpayload.tampered_signature"
+        "Authorization": "Bearer invalid.tampered.token"
     }
     resp_tampered = client.get("/api/v1/coaching/tools", headers=tampered_headers)
     print(f"Status Code: {resp_tampered.status_code}")
