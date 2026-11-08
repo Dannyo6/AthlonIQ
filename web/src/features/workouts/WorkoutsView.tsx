@@ -277,7 +277,7 @@ export const WorkoutsView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Dumbbell className="h-6 w-6 text-athloniq-lime" />
@@ -318,7 +318,7 @@ export const WorkoutsView: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#1E2330] pb-2">
+      <div className="flex items-center gap-2 border-b border-athloniq-border pb-2">
         {(["templates", "active", "history"] as const).map((tab) => (
           <button
             key={tab}
@@ -326,7 +326,7 @@ export const WorkoutsView: React.FC = () => {
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors capitalize ${
               activeTab === tab
                 ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
-                : "text-slate-400 hover:text-white hover:bg-[#181D2A]"
+                : "text-slate-400 hover:text-white hover:bg-athloniq-surface"
             }`}
           >
             {tab === "templates" ? "Templates" : tab === "active" ? "Active Session" : "History"}
@@ -346,7 +346,7 @@ export const WorkoutsView: React.FC = () => {
                 </div>
                 <Badge variant="lime">Est. {tmpl.estimatedDurationMin}m</Badge>
               </div>
-              <div className="space-y-1.5 border-t border-[#1E2330] pt-3">
+              <div className="space-y-1.5 border-t border-athloniq-border pt-3">
                 {tmpl.exercises.map((ex, idx) => (
                   <div key={ex.id} className="flex items-center justify-between text-xs">
                     <span className="text-slate-300 font-medium">{idx + 1}. {ex.exerciseName}</span>
@@ -380,7 +380,7 @@ export const WorkoutsView: React.FC = () => {
           {sessionExercises.length > 0 && (
             <>
               {/* Session Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl bg-[#12151E] border border-[#1E2330]">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl bg-athloniq-card border border-athloniq-border">
                 <div className="flex-1">
                   <input
                     value={sessionTitle}
@@ -393,7 +393,7 @@ export const WorkoutsView: React.FC = () => {
                   </div>
                 </div>
                 {/* Rest Timer */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0 bg-[#0C0E15] p-2.5 rounded-xl border border-white/[0.06]">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 bg-athloniq-dark-nav p-2.5 rounded-xl border border-white/[0.06]">
                   <div className="flex items-center gap-1.5 mr-1">
                     <Timer className="h-4 w-4 text-athloniq-lime" />
                     <div className={`font-mono text-2xl font-black tabular-nums ${restTimer > 0 ? "text-athloniq-lime" : "text-slate-500"}`}>
@@ -406,7 +406,7 @@ export const WorkoutsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => adjustRestTimer(-15)}
-                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#141824] text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
+                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-athloniq-card-alt text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
                       title="Decrease 15 seconds"
                     >
                       -15s
@@ -414,7 +414,7 @@ export const WorkoutsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => adjustRestTimer(15)}
-                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#141824] text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
+                      className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-athloniq-card-alt text-slate-300 border border-white/[0.08] hover:text-white hover:border-white/[0.20]"
                       title="Add 15 seconds"
                     >
                       +15s
@@ -434,7 +434,7 @@ export const WorkoutsView: React.FC = () => {
                         className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
                           restPreset === sec
                             ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40 font-black"
-                            : "bg-[#141824] text-slate-400 border border-white/[0.06] hover:text-white"
+                            : "bg-athloniq-card-alt text-slate-400 border border-white/[0.06] hover:text-white"
                         }`}
                       >
                         {sec}s
@@ -462,7 +462,7 @@ export const WorkoutsView: React.FC = () => {
                         setRestTimer(0);
                         setRestRunning(false);
                       }}
-                      className="p-1.5 rounded-lg bg-[#141824] border border-white/[0.08] text-slate-400 hover:text-white"
+                      className="p-1.5 rounded-lg bg-athloniq-card-alt border border-white/[0.08] text-slate-400 hover:text-white"
                       title="Reset timer"
                     >
                       <RotateCcw className="h-4 w-4" />
@@ -476,7 +476,7 @@ export const WorkoutsView: React.FC = () => {
                 const suggestion = getProgressionSuggestion(ex);
                 return (
                   <Card key={ex.id} className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+                    <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                       <div>
                         <h3 className="font-bold text-white">{ex.exerciseName}</h3>
                         <div className="text-xs text-slate-400 font-mono mt-0.5 flex flex-wrap items-center gap-x-2">
@@ -494,7 +494,7 @@ export const WorkoutsView: React.FC = () => {
                       </div>
                       <button
                         onClick={() => startRestTimer(ex.restSeconds)}
-                        className="p-1.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-slate-400 hover:text-athloniq-lime text-xs font-mono"
+                        className="p-1.5 rounded-lg bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-athloniq-lime text-xs font-mono"
                       >
                         <Timer className="h-4 w-4" />
                       </button>
@@ -560,7 +560,7 @@ export const WorkoutsView: React.FC = () => {
                                     loadKg: val === "" ? 0 : parseFloat(val) || 0,
                                   });
                                 }}
-                                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                                className="w-full bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                               />
                             )}
                           </div>
@@ -576,7 +576,7 @@ export const WorkoutsView: React.FC = () => {
                                   reps: val === "" ? 0 : parseInt(val, 10) || 0,
                                 });
                               }}
-                              className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                              className="w-full bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
                           <div className="col-span-2">
@@ -598,7 +598,7 @@ export const WorkoutsView: React.FC = () => {
                                   });
                                 }
                               }}
-                              className="w-full bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                              className="w-full bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
                           <div className="col-span-2 flex justify-center">
@@ -627,7 +627,7 @@ export const WorkoutsView: React.FC = () => {
 
                     <button
                       onClick={() => addSet(ex.id)}
-                      className="w-full py-1.5 rounded-xl border border-dashed border-[#1E2330] text-xs text-slate-500 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors font-mono"
+                      className="w-full py-1.5 rounded-xl border border-dashed border-athloniq-border text-xs text-slate-500 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors font-mono"
                     >
                       + Add Set
                     </button>
@@ -657,7 +657,7 @@ export const WorkoutsView: React.FC = () => {
                           setSessionRpe(isNaN(n) ? null : Math.min(10, Math.max(1, n)));
                         }
                       }}
-                      className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                      className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                     />
                   </div>
                 </div>
@@ -666,7 +666,7 @@ export const WorkoutsView: React.FC = () => {
                   onChange={(e) => setSessionNotes(e.target.value)}
                   placeholder="Session notes..."
                   rows={2}
-                  className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none resize-none"
+                  className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none resize-none"
                 />
                 <Button variant="primary" className="w-full" onClick={finishSession}>
                   <CheckCircle2 className="h-4 w-4" /> Finish & Save Session

@@ -363,7 +363,7 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <User className="h-6 w-6 text-athloniq-lime" />
@@ -433,8 +433,8 @@ export const ProfileView: React.FC = () => {
                     isCurrent
                       ? "bg-athloniq-lime/10 border-athloniq-lime text-white"
                       : isPast
-                      ? "bg-[#12151E] border-emerald-500/40 text-emerald-300"
-                      : "bg-[#12151E] border-[#1E2330] text-slate-500"
+                      ? "bg-athloniq-card border-emerald-500/40 text-emerald-300"
+                      : "bg-athloniq-card border-athloniq-border text-slate-500"
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs font-mono font-bold">
@@ -451,7 +451,7 @@ export const ProfileView: React.FC = () => {
             {/* STEP 1: Biometrics & Anthropometry */}
             {currentStep === 1 && (
               <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
                   <div>
                     <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
                       Step 1 of 5
@@ -472,7 +472,7 @@ export const ProfileView: React.FC = () => {
                       id="profile-age"
                       type="number"
                       {...register("age")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                     {errors.age && (
                       <p className="text-xs text-rose-400">{errors.age.message}</p>
@@ -488,7 +488,7 @@ export const ProfileView: React.FC = () => {
                       type="number"
                       step="0.5"
                       {...register("heightCm")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                     {errors.heightCm && (
                       <p className="text-xs text-rose-400">{errors.heightCm.message}</p>
@@ -504,7 +504,7 @@ export const ProfileView: React.FC = () => {
                       type="number"
                       step="0.1"
                       {...register("weightKg")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                     {errors.weightKg && (
                       <p className="text-xs text-rose-400">{errors.weightKg.message}</p>
@@ -522,7 +522,7 @@ export const ProfileView: React.FC = () => {
                     </div>
                     <select
                       {...register("sex")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                     >
                       <option value="unknown">Skip / Unknown</option>
                       <option value="male">Male</option>
@@ -545,7 +545,7 @@ export const ProfileView: React.FC = () => {
                       type="number"
                       placeholder="e.g. 74 cm (or leave empty)"
                       {...register("waistCm")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                     <p className="text-[11px] text-slate-500">
                       Used for Navy body-fat estimates when available. Optional.
@@ -554,7 +554,7 @@ export const ProfileView: React.FC = () => {
                 </div>
 
                 {/* Instant BMI Screening Preview */}
-                <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {liveBmi ? (
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
@@ -607,7 +607,7 @@ export const ProfileView: React.FC = () => {
             {/* STEP 2: Goals & Dietary Profile */}
             {currentStep === 2 && (
               <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
                   <div>
                     <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
                       Step 2 of 5
@@ -626,7 +626,7 @@ export const ProfileView: React.FC = () => {
                     </label>
                     <select
                       {...register("primaryGoal")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                     >
                       <option value="lean_bulk">Lean Bulk (+250 kcal surplus)</option>
                       <option value="hypertrophy">Hypertrophy (Targeted Muscle Growth)</option>
@@ -643,7 +643,7 @@ export const ProfileView: React.FC = () => {
                     </label>
                     <select
                       {...register("dietaryPattern")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                     >
                       <option value="nonvegetarian">Nonvegetarian (Omnivore)</option>
                       <option value="vegetarian">Vegetarian (Lacto-Ovo)</option>
@@ -655,7 +655,7 @@ export const ProfileView: React.FC = () => {
                 </div>
 
                 {/* Protein Target Calibration */}
-                <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-3">
+                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center gap-2">
@@ -674,7 +674,7 @@ export const ProfileView: React.FC = () => {
                       <input
                         type="number"
                         {...register("customProteinG")}
-                        className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono font-bold focus:border-athloniq-lime focus:outline-none"
+                        className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono font-bold focus:border-athloniq-lime focus:outline-none"
                       />
                     </div>
                     <span className="text-xs text-slate-400">
@@ -705,7 +705,7 @@ export const ProfileView: React.FC = () => {
             {/* STEP 3: Home Equipment Verification */}
             {currentStep === 3 && (
               <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
                   <div>
                     <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
                       Step 3 of 5
@@ -728,8 +728,8 @@ export const ProfileView: React.FC = () => {
                       key={item.id}
                       className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                         item.isConfirmed
-                          ? "bg-[#181D2A] border-emerald-500/40"
-                          : "bg-[#181D2A]/60 border-amber-500/40"
+                          ? "bg-athloniq-surface border-emerald-500/40"
+                          : "bg-athloniq-surface/60 border-amber-500/40"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -792,7 +792,7 @@ export const ProfileView: React.FC = () => {
                       </div>
 
                       {editingEquipmentId === item.id && (
-                        <div className="mt-3 pt-3 border-t border-[#1E2330] w-full flex flex-col sm:flex-row items-end gap-3 animate-fade-in">
+                        <div className="mt-3 pt-3 border-t border-athloniq-border w-full flex flex-col sm:flex-row items-end gap-3 animate-fade-in">
                           <div className="space-y-1 flex-1 w-full sm:w-auto">
                             <label className="text-[10px] text-slate-400 font-medium">Max Load (kg)</label>
                             <input
@@ -802,7 +802,7 @@ export const ProfileView: React.FC = () => {
                               placeholder="e.g. 70 (or leave blank)"
                               value={editMaxLoad}
                               onChange={(e) => setEditMaxLoad(e.target.value)}
-                              className="w-full bg-[#12151E] border border-[#1E2330] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
                             />
                           </div>
                           <div className="space-y-1 flex-1 w-full sm:w-auto">
@@ -814,7 +814,7 @@ export const ProfileView: React.FC = () => {
                               placeholder="e.g. 2.5 (or leave blank)"
                               value={editMinIncrement}
                               onChange={(e) => setEditMinIncrement(e.target.value)}
-                              className="w-full bg-[#12151E] border border-[#1E2330] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
                             />
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -875,7 +875,7 @@ export const ProfileView: React.FC = () => {
             {/* STEP 4: Training Split, Sport & Sleep Baseline */}
             {currentStep === 4 && (
               <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
                   <div>
                     <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
                       Step 4 of 5
@@ -897,7 +897,7 @@ export const ProfileView: React.FC = () => {
                       min="1"
                       max="7"
                       {...register("trainingDaysPerWeek")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                   </div>
 
@@ -907,7 +907,7 @@ export const ProfileView: React.FC = () => {
                     </label>
                     <select
                       {...register("experienceLevel")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                     >
                       <option value="beginner">Beginner (&lt; 1 Year)</option>
                       <option value="intermediate">Intermediate (1-3 Years)</option>
@@ -922,7 +922,7 @@ export const ProfileView: React.FC = () => {
                     </label>
                     <select
                       {...register("currentSplit")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                     >
                       <option value="need_recommendation">Need Recommendation</option>
                       <option value="upper_lower">Upper / Lower (4-5 Days)</option>
@@ -942,7 +942,7 @@ export const ProfileView: React.FC = () => {
                       type="number"
                       min="0"
                       {...register("weeklyBadmintonSessions")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                   </div>
 
@@ -954,7 +954,7 @@ export const ProfileView: React.FC = () => {
                       type="number"
                       min="0"
                       {...register("weeklyRunningSessions")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                   </div>
 
@@ -968,7 +968,7 @@ export const ProfileView: React.FC = () => {
                       min="4"
                       max="12"
                       {...register("sleepBaselineHours")}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                     />
                   </div>
                 </div>
@@ -981,7 +981,7 @@ export const ProfileView: React.FC = () => {
                     type="text"
                     placeholder="e.g. slight right shoulder impingement on flat bench, or none"
                     {...register("exerciseLimitations")}
-                    className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                    className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                   />
                 </div>
 
@@ -1007,7 +1007,7 @@ export const ProfileView: React.FC = () => {
             {/* STEP 5: Review & Plan Activation */}
             {currentStep === 5 && (
               <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
                   <div>
                     <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
                       Step 5 of 5
@@ -1023,7 +1023,7 @@ export const ProfileView: React.FC = () => {
                 </div>
 
                 {/* Energy & Macro Targets Preview Card */}
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-[#181D2A] to-[#12151E] border border-athloniq-lime/30 space-y-4">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-athloniq-surface to-athloniq-card border border-athloniq-lime/30 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Flame className="h-5 w-5 text-athloniq-lime" />
@@ -1035,28 +1035,28 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
                       <div className="text-[11px] text-slate-400 font-medium">Daily Target</div>
                       <div className="text-2xl font-black text-athloniq-lime font-mono mt-1 tabular-nums">
                         {liveEnergy.estimatedKcal ?? <span className="text-sm text-slate-500">not set</span>}
                         {liveEnergy.estimatedKcal && <span className="text-xs text-slate-400 ml-1">kcal</span>}
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
                       <div className="text-[11px] text-slate-400 font-medium">Protein (1.6-2.2 g/kg)</div>
                       <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
                         {liveProteinRef.proteinTargetG}
                         <span className="text-xs text-slate-400 ml-1">g</span>
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
                       <div className="text-[11px] text-slate-400 font-medium">Carbohydrates</div>
                       <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
                         {liveEnergy.macros?.carbsG ?? <span className="text-sm text-slate-500">not set</span>}
                         {liveEnergy.macros?.carbsG !== undefined && liveEnergy.macros?.carbsG !== null && <span className="text-xs text-slate-400 ml-1">g</span>}
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
                       <div className="text-[11px] text-slate-400 font-medium">Dietary Fats</div>
                       <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
                         {liveEnergy.macros?.fatG ?? <span className="text-sm text-slate-500">not set</span>}
@@ -1072,8 +1072,8 @@ export const ProfileView: React.FC = () => {
 
                 {/* Audit Grid of Entered Baseline Anchors */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
-                    <div className="flex justify-between items-center border-b border-[#1E2330] pb-1.5 font-bold text-slate-300">
+                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
+                    <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
                       <span>BIOMETRICS</span>
                       <ProvenanceBadge provenance="calculated_estimate" />
                     </div>
@@ -1097,8 +1097,8 @@ export const ProfileView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
-                    <div className="flex justify-between items-center border-b border-[#1E2330] pb-1.5 font-bold text-slate-300">
+                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
+                    <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
                       <span>EQUIPMENT & SCOPE</span>
                       <ProvenanceBadge provenance="user_confirmed" />
                     </div>
@@ -1124,8 +1124,8 @@ export const ProfileView: React.FC = () => {
                 </div>
 
                 {/* Timezone Confirmation Card */}
-                <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
-                  <div className="flex justify-between items-center border-b border-[#1E2330] pb-1.5 font-bold text-slate-300">
+                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
+                  <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
                     <span className="flex items-center gap-1.5">
                       <Globe className="h-4 w-4 text-athloniq-lime" />
                       TIMEZONE CONFIRMATION
@@ -1144,7 +1144,7 @@ export const ProfileView: React.FC = () => {
                         type="text"
                         {...register("timezone")}
                         data-testid="onboarding-timezone-input"
-                        className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                        className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
                         placeholder="e.g. Asia/Kolkata, America/New_York"
                       />
                     </div>
@@ -1185,20 +1185,20 @@ export const ProfileView: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-2 border-t border-[#1E2330] text-xs">
-              <div className="flex justify-between py-1 border-b border-[#1E2330]">
+            <div className="space-y-2.5 pt-2 border-t border-athloniq-border text-xs">
+              <div className="flex justify-between py-1 border-b border-athloniq-border">
                 <span className="text-slate-400">Age & Weight</span>
                 <span className="font-mono text-white font-medium">
                   {profile.age} yrs • {profile.weightKg} kg
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[#1E2330]">
+              <div className="flex justify-between py-1 border-b border-athloniq-border">
                 <span className="text-slate-400">Height & BMI</span>
                 <span className="font-mono text-white font-medium">
                   {profile.heightCm} cm • BMI 18.4
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[#1E2330]">
+              <div className="flex justify-between py-1 border-b border-athloniq-border">
                 <span className="text-slate-400">Training Frequency</span>
                 <span className="text-athloniq-lime font-semibold font-mono">
                   {profile.trainingDaysPerWeek} Days / Week
@@ -1236,7 +1236,7 @@ export const ProfileView: React.FC = () => {
               <ProvenanceBadge provenance={goals.calorieProvenance} />
             </div>
 
-            <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+            <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
               <div className="text-xs font-semibold text-athloniq-lime uppercase">
                 Lean Bulk Strategy (+250 kcal)
               </div>
@@ -1288,7 +1288,7 @@ export const ProfileView: React.FC = () => {
                 <span>Auditable Provenance on Every Metric</span>
               </div>
             </div>
-            <div className="pt-3 border-t border-[#1E2330]">
+            <div className="pt-3 border-t border-athloniq-border">
               <div className="text-[11px] text-slate-400">
                 All biometrics, equipment items, and check-in scores are deterministically verified and synchronized with PostgreSQL Row-Level Security (RLS) policies in Supabase.
               </div>
@@ -1314,7 +1314,7 @@ export const ProfileView: React.FC = () => {
       />
 
       {/* Data Portability, Export & Account Controls */}
-      <Card className="space-y-4 border-[#1E2330]">
+      <Card className="space-y-4 border-athloniq-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-athloniq-lime" />

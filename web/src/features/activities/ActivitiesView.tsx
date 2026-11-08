@@ -150,7 +150,7 @@ export const ActivitiesView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Activity className="h-6 w-6 text-athloniq-lime" />
@@ -173,7 +173,7 @@ export const ActivitiesView: React.FC = () => {
           { label: "Calisthenics", count: weeklyCounts.calisthenics, sub: "sessions this week", color: "text-athloniq-lime" },
           { label: "Other", count: weeklyCounts.other, sub: "sessions this week", color: "text-purple-400" },
         ].map(({ label, count, sub, color }) => (
-          <div key={label} className="p-4 rounded-2xl bg-[#12151E] border border-[#1E2330] text-center">
+          <div key={label} className="p-4 rounded-2xl bg-athloniq-card border border-athloniq-border text-center">
             <div className={`text-3xl font-black font-mono tabular-nums ${color}`}>{count}</div>
             <div className="text-xs font-bold text-white mt-0.5">{label}</div>
             <div className="text-[11px] text-slate-400 font-mono">{sub}</div>
@@ -184,11 +184,11 @@ export const ActivitiesView: React.FC = () => {
       {/* Log Form */}
       {showForm && (
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-athloniq-lime" /> Log New Activity
             </h3>
-            <div className="flex items-center p-0.5 rounded-xl bg-[#181D2A] border border-[#1E2330] gap-0.5">
+            <div className="flex items-center p-0.5 rounded-xl bg-athloniq-surface border border-athloniq-border gap-0.5">
               {(["running", "badminton", "calisthenics", "other"] as ActivityType[]).map((mode) => (
                 <button
                   key={mode}
@@ -212,7 +212,7 @@ export const ActivitiesView: React.FC = () => {
                 type="date"
                 value={logDate}
                 onChange={(e) => setLogDate(e.target.value)}
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
               />
             </div>
             <div>
@@ -222,7 +222,7 @@ export const ActivitiesView: React.FC = () => {
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 placeholder="e.g. 45"
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono tabular-nums"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono tabular-nums"
               />
             </div>
           </div>
@@ -238,12 +238,12 @@ export const ActivitiesView: React.FC = () => {
                     value={distance}
                     onChange={(e) => setDistance(e.target.value)}
                     placeholder="e.g. 5.0"
-                    className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono tabular-nums"
+                    className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono tabular-nums"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 font-medium">Live Pace</label>
-                  <div className="mt-1 h-10 flex items-center px-3 rounded-xl bg-[#12151E] border border-[#1E2330]">
+                  <div className="mt-1 h-10 flex items-center px-3 rounded-xl bg-athloniq-card border border-athloniq-border">
                     {livePace ? (
                       <span className="text-athloniq-lime font-mono font-bold tabular-nums">
                         {livePace.paceFormatted}
@@ -256,7 +256,7 @@ export const ActivitiesView: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#181D2A]/50 border border-[#1E2330] text-[11px] text-slate-400">
+              <div className="p-3 rounded-xl bg-athloniq-surface/50 border border-athloniq-border text-[11px] text-slate-400">
                 <strong className="text-slate-300">Honesty Rule:</strong> No fabricated calories burned or heart rate displayed. Pace is deterministically calculated from your inputs only.
               </div>
             </div>
@@ -274,7 +274,7 @@ export const ActivitiesView: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
                         matchFormat === fmt
                           ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
-                          : "bg-[#181D2A] text-slate-400 border border-[#1E2330] hover:text-white"
+                          : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
                       }`}
                     >
                       {fmt.replace("_", " ")}
@@ -282,7 +282,7 @@ export const ActivitiesView: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#181D2A]/50 border border-[#1E2330] text-[11px] text-slate-400">
+              <div className="p-3 rounded-xl bg-athloniq-surface/50 border border-athloniq-border text-[11px] text-slate-400">
                 <strong className="text-slate-300">Honesty Rule:</strong> No fabricated heart rate or calorie burn for badminton.
               </div>
             </div>
@@ -295,7 +295,7 @@ export const ActivitiesView: React.FC = () => {
                 <select
                   value={skill}
                   onChange={(e) => setSkill(e.target.value)}
-                  className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   {CALISTHENICS_SKILLS.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -310,7 +310,7 @@ export const ActivitiesView: React.FC = () => {
                     value={progressionLevel}
                     onChange={(e) => setProgressionLevel(e.target.value)}
                     placeholder="e.g. Band-assisted"
-                    className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                    className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                   />
                 </div>
                 <div>
@@ -320,7 +320,7 @@ export const ActivitiesView: React.FC = () => {
                     value={setsCount}
                     onChange={(e) => setSetsCount(e.target.value)}
                     placeholder="e.g. 4"
-                    className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                    className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                   />
                 </div>
                 <div>
@@ -330,7 +330,7 @@ export const ActivitiesView: React.FC = () => {
                     value={repsOrHold}
                     onChange={(e) => setRepsOrHold(e.target.value)}
                     placeholder="e.g. 8"
-                    className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                    className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                   />
                 </div>
               </div>
@@ -350,7 +350,7 @@ export const ActivitiesView: React.FC = () => {
                   className={`w-8 h-8 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
                     effort === n
                       ? "bg-athloniq-lime text-slate-950"
-                      : "bg-[#181D2A] border border-[#1E2330] text-slate-400 hover:text-white"
+                      : "bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-white"
                   }`}
                 >
                   {n}
@@ -367,7 +367,7 @@ export const ActivitiesView: React.FC = () => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Morning loop, Riverside park"
-              className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+              className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
             />
           </div>
 
@@ -389,7 +389,7 @@ export const ActivitiesView: React.FC = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as ActivityType | "all")}
-              className="bg-[#12151E] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white focus:border-athloniq-lime focus:outline-none"
+              className="bg-athloniq-card border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white focus:border-athloniq-lime focus:outline-none"
             >
               <option value="all">All Sports</option>
               <option value="running">Running</option>

@@ -173,9 +173,9 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
       </div>
 
       {/* Top Preview & Meal Slot Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-[#12151E] p-4 rounded-2xl border border-[#1E2330]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-athloniq-card p-4 rounded-2xl border border-athloniq-border">
         {previewUrl ? (
-          <div className="relative rounded-xl overflow-hidden border border-[#1E2330] aspect-video md:aspect-square bg-black/40 flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden border border-athloniq-border aspect-video md:aspect-square bg-black/40 flex items-center justify-center">
             <img
               src={previewUrl}
               alt="Meal preview"
@@ -186,7 +186,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-[#1E2330] aspect-video md:aspect-square bg-[#181D2A]/40 flex flex-col items-center justify-center text-slate-500">
+          <div className="rounded-xl border border-dashed border-athloniq-border aspect-video md:aspect-square bg-athloniq-surface/40 flex flex-col items-center justify-center text-slate-500">
             <Sparkles className="h-6 w-6 text-purple-400 mb-1" />
             <span className="text-xs">Photo Processed</span>
           </div>
@@ -206,7 +206,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     selectedSlot === slot.id
                       ? "bg-athloniq-lime text-slate-950 font-bold shadow-glow-lime"
-                      : "bg-[#181D2A] text-slate-400 border border-[#1E2330] hover:text-white"
+                      : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
                   }`}
                 >
                   {slot.label}
@@ -216,25 +216,25 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
           </div>
 
           <div className="grid grid-cols-4 gap-2 pt-1 font-mono text-center">
-            <div className="p-2 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+            <div className="p-2 rounded-xl bg-athloniq-surface border border-athloniq-border">
               <div className="text-[10px] text-slate-400 uppercase">Calories</div>
               <div className="text-sm font-bold text-athloniq-lime tabular-nums">
                 {totalCal} <span className="text-[10px] font-normal">kcal</span>
               </div>
             </div>
-            <div className="p-2 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+            <div className="p-2 rounded-xl bg-athloniq-surface border border-athloniq-border">
               <div className="text-[10px] text-slate-400 uppercase">Protein</div>
               <div className="text-sm font-bold text-white tabular-nums">
                 {totalProtein}g
               </div>
             </div>
-            <div className="p-2 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+            <div className="p-2 rounded-xl bg-athloniq-surface border border-athloniq-border">
               <div className="text-[10px] text-slate-400 uppercase">Carbs</div>
               <div className="text-sm font-bold text-slate-300 tabular-nums">
                 {totalCarbs}g
               </div>
             </div>
-            <div className="p-2 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+            <div className="p-2 rounded-xl bg-athloniq-surface border border-athloniq-border">
               <div className="text-[10px] text-slate-400 uppercase">Fat</div>
               <div className="text-sm font-bold text-slate-300 tabular-nums">
                 {totalFat}g
@@ -255,7 +255,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
         </div>
 
         {items.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-[#12151E] border border-dashed border-[#1E2330] text-slate-400 space-y-3">
+          <div className="p-8 text-center rounded-2xl bg-athloniq-card border border-dashed border-athloniq-border text-slate-400 space-y-3">
             <AlertTriangle className="h-8 w-8 text-amber-400 mx-auto opacity-80" />
             <p className="text-sm">All candidates have been removed.</p>
             {onRetake && (
@@ -276,7 +276,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
             return (
               <div
                 key={item.id || idx}
-                className="p-4 rounded-2xl bg-[#12151E] border border-[#1E2330] hover:border-slate-700 transition-all space-y-3"
+                className="p-4 rounded-2xl bg-athloniq-card border border-athloniq-border hover:border-slate-700 transition-all space-y-3"
               >
                 {/* Header: Name, Catalog mapping & badges */}
                 <div className="flex items-start justify-between gap-3">
@@ -323,7 +323,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                 </div>
 
                 {/* Macro breakdown & portion multiplier */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#1E2330]/60">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-athloniq-border/60">
                   {/* Quantity Scaler */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs text-slate-400 mr-1 font-medium">
@@ -337,7 +337,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                         className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all ${
                           Math.abs(item.quantity - q) < 0.01
                             ? "bg-athloniq-lime text-slate-950 font-bold"
-                            : "bg-[#181D2A] text-slate-400 hover:text-white border border-[#1E2330]"
+                            : "bg-athloniq-surface text-slate-400 hover:text-white border border-athloniq-border"
                         }`}
                       >
                         {q}x
@@ -353,7 +353,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                         onChange={(e) =>
                           handleUpdateQuantity(idx, parseFloat(e.target.value) || 1)
                         }
-                        className="w-16 bg-[#181D2A] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white text-center font-mono focus:border-athloniq-lime focus:outline-none"
+                        className="w-16 bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white text-center font-mono focus:border-athloniq-lime focus:outline-none"
                       />
                     </div>
                   </div>
@@ -381,7 +381,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
       </div>
 
       {/* Action Footer */}
-      <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#1E2330]">
+      <div className="flex items-center justify-between gap-3 pt-4 border-t border-athloniq-border">
         <Button variant="ghost" onClick={onCancel}>
           Cancel
         </Button>

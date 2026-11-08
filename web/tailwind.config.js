@@ -7,9 +7,13 @@ export default {
       colors: {
         athloniq: {
           dark: "#090A0F",
+          "dark-nav": "#0C0E15",
           card: "#12151E",
+          "card-alt": "#141824",
           surface: "#181D2A",
+          "surface-alt": "#1E2433",
           border: "#1E2330",
+          "border-alt": "#232A3B",
           lime: {
             DEFAULT: "#BEF264",
             hover: "#A3E635",

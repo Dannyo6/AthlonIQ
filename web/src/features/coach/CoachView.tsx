@@ -299,7 +299,7 @@ export const CoachView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Sub-Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Bot className="h-6 w-6 text-athloniq-lime" />
@@ -323,13 +323,13 @@ export const CoachView: React.FC = () => {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-[#1E2330] gap-2">
+      <div className="flex border-b border-athloniq-border gap-2">
         <button
           onClick={() => setActiveTab("chat")}
           className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all ${
             activeTab === "chat"
               ? "border-athloniq-lime text-athloniq-lime bg-athloniq-lime/5"
-              : "border-transparent text-slate-400 hover:text-white hover:bg-[#141824]"
+              : "border-transparent text-slate-400 hover:text-white hover:bg-athloniq-card-alt"
           }`}
         >
           <Bot className="h-4 w-4" />
@@ -341,7 +341,7 @@ export const CoachView: React.FC = () => {
           className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all ${
             activeTab === "review"
               ? "border-athloniq-lime text-athloniq-lime bg-athloniq-lime/5"
-              : "border-transparent text-slate-400 hover:text-white hover:bg-[#141824]"
+              : "border-transparent text-slate-400 hover:text-white hover:bg-athloniq-card-alt"
           }`}
         >
           <Flame className="h-4 w-4" />
@@ -376,7 +376,7 @@ export const CoachView: React.FC = () => {
           )}
 
           {/* Chat Container */}
-          <Card className="flex flex-col h-[600px] p-0 overflow-hidden border-[#1E2330] bg-[#0E121B]">
+          <Card className="flex flex-col h-[600px] p-0 overflow-hidden border-athloniq-border bg-[#0E121B]">
             {/* Messages Scroll Area */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {coachMessages.map((msg) => (
@@ -401,8 +401,8 @@ export const CoachView: React.FC = () => {
                   <div
                     className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed space-y-3 ${
                       msg.sender === "athlete"
-                        ? "bg-[#181D2A] text-white border border-[#232A3B] rounded-tr-none"
-                        : "bg-[#121622] text-slate-200 border border-[#1E2433] rounded-tl-none shadow-md"
+                        ? "bg-athloniq-surface text-white border border-athloniq-border-alt rounded-tr-none"
+                        : "bg-[#121622] text-slate-200 border border-athloniq-surface-alt rounded-tl-none shadow-md"
                     }`}
                   >
                     {/* Reply Text */}
@@ -412,7 +412,7 @@ export const CoachView: React.FC = () => {
 
                     {/* Tools Invoked Badges */}
                     {msg.toolsUsed && msg.toolsUsed.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#1E2433]">
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-athloniq-surface-alt">
                         <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1 self-center">
                           Tools Invoked:
                         </span>
@@ -433,7 +433,7 @@ export const CoachView: React.FC = () => {
                         msg.appCalculations?.length ||
                         msg.recommendations?.length ||
                         msg.missingOrUncertain?.length) && (
-                        <div className="space-y-2 pt-2 border-t border-[#1E2433] text-xs">
+                        <div className="space-y-2 pt-2 border-t border-athloniq-surface-alt text-xs">
                           {/* Verified Tool Facts */}
                           {msg.factsFromTools && msg.factsFromTools.length > 0 && (
                             <div className="p-2.5 rounded-xl bg-lime-500/10 border border-lime-500/30 text-lime-200">
@@ -466,7 +466,7 @@ export const CoachView: React.FC = () => {
 
                           {/* Coach Recommendations */}
                           {msg.recommendations && msg.recommendations.length > 0 && (
-                            <div className="p-2.5 rounded-xl bg-[#161B28] border border-[#232A3B] text-slate-200">
+                            <div className="p-2.5 rounded-xl bg-[#161B28] border border-athloniq-border-alt text-slate-200">
                               <div className="font-bold uppercase tracking-wider text-[10px] text-purple-300 flex items-center gap-1.5 mb-1">
                                 <Compass className="h-3 w-3" />
                                 Coach Recommendations
@@ -504,7 +504,7 @@ export const CoachView: React.FC = () => {
                             <Zap className="h-3.5 w-3.5" />
                             Proposed Action (Requires Explicit Confirmation)
                           </span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#10141E] text-slate-400 border border-[#1E2330]">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#10141E] text-slate-400 border border-athloniq-border">
                             {msg.proposedAction.type}
                           </span>
                         </div>
@@ -520,7 +520,7 @@ export const CoachView: React.FC = () => {
                             Action Confirmed & Applied to Live Records
                           </div>
                         ) : msg.proposedAction.status === "dismissed" ? (
-                          <div className="text-xs text-slate-400 italic bg-[#10141E] p-2 rounded-lg border border-[#1E2330]">
+                          <div className="text-xs text-slate-400 italic bg-[#10141E] p-2 rounded-lg border border-athloniq-border">
                             Action dismissed. No records were modified.
                           </div>
                         ) : (
@@ -562,7 +562,7 @@ export const CoachView: React.FC = () => {
                   <div className="h-9 w-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center animate-pulse">
                     <Bot className="h-4 w-4" />
                   </div>
-                  <div className="px-4 py-3 rounded-2xl bg-[#121622] border border-[#1E2433] text-xs text-slate-300 flex items-center gap-2">
+                  <div className="px-4 py-3 rounded-2xl bg-[#121622] border border-athloniq-surface-alt text-xs text-slate-300 flex items-center gap-2">
                     <RefreshCw className="h-3.5 w-3.5 animate-spin text-athloniq-lime" />
                     Executing allowlisted tools and synthesizing grounded response...
                   </div>
@@ -571,7 +571,7 @@ export const CoachView: React.FC = () => {
             </div>
 
             {/* Quick Prompt Chips */}
-            <div className="px-4 py-3 bg-[#131724] border-t border-[#1E2330] flex items-center gap-2 overflow-x-auto text-xs scrollbar-thin">
+            <div className="px-4 py-3 bg-[#131724] border-t border-athloniq-border flex items-center gap-2 overflow-x-auto text-xs scrollbar-thin">
               <span className="text-slate-400 shrink-0 font-medium text-xs flex items-center gap-1">
                 <Sparkles className="h-3.5 w-3.5 text-athloniq-lime" />
                 Quick Prompts:
@@ -581,7 +581,7 @@ export const CoachView: React.FC = () => {
                   key={idx}
                   onClick={() => handleSendPrompt(prompt)}
                   disabled={isLoading || !isOnline}
-                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#181E2E] hover:bg-[#222A40] text-slate-300 hover:text-white transition-colors border border-[#232A3B] text-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#181E2E] hover:bg-[#222A40] text-slate-300 hover:text-white transition-colors border border-athloniq-border-alt text-xs flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>{prompt}</span>
                   <ArrowRight className="h-3 w-3 text-slate-500" />
@@ -590,7 +590,7 @@ export const CoachView: React.FC = () => {
             </div>
 
             {/* Input Form */}
-            <div className="p-4 bg-[#0E121B] border-t border-[#1E2330] flex items-center gap-3">
+            <div className="p-4 bg-[#0E121B] border-t border-athloniq-border flex items-center gap-3">
               <input
                 type="text"
                 value={input}
@@ -602,7 +602,7 @@ export const CoachView: React.FC = () => {
                     ? "AI Performance Coach is offline. Please reconnect to internet (offline AI not supported)."
                     : "Ask about workouts, protein gap, equipment progression, or recovery..."
                 }
-                className="flex-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <Button
                 variant="primary"
@@ -699,7 +699,7 @@ export const CoachView: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 1. Nutrition Consistency Review */}
                 <Card className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+                  <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <Flame className="h-4 w-4 text-amber-400" />
                       Nutrition & Protein Consistency
@@ -710,7 +710,7 @@ export const CoachView: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-[#141824] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Food Logging Days</span>
                       <span className="text-lg font-bold text-white">
                         {weeklyReport.nutrition_consistency.days_logging_food} / 7
@@ -720,7 +720,7 @@ export const CoachView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#141824] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Daily Protein Target</span>
                       <span className="text-lg font-bold text-athloniq-lime">
                         {weeklyReport.nutrition_consistency.current_protein_target_g} g
@@ -731,14 +731,14 @@ export const CoachView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed bg-[#12151E] p-3 rounded-xl border border-[#1E2330]">
+                  <p className="text-xs text-slate-300 leading-relaxed bg-athloniq-card p-3 rounded-xl border border-athloniq-border">
                     {weeklyReport.nutrition_consistency.summary}
                   </p>
                 </Card>
 
                 {/* 2. Weight Trend & Hydration Review */}
                 <Card className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+                  <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <Scale className="h-4 w-4 text-sky-400" />
                       Weight Trend & Hydration Review
@@ -749,7 +749,7 @@ export const CoachView: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 rounded-xl bg-[#141824] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Weigh-Ins Found</span>
                       <span className="text-lg font-bold text-white">
                         {weeklyReport.weight_trend_review.weigh_in_count}
@@ -759,7 +759,7 @@ export const CoachView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#141824] border border-[#1E2330]">
+                    <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">7-Day Rolling Trend</span>
                       <span className="text-lg font-bold text-sky-300">
                         {weeklyReport.weight_trend_review.rolling_7d_kg
@@ -772,7 +772,7 @@ export const CoachView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed bg-[#12151E] p-3 rounded-xl border border-[#1E2330]">
+                  <p className="text-xs text-slate-300 leading-relaxed bg-athloniq-card p-3 rounded-xl border border-athloniq-border">
                     {weeklyReport.weight_trend_review.explanation}
                   </p>
 
@@ -786,7 +786,7 @@ export const CoachView: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 3. Training & Sports Consistency */}
                 <Card className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+                  <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <Dumbbell className="h-4 w-4 text-purple-400" />
                       Training & Sports Load (Gym, Badminton, Run)
@@ -797,7 +797,7 @@ export const CoachView: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Gym Sessions</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.training_and_sports_load.gym_sessions_completed} / {weeklyReport.training_and_sports_load.gym_sessions_target}
@@ -807,7 +807,7 @@ export const CoachView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Badminton</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.training_and_sports_load.badminton_sessions}
@@ -817,7 +817,7 @@ export const CoachView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Running</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.training_and_sports_load.running_sessions}
@@ -828,14 +828,14 @@ export const CoachView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed bg-[#12151E] p-3 rounded-xl border border-[#1E2330]">
+                  <p className="text-xs text-slate-300 leading-relaxed bg-athloniq-card p-3 rounded-xl border border-athloniq-border">
                     {weeklyReport.training_and_sports_load.summary}
                   </p>
                 </Card>
 
                 {/* 4. Recovery Patterns */}
                 <Card className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+                  <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <Moon className="h-4 w-4 text-athloniq-lime" />
                       Recovery & Sleep Patterns
@@ -846,21 +846,21 @@ export const CoachView: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Avg Sleep</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.recovery_patterns.average_sleep_hours}h
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Sleep Quality</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.recovery_patterns.average_sleep_quality} / 5
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-[#141824] border border-[#1E2330] text-center">
+                    <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Soreness</span>
                       <span className="text-base font-bold text-white">
                         {weeklyReport.recovery_patterns.average_soreness} / 5
@@ -868,15 +868,15 @@ export const CoachView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed bg-[#12151E] p-3 rounded-xl border border-[#1E2330]">
+                  <p className="text-xs text-slate-300 leading-relaxed bg-athloniq-card p-3 rounded-xl border border-athloniq-border">
                     {weeklyReport.recovery_patterns.summary}
                   </p>
                 </Card>
               </div>
 
               {/* Reminders & Quiet Hours Configuration Panel */}
-              <Card className="p-5 border-[#1E2330] bg-[#10141F] space-y-4">
-                <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+              <Card className="p-5 border-athloniq-border bg-[#10141F] space-y-4">
+                <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
                   <div>
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <Clock className="h-4 w-4 text-athloniq-lime" />
@@ -901,7 +901,7 @@ export const CoachView: React.FC = () => {
                       type="time"
                       value={preferences.quietHoursStart}
                       onChange={(e) => updatePreferences({ quietHoursStart: e.target.value })}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-athloniq-lime"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-athloniq-lime"
                     />
                   </div>
 
@@ -914,7 +914,7 @@ export const CoachView: React.FC = () => {
                       type="time"
                       value={preferences.quietHoursEnd}
                       onChange={(e) => updatePreferences({ quietHoursEnd: e.target.value })}
-                      className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-athloniq-lime"
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-athloniq-lime"
                     />
                   </div>
 

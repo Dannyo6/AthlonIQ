@@ -130,7 +130,7 @@ export const UnsavedWorkProvider: React.FC<{ children: React.ReactNode }> = ({ c
           aria-labelledby="unsaved-modal-title"
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in select-none"
         >
-          <div className="max-w-md w-full bg-[#12151E] border border-amber-500/40 rounded-2xl p-6 shadow-2xl text-center space-y-4">
+          <div className="max-w-md w-full bg-athloniq-card border border-amber-500/40 rounded-2xl p-6 shadow-2xl text-center space-y-4">
             <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
               <AlertTriangle className="h-6 w-6" />
             </div>

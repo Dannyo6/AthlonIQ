@@ -289,9 +289,9 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#0F121B] border border-[#1E2330] rounded-3xl shadow-2xl overflow-hidden my-auto">
+      <div className="relative w-full max-w-2xl bg-[#0F121B] border border-athloniq-border rounded-3xl shadow-2xl overflow-hidden my-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E2330] bg-[#12151E]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-athloniq-border bg-athloniq-card">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">
               <Camera className="h-5 w-5" />
@@ -323,7 +323,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#181D2A] transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-athloniq-surface transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -337,7 +337,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
               {/* Pulsing Visual Scanner */}
               <div className="relative flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping opacity-75 h-24 w-24" />
-                <div className="relative h-20 w-20 rounded-2xl bg-[#181D2A] border-2 border-purple-500/60 shadow-glow-violet flex items-center justify-center">
+                <div className="relative h-20 w-20 rounded-2xl bg-athloniq-surface border-2 border-purple-500/60 shadow-glow-violet flex items-center justify-center">
                   <Scan className="h-10 w-10 text-purple-300 animate-pulse" />
                 </div>
               </div>
@@ -354,14 +354,14 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
               {/* Shimmering Skeleton Cards */}
               <div className="w-full space-y-2.5 max-w-md pt-2">
-                <div className="h-14 rounded-xl bg-[#181D2A]/80 border border-[#1E2330] p-3 flex items-center justify-between animate-pulse">
+                <div className="h-14 rounded-xl bg-athloniq-surface/80 border border-athloniq-border p-3 flex items-center justify-between animate-pulse">
                   <div className="space-y-1.5">
                     <div className="h-3.5 w-32 bg-slate-700 rounded" />
                     <div className="h-2.5 w-20 bg-slate-800 rounded" />
                   </div>
                   <div className="h-4 w-16 bg-purple-500/30 rounded" />
                 </div>
-                <div className="h-14 rounded-xl bg-[#181D2A]/80 border border-[#1E2330] p-3 flex items-center justify-between animate-pulse delay-75">
+                <div className="h-14 rounded-xl bg-athloniq-surface/80 border border-athloniq-border p-3 flex items-center justify-between animate-pulse delay-75">
                   <div className="space-y-1.5">
                     <div className="h-3.5 w-28 bg-slate-700 rounded" />
                     <div className="h-2.5 w-24 bg-slate-800 rounded" />
@@ -404,7 +404,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                   type="button"
                   data-testid="vision-try-again-button"
                   onClick={() => resetState()}
-                  className="px-4 py-2.5 rounded-xl bg-[#181D2A] hover:bg-[#1E2330] border border-[#2A3142] text-slate-300 hover:text-white font-semibold text-xs transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-athloniq-surface hover:bg-athloniq-border border border-[#2A3142] text-slate-300 hover:text-white font-semibold text-xs transition-all"
                 >
                   Try Another Photo
                 </button>
@@ -457,7 +457,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 className={`group relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
                   dragOver
                     ? "border-purple-400 bg-purple-500/10 scale-[1.01]"
-                    : "border-[#1E2330] hover:border-purple-500/60 bg-[#12151E]/60 hover:bg-[#12151E]"
+                    : "border-athloniq-border hover:border-purple-500/60 bg-athloniq-card/60 hover:bg-athloniq-card"
                 }`}
               >
                 <input
@@ -481,7 +481,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#181D2A] border border-[#1E2330] text-[11px] font-mono text-purple-300 mt-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-athloniq-surface border border-athloniq-border text-[11px] font-mono text-purple-300 mt-2">
                   <Sparkles className="h-3 w-3 text-purple-400" />
                   Automatic Indian Culinary Detection
                 </div>
@@ -499,7 +499,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                       key={i}
                       type="button"
                       onClick={() => handleSelectPreset(preset)}
-                      className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330] hover:border-purple-500/40 text-left transition-all hover:bg-[#181D2A] flex items-center justify-between group"
+                      className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border hover:border-purple-500/40 text-left transition-all hover:bg-athloniq-surface flex items-center justify-between group"
                     >
                       <div className="text-xs font-semibold text-slate-200 group-hover:text-purple-300">
                         {preset.label}

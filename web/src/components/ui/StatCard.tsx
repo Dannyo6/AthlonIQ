@@ -63,7 +63,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="rounded-xl bg-[#181D2A] p-3 text-athloniq-lime border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] group-hover:scale-105 transition-transform duration-150">
+          <div className="rounded-xl bg-athloniq-surface p-3 text-athloniq-lime border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] group-hover:scale-105 transition-transform duration-150">
             {icon}
           </div>
         )}

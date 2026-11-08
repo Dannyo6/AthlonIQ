@@ -26,7 +26,7 @@ export const PwaUpdateBanner: React.FC<PwaUpdateBannerProps> = ({
 
   return (
     <div className="fixed top-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-[10000] animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="bg-[#12151E] border border-lime-400/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(163,230,53,0.2)] backdrop-blur-xl flex flex-col gap-3">
+      <div className="bg-athloniq-card border border-lime-400/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(163,230,53,0.2)] backdrop-blur-xl flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-lime-400/10 border border-lime-400/30 flex items-center justify-center text-lime-400 shrink-0">
@@ -108,7 +108,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
 }) => {
   if (isInstalled) {
     return (
-      <div className="rounded-2xl bg-[#12151E] p-4 border border-white/[0.08] flex items-center justify-between gap-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+      <div className="rounded-2xl bg-athloniq-card p-4 border border-white/[0.08] flex items-center justify-between gap-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center">
             <CheckCircle2 className="h-5 w-5" />
@@ -129,7 +129,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
 
   if (canInstall) {
     return (
-      <div className="rounded-2xl bg-[#12151E] p-4 border border-lime-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
+      <div className="rounded-2xl bg-athloniq-card p-4 border border-lime-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-lime-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-glow-lime">
             AQ
@@ -159,7 +159,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
 
   if (isIos) {
     return (
-      <div className="rounded-2xl bg-[#12151E] p-4 border border-white/[0.08] space-y-2.5">
+      <div className="rounded-2xl bg-athloniq-card p-4 border border-white/[0.08] space-y-2.5">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-300">
             <Smartphone className="h-4 w-4" />
@@ -186,7 +186,7 @@ interface PwaOfflineEmptyStateProps {
 
 export const PwaOfflineEmptyState: React.FC<PwaOfflineEmptyStateProps> = ({ featureName }) => {
   return (
-    <div className="rounded-2xl bg-[#12151E] p-6 border border-amber-500/30 text-center space-y-3">
+    <div className="rounded-2xl bg-athloniq-card p-6 border border-amber-500/30 text-center space-y-3">
       <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
         <WifiOff className="h-5 w-5" />
       </div>

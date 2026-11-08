@@ -38,7 +38,7 @@ export const RecoveryView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Moon className="h-6 w-6 text-athloniq-lime" />
@@ -97,7 +97,7 @@ export const RecoveryView: React.FC = () => {
       {/* Main Check-in Form & Live Rules Audit */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <div>
               <h3 className="font-bold text-white text-lg">Daily Subjective Check-in</h3>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -123,7 +123,7 @@ export const RecoveryView: React.FC = () => {
                 max="18"
                 value={sleepHours}
                 onChange={(e) => setSleepHours(Number(e.target.value))}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
               />
               <span className="text-[11px] text-slate-500">
                 Rule: &gt;=8.0h (+15 pts), 7.0-7.9h (+5 pts), &lt;6.0h (-25 pts).
@@ -137,7 +137,7 @@ export const RecoveryView: React.FC = () => {
               <select
                 value={sleepQuality}
                 onChange={(e) => setSleepQuality(Number(e.target.value))}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
               >
                 <option value={5}>5 - Restorative & Deep (+10 pts)</option>
                 <option value={4}>4 - Good Rest (+5 pts)</option>
@@ -154,7 +154,7 @@ export const RecoveryView: React.FC = () => {
               <select
                 value={soreness}
                 onChange={(e) => setSoreness(Number(e.target.value))}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
               >
                 <option value={1}>1 - Zero Soreness (+5 pts)</option>
                 <option value={2}>2 - Minimal Soreness (0 pts)</option>
@@ -171,7 +171,7 @@ export const RecoveryView: React.FC = () => {
               <select
                 value={fatigue}
                 onChange={(e) => setFatigue(Number(e.target.value))}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
               >
                 <option value={1}>1 - Fully Energized (+5 pts)</option>
                 <option value={2}>2 - Normal Baseline (0 pts)</option>
@@ -188,11 +188,11 @@ export const RecoveryView: React.FC = () => {
                 </label>
                 <div className="flex items-center gap-2">
                   {stress === null || !stressTouched ? (
-                    <span className="text-xs font-medium text-slate-400 bg-[#181D2A] px-2 py-0.5 rounded border border-[#1E2330]">
+                    <span className="text-xs font-medium text-slate-400 bg-athloniq-surface px-2 py-0.5 rounded border border-athloniq-border">
                       Not set
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-athloniq-lime bg-[#181D2A] px-2 py-0.5 rounded border border-[#1E2330]">
+                    <span className="text-xs font-medium text-athloniq-lime bg-athloniq-surface px-2 py-0.5 rounded border border-athloniq-border">
                       Level {stress} / 5
                     </span>
                   )}
@@ -221,7 +221,7 @@ export const RecoveryView: React.FC = () => {
                   setStress(Number(e.target.value));
                   setStressTouched(true);
                 }}
-                className="w-full accent-athloniq-lime cursor-pointer bg-[#181D2A] h-2 rounded-lg appearance-none"
+                className="w-full accent-athloniq-lime cursor-pointer bg-athloniq-surface h-2 rounded-lg appearance-none"
               />
               <div className="flex justify-between text-[11px] text-slate-500 font-mono">
                 <span>1 (Low)</span>
@@ -251,7 +251,7 @@ export const RecoveryView: React.FC = () => {
 
         {/* Transparent Rules Audit Panel */}
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <div>
               <h4 className="font-bold text-white text-base">Mathematical Audit</h4>
               <p className="text-[11px] text-slate-400">Auditable Rule Breakdown</p>
@@ -259,7 +259,7 @@ export const RecoveryView: React.FC = () => {
             <ProvenanceBadge provenance="calculated_estimate" />
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+          <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
             <div className="text-xs text-slate-400 font-medium">Readiness Guidance:</div>
             <div className="text-xs text-slate-200 leading-relaxed font-medium">
               {hasTodayCheckIn && readiness
@@ -275,7 +275,7 @@ export const RecoveryView: React.FC = () => {
                 readiness.triggers.map((trigger, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-xs font-mono tabular-nums text-slate-300 flex items-center justify-between"
+                    className="p-2.5 rounded-lg bg-athloniq-surface border border-athloniq-border text-xs font-mono tabular-nums text-slate-300 flex items-center justify-between"
                   >
                     <span>{trigger}</span>
                   </div>
@@ -286,7 +286,7 @@ export const RecoveryView: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-2 text-[11px] text-slate-500 leading-relaxed border-t border-[#1E2330]">
+          <div className="pt-2 text-[11px] text-slate-500 leading-relaxed border-t border-athloniq-border">
             Notice: AthlonIQ does not fabricate nocturnal HRV, heart rate dips, or deep sleep stages without real hardware sensor telemetry.
           </div>
         </Card>

@@ -9,7 +9,7 @@ export const NotFoundView: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 animate-in fade-in duration-300">
-      <div className="max-w-md w-full bg-[#12151E] border border-white/[0.08] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
+      <div className="max-w-md w-full bg-athloniq-card border border-white/[0.08] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
         {/* Ambient background glow */}
         <div className="absolute -top-12 -right-12 w-36 h-36 bg-athloniq-lime/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -38,7 +38,7 @@ export const NotFoundView: React.FC = () => {
         <div className="pt-2">
           <Link
             to="/today"
-            className="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-bold text-xs text-slate-950 bg-athloniq-lime hover:bg-[#a3e635] transition-all shadow-glow-lime hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-bold text-xs text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover transition-all shadow-glow-lime hover:scale-[1.02] active:scale-[0.98]"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Return to Today Dashboard</span>

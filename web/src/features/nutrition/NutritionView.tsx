@@ -185,7 +185,7 @@ export const NutritionView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Utensils className="h-6 w-6 text-athloniq-lime" />
@@ -200,7 +200,7 @@ export const NutritionView: React.FC = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
+            className="bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
           />
           <Button
             variant="secondary"
@@ -238,7 +238,7 @@ export const NutritionView: React.FC = () => {
       {/* Add Meal Panel */}
       {showAddPanel && (
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-athloniq-lime" /> Add Meal Entry
             </h3>
@@ -256,7 +256,7 @@ export const NutritionView: React.FC = () => {
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
                   selectedSlot === slot.id
                     ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
-                    : "bg-[#181D2A] text-slate-400 border border-[#1E2330] hover:text-white"
+                    : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
                 }`}
               >
                 {slot.label}
@@ -276,7 +276,7 @@ export const NutritionView: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setSelectedFood(null);
                 }}
-                className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none placeholder-slate-500"
+                className="w-full bg-athloniq-card border border-athloniq-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none placeholder-slate-500"
               />
             </div>
             <Button
@@ -292,7 +292,7 @@ export const NutritionView: React.FC = () => {
 
           {/* Search Results */}
           {searchResults.length > 0 && !selectedFood && (
-            <div className="max-h-48 overflow-y-auto space-y-1 border border-[#1E2330] rounded-xl p-2">
+            <div className="max-h-48 overflow-y-auto space-y-1 border border-athloniq-border rounded-xl p-2">
               {searchResults.map((food) => (
                 <button
                   key={food.id}
@@ -300,7 +300,7 @@ export const NutritionView: React.FC = () => {
                     setSelectedFood(food);
                     setSearchQuery(food.name);
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#181D2A] text-left transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-athloniq-surface text-left transition-colors"
                 >
                   <div>
                     <div className="text-sm font-semibold text-white">{food.name}</div>
@@ -330,25 +330,25 @@ export const NutritionView: React.FC = () => {
                 <Badge variant="lime">VERIFIED REFERENCE</Badge>
               </div>
               <div className="grid grid-cols-4 gap-2 text-center text-xs font-mono">
-                <div className="p-2 rounded-lg bg-[#181D2A]">
+                <div className="p-2 rounded-lg bg-athloniq-surface">
                   <div className="text-athloniq-lime font-bold tabular-nums">
                     {Math.round(selectedFood.calories_kcal * effectiveQty)}
                   </div>
                   <div className="text-slate-400">kcal</div>
                 </div>
-                <div className="p-2 rounded-lg bg-[#181D2A]">
+                <div className="p-2 rounded-lg bg-athloniq-surface">
                   <div className="text-emerald-400 font-bold tabular-nums">
                     {Math.round(selectedFood.protein_g * effectiveQty * 10) / 10}g
                   </div>
                   <div className="text-slate-400">protein</div>
                 </div>
-                <div className="p-2 rounded-lg bg-[#181D2A]">
+                <div className="p-2 rounded-lg bg-athloniq-surface">
                   <div className="text-amber-400 font-bold tabular-nums">
                     {Math.round(selectedFood.carbs_g * effectiveQty * 10) / 10}g
                   </div>
                   <div className="text-slate-400">carbs</div>
                 </div>
-                <div className="p-2 rounded-lg bg-[#181D2A]">
+                <div className="p-2 rounded-lg bg-athloniq-surface">
                   <div className="text-purple-400 font-bold tabular-nums">
                     {Math.round(selectedFood.fat_g * effectiveQty * 10) / 10}g
                   </div>
@@ -364,7 +364,7 @@ export const NutritionView: React.FC = () => {
                     className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
                       quantity === q && !customQty
                         ? "bg-athloniq-lime text-slate-950"
-                        : "bg-[#181D2A] text-slate-300 border border-[#1E2330] hover:border-athloniq-lime/40"
+                        : "bg-athloniq-surface text-slate-300 border border-athloniq-border hover:border-athloniq-lime/40"
                     }`}
                   >
                     {q}x
@@ -377,7 +377,7 @@ export const NutritionView: React.FC = () => {
                   placeholder="Custom"
                   value={customQty}
                   onChange={(e) => setCustomQty(e.target.value)}
-                  className="w-20 bg-[#12151E] border border-[#1E2330] rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                  className="w-20 bg-athloniq-card border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                 />
               </div>
             </div>
@@ -401,7 +401,7 @@ export const NutritionView: React.FC = () => {
 
       {/* Daily Macro Progress */}
       <Card className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-athloniq-lime uppercase font-mono font-bold">Confirmed Daily Totals</span>
@@ -448,7 +448,7 @@ export const NutritionView: React.FC = () => {
               <span>Calories</span>
               <span>{pct(ct.caloriesKcal, targetKcal!)}%</span>
             </div>
-            <div className="h-3 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
+            <div className="h-3 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
               <div
                 className="h-full bg-gradient-to-r from-athloniq-lime to-lime-300 rounded-full transition-all duration-500"
                 style={{ width: `${pct(ct.caloriesKcal, targetKcal!)}%` }}
@@ -490,7 +490,7 @@ export const NutritionView: React.FC = () => {
               textColor: "text-purple-400",
             },
           ].map((macro) => (
-            <div key={macro.label} className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2.5">
+            <div key={macro.label} className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2.5">
               <div className="flex items-center justify-between text-xs flex-wrap gap-1">
                 <span className="text-slate-300 font-semibold">{macro.label}</span>
                 <div className="flex items-center gap-1.5">
@@ -507,7 +507,7 @@ export const NutritionView: React.FC = () => {
                   <div className={`font-mono text-xl font-bold tabular-nums ${macro.textColor}`}>
                     {macro.current} / {macro.target} {macro.unit}
                   </div>
-                  <div className="h-2 w-full bg-[#12151E] rounded-full overflow-hidden border border-[#1E2330]">
+                  <div className="h-2 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
                     <div
                       className={`h-full ${macro.color} rounded-full transition-all duration-500`}
                       style={{ width: `${pct(macro.current, macro.target)}%` }}
@@ -535,7 +535,7 @@ export const NutritionView: React.FC = () => {
         const slotKcal = slotEntries.reduce((sum, e) => sum + Math.round(e.caloriesKcal * e.quantity), 0);
         return (
           <Card key={slot.id} className="space-y-3">
-            <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+            <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
               <h3 className="font-bold text-white flex items-center gap-2">
                 {slot.label}
                 {slotKcal > 0 && (
@@ -550,7 +550,7 @@ export const NutritionView: React.FC = () => {
                   setShowAddPanel(true);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="p-1.5 rounded-lg bg-[#181D2A] border border-[#1E2330] text-slate-400 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors"
+                className="p-1.5 rounded-lg bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -563,7 +563,7 @@ export const NutritionView: React.FC = () => {
                 {slotEntries.map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#181D2A]/60 border border-[#1E2330] hover:border-slate-700 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl bg-athloniq-surface/60 border border-athloniq-border hover:border-slate-700 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -571,7 +571,7 @@ export const NutritionView: React.FC = () => {
                         <span className="text-[10px] font-mono text-slate-500 shrink-0">
                           ×{entry.quantity}
                         </span>
-                        <span className="text-[10px] uppercase font-mono text-slate-500 px-1.5 py-0.5 rounded bg-[#12151E] border border-[#1E2330] shrink-0">
+                        <span className="text-[10px] uppercase font-mono text-slate-500 px-1.5 py-0.5 rounded bg-athloniq-card border border-athloniq-border shrink-0">
                           {PROVENANCE_LABELS[entry.provenance] ?? entry.provenance}
                         </span>
                       </div>
@@ -606,7 +606,7 @@ export const NutritionView: React.FC = () => {
       {/* Custom Food Modal */}
       {showCustomModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur">
-          <div className="w-full max-w-md bg-[#12151E] border border-[#1E2330] rounded-2xl p-6 space-y-4 shadow-2xl">
+          <div className="w-full max-w-md bg-athloniq-card border border-athloniq-border rounded-2xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Create Custom Food</h3>
               <button onClick={() => setShowCustomModal(false)} className="text-slate-400 hover:text-white">
@@ -616,9 +616,9 @@ export const NutritionView: React.FC = () => {
             <Badge variant="amber">MANUAL ENTRY — provenance tracked</Badge>
             <div className="space-y-3">
               <input placeholder="Food name *" value={customName} onChange={(e) => setCustomName(e.target.value)}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none" />
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none" />
               <input placeholder="Serving label (e.g. 1 bowl 200g)" value={customServing} onChange={(e) => setCustomServing(e.target.value)}
-                className="w-full bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none" />
+                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none" />
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: "Calories (kcal) *", val: customCal, set: setCustomCal },
@@ -629,7 +629,7 @@ export const NutritionView: React.FC = () => {
                   <div key={label}>
                     <label className="text-[11px] text-slate-400 font-medium">{label}</label>
                     <input type="number" min="0" step="0.1" value={val} onChange={(e) => set(e.target.value)}
-                      className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums" />
+                      className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums" />
                   </div>
                 ))}
               </div>

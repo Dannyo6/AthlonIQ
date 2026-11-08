@@ -273,7 +273,7 @@ export const ProgressView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2330] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <TrendingUp className="h-6 w-6 text-athloniq-lime" />
@@ -357,7 +357,7 @@ export const ProgressView: React.FC = () => {
             color: "text-slate-300",
           },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="p-4 rounded-2xl bg-[#12151E] border border-[#1E2330] space-y-1">
+          <div key={label} className="p-4 rounded-2xl bg-athloniq-card border border-athloniq-border space-y-1">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</div>
             <div className={`text-2xl font-black font-mono tabular-nums ${color}`}>{value}</div>
             <div className="text-[11px] text-slate-400">{sub}</div>
@@ -367,7 +367,7 @@ export const ProgressView: React.FC = () => {
 
       {/* 2. Phase 5: Adaptive Lean-Bulk Calibrator Card */}
       <Card className="space-y-4 border-athloniq-lime/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-athloniq-lime" />
             <div>
@@ -397,13 +397,13 @@ export const ProgressView: React.FC = () => {
 
         {/* Observation Progress Indicators */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[11px] text-slate-400">14-Day Nutrition Adherence</div>
             <div className="text-lg font-black font-mono text-white mt-1 tabular-nums">
               {leanBulkCalibration.observation_days_logged} / 10{" "}
               <span className="text-xs font-normal text-slate-400">days logged</span>
             </div>
-            <div className="w-full bg-[#12151E] rounded-full h-1.5 mt-2 overflow-hidden">
+            <div className="w-full bg-athloniq-card rounded-full h-1.5 mt-2 overflow-hidden">
               <div
                 className="bg-athloniq-lime h-full rounded-full"
                 style={{ width: `${Math.min(100, (leanBulkCalibration.observation_days_logged / 10) * 100)}%` }}
@@ -411,13 +411,13 @@ export const ProgressView: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[11px] text-slate-400">14-Day Fasted Weigh-Ins</div>
             <div className="text-lg font-black font-mono text-white mt-1 tabular-nums">
               {leanBulkCalibration.observation_weigh_ins} / 4{" "}
               <span className="text-xs font-normal text-slate-400">weigh-ins</span>
             </div>
-            <div className="w-full bg-[#12151E] rounded-full h-1.5 mt-2 overflow-hidden">
+            <div className="w-full bg-athloniq-card rounded-full h-1.5 mt-2 overflow-hidden">
               <div
                 className="bg-emerald-400 h-full rounded-full"
                 style={{ width: `${Math.min(100, (leanBulkCalibration.observation_weigh_ins / 4) * 100)}%` }}
@@ -425,7 +425,7 @@ export const ProgressView: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[11px] text-slate-400">Target Gain Corridor (55 kg BW)</div>
             <div className="text-sm font-bold text-slate-200 mt-1 font-mono">
               +0.10 to +0.25 kg/wk
@@ -442,7 +442,7 @@ export const ProgressView: React.FC = () => {
         </div>
 
         {/* Explanation & Recommendation */}
-        <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+        <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
           <p className="text-xs text-slate-300 leading-relaxed">{leanBulkCalibration.explanation}</p>
           <p className="text-xs text-athloniq-lime font-medium leading-relaxed">
             {leanBulkCalibration.recommendation}
@@ -451,7 +451,7 @@ export const ProgressView: React.FC = () => {
 
         {/* Explicit Adjustment Confirmation Action */}
         {(leanBulkCalibration.status === "increase_surplus" || leanBulkCalibration.status === "trim_surplus") && (
-          <div className="p-4 rounded-xl bg-gradient-to-r from-athloniq-lime/10 to-[#181D2A] border border-athloniq-lime/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-athloniq-lime/10 to-athloniq-surface border border-athloniq-lime/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="text-xs font-bold text-white uppercase tracking-wider">
                 Recommendation: {leanBulkCalibration.suggested_calorie_delta_kcal > 0 ? "+" : ""}
@@ -471,7 +471,7 @@ export const ProgressView: React.FC = () => {
 
       {/* 3. Phase 5: Multi-Sport Fatigue & Recovery Advisory */}
       <Card className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-amber-400" />
             <div>
@@ -495,25 +495,25 @@ export const ProgressView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[10px] uppercase font-bold text-slate-500">Gym Sessions (7d)</div>
             <div className="text-xl font-black font-mono text-white mt-1">{fatigueAdvisory.gym_sessions_7d}</div>
           </div>
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[10px] uppercase font-bold text-slate-500">Badminton (7d)</div>
             <div className="text-xl font-black font-mono text-white mt-1">
               {fatigueAdvisory.badminton_minutes_7d.toFixed(0)}{" "}
               <span className="text-xs font-normal text-slate-400">min</span>
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[10px] uppercase font-bold text-slate-500">Running (7d)</div>
             <div className="text-xl font-black font-mono text-white mt-1">
               {fatigueAdvisory.running_km_7d.toFixed(1)}{" "}
               <span className="text-xs font-normal text-slate-400">km</span>
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+          <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
             <div className="text-[10px] uppercase font-bold text-slate-500">Sleep / Soreness</div>
             <div className="text-base font-black font-mono text-white mt-1">
               {fatigueAdvisory.avg_sleep_hours_7d ? `${fatigueAdvisory.avg_sleep_hours_7d}h` : "—"} /{" "}
@@ -522,7 +522,7 @@ export const ProgressView: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+        <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
           <p className="text-xs text-slate-300 leading-relaxed">{fatigueAdvisory.explanation}</p>
           <div className="space-y-1 pt-1">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Actionable Adjustments:</span>
@@ -534,7 +534,7 @@ export const ProgressView: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-[#12151E] border border-[#1E2330] flex items-center gap-2 text-[11px] text-slate-500">
+        <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border flex items-center gap-2 text-[11px] text-slate-500">
           <ShieldAlert className="h-4 w-4 text-slate-400 shrink-0" />
           <span>{fatigueAdvisory.disclaimer}</span>
         </div>
@@ -542,7 +542,7 @@ export const ProgressView: React.FC = () => {
 
       {/* 4. Phase 5: Private Progress Photo Timeline */}
       <Card className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
           <div className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-athloniq-lime" />
             <div>
@@ -566,7 +566,7 @@ export const ProgressView: React.FC = () => {
 
         {/* Add Progress Photo Form */}
         {showPhotoForm && (
-          <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-3">
+          <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-3">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <Camera className="h-4 w-4 text-athloniq-lime" /> Upload Progress Photo
             </h4>
@@ -577,7 +577,7 @@ export const ProgressView: React.FC = () => {
                   type="date"
                   value={photoDate}
                   onChange={(e) => setPhotoDate(e.target.value)}
-                  className="w-full mt-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                 />
               </div>
               <div>
@@ -587,7 +587,7 @@ export const ProgressView: React.FC = () => {
                   step="0.1"
                   value={photoWeight}
                   onChange={(e) => setPhotoWeight(e.target.value)}
-                  className="w-full mt-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
                 />
               </div>
               <div>
@@ -597,7 +597,7 @@ export const ProgressView: React.FC = () => {
                   placeholder="e.g. Fasted AM, relaxed front pose"
                   value={photoNotes}
                   onChange={(e) => setPhotoNotes(e.target.value)}
-                  className="w-full mt-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                 />
               </div>
             </div>
@@ -609,20 +609,20 @@ export const ProgressView: React.FC = () => {
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoUpload}
-                  className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#12151E] file:text-athloniq-lime hover:file:bg-[#1e2433] cursor-pointer"
+                  className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-athloniq-card file:text-athloniq-lime hover:file:bg-athloniq-surface-alt cursor-pointer"
                 />
                 <input
                   type="text"
                   placeholder="Or paste image URL / data URL..."
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  className="flex-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
+                  className="flex-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
                 />
               </div>
             </div>
 
             {photoUrl && (
-              <div className="w-28 h-36 rounded-xl overflow-hidden border border-[#1E2330] bg-[#12151E]">
+              <div className="w-28 h-36 rounded-xl overflow-hidden border border-athloniq-border bg-athloniq-card">
                 <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
               </div>
             )}
@@ -640,7 +640,7 @@ export const ProgressView: React.FC = () => {
 
         {/* Side-by-Side Comparison Selector */}
         {progressPhotos.length >= 2 && (
-          <div className="p-4 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-3">
+          <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                 <ArrowLeftRight className="h-4 w-4 text-athloniq-lime" /> Side-by-Side Comparison
@@ -654,7 +654,7 @@ export const ProgressView: React.FC = () => {
                 <select
                   value={selectedPhotoA?.id}
                   onChange={(e) => setCompareIdA(e.target.value)}
-                  className="w-full mt-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   {progressPhotos.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -663,12 +663,12 @@ export const ProgressView: React.FC = () => {
                   ))}
                 </select>
                 {selectedPhotoA && (
-                  <div className="mt-3 p-3 rounded-xl bg-[#12151E] border border-[#1E2330] space-y-2">
+                  <div className="mt-3 p-3 rounded-xl bg-athloniq-card border border-athloniq-border space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-mono text-white font-bold">{selectedPhotoA.loggedDate}</span>
                       <Badge variant="lime">{selectedPhotoA.weightKg.toFixed(1)} kg</Badge>
                     </div>
-                    <div className="h-48 rounded-lg overflow-hidden bg-[#181D2A] border border-[#1E2330] flex items-center justify-center">
+                    <div className="h-48 rounded-lg overflow-hidden bg-athloniq-surface border border-athloniq-border flex items-center justify-center">
                       <img
                         src={selectedPhotoA.imageUrl}
                         alt="Baseline"
@@ -685,7 +685,7 @@ export const ProgressView: React.FC = () => {
                 <select
                   value={selectedPhotoB?.id}
                   onChange={(e) => setCompareIdB(e.target.value)}
-                  className="w-full mt-1 bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full mt-1 bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-xs text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   {progressPhotos.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -694,12 +694,12 @@ export const ProgressView: React.FC = () => {
                   ))}
                 </select>
                 {selectedPhotoB && (
-                  <div className="mt-3 p-3 rounded-xl bg-[#12151E] border border-[#1E2330] space-y-2">
+                  <div className="mt-3 p-3 rounded-xl bg-athloniq-card border border-athloniq-border space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-mono text-white font-bold">{selectedPhotoB.loggedDate}</span>
                       <Badge variant="lime">{selectedPhotoB.weightKg.toFixed(1)} kg</Badge>
                     </div>
-                    <div className="h-48 rounded-lg overflow-hidden bg-[#181D2A] border border-[#1E2330] flex items-center justify-center">
+                    <div className="h-48 rounded-lg overflow-hidden bg-athloniq-surface border border-athloniq-border flex items-center justify-center">
                       <img
                         src={selectedPhotoB.imageUrl}
                         alt="Current"
@@ -719,14 +719,14 @@ export const ProgressView: React.FC = () => {
           {progressPhotos.map((photo) => (
             <div
               key={photo.id}
-              className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2 relative group"
+              className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2 relative group"
             >
-              <div className="h-40 rounded-lg overflow-hidden bg-[#12151E] flex items-center justify-center">
+              <div className="h-40 rounded-lg overflow-hidden bg-athloniq-card flex items-center justify-center">
                 <img src={photo.imageUrl} alt="Progress" className="w-full h-full object-cover" />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono text-white">{photo.loggedDate}</span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#12151E] text-athloniq-lime">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-athloniq-card text-athloniq-lime">
                   {photo.weightKg.toFixed(1)} kg
                 </span>
               </div>
@@ -746,7 +746,7 @@ export const ProgressView: React.FC = () => {
       {/* 5. Weigh-In Form (Modal/Drawer) */}
       {showWeightForm && (
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Scale className="h-4 w-4 text-athloniq-lime" /> Log Weigh-In
             </h3>
@@ -759,7 +759,7 @@ export const ProgressView: React.FC = () => {
                 type="date"
                 value={weightDate}
                 onChange={(e) => setWeightDate(e.target.value)}
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none font-mono"
               />
             </div>
             <div>
@@ -772,7 +772,7 @@ export const ProgressView: React.FC = () => {
                 value={weightInput}
                 onChange={(e) => setWeightInput(e.target.value)}
                 placeholder="e.g. 55.4"
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
               />
             </div>
             <div>
@@ -785,7 +785,7 @@ export const ProgressView: React.FC = () => {
                 value={waistInput}
                 onChange={(e) => setWaistInput(e.target.value)}
                 placeholder="optional"
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
               />
             </div>
             <div>
@@ -798,7 +798,7 @@ export const ProgressView: React.FC = () => {
                 value={chestInput}
                 onChange={(e) => setChestInput(e.target.value)}
                 placeholder="optional"
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
               />
             </div>
             <div>
@@ -811,7 +811,7 @@ export const ProgressView: React.FC = () => {
                 value={armInput}
                 onChange={(e) => setArmInput(e.target.value)}
                 placeholder="optional"
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
               />
             </div>
             <div>
@@ -821,7 +821,7 @@ export const ProgressView: React.FC = () => {
                 value={weightNotes}
                 onChange={(e) => setWeightNotes(e.target.value)}
                 placeholder="Fasted AM, post-workout..."
-                className="w-full mt-1 bg-[#181D2A] border border-[#1E2330] rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                className="w-full mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
               />
             </div>
           </div>
@@ -838,7 +838,7 @@ export const ProgressView: React.FC = () => {
 
       {/* 6. 7-Day Rolling Weight Trend Engine */}
       <Card className="space-y-4">
-        <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+        <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-athloniq-lime" /> 7-Day Rolling Weight Trend
           </h3>
@@ -855,13 +855,13 @@ export const ProgressView: React.FC = () => {
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330] text-center">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border text-center">
                 <div className="text-xs text-slate-400 font-medium mb-1">7-Day Rolling Avg</div>
                 <div className="text-xl font-black font-mono tabular-nums text-athloniq-lime">
                   {weightTrend.rolling7dKg?.toFixed(2)} kg
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330] text-center">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border text-center">
                 <div className="text-xs text-slate-400 font-medium mb-1">Weekly Delta</div>
                 <div
                   className={`text-xl font-black font-mono tabular-nums ${
@@ -882,19 +882,19 @@ export const ProgressView: React.FC = () => {
             {/* Weight history table */}
             <div className="max-h-48 overflow-y-auto">
               <table className="w-full text-xs font-mono tabular-nums">
-                <thead className="border-b border-[#1E2330]">
+                <thead className="border-b border-athloniq-border">
                   <tr className="text-slate-500 text-left">
                     <th className="pb-2 font-bold">Date</th>
                     <th className="pb-2 font-bold text-right">Weight</th>
                     <th className="pb-2 font-bold text-right">7d Avg</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1E2330]">
+                <tbody className="divide-y divide-athloniq-border">
                   {weightTrend.entries
                     .slice()
                     .reverse()
                     .map((entry) => (
-                      <tr key={entry.logged_date} className="hover:bg-[#181D2A] transition-colors">
+                      <tr key={entry.logged_date} className="hover:bg-athloniq-surface transition-colors">
                         <td className="py-2 text-slate-300">{entry.logged_date}</td>
                         <td className="py-2 text-right text-white font-bold">{entry.weight_kg.toFixed(1)} kg</td>
                         <td className="py-2 text-right text-athloniq-lime">
@@ -912,7 +912,7 @@ export const ProgressView: React.FC = () => {
       {/* 7. Body Metric History */}
       {bodyMetrics.length > 0 && (
         <Card className="space-y-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-[#1E2330] pb-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-athloniq-border pb-3">
             <Scale className="h-4 w-4 text-athloniq-lime" /> Weigh-In History
           </h3>
           <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -921,7 +921,7 @@ export const ProgressView: React.FC = () => {
               .map((metric) => (
                 <div
                   key={metric.id}
-                  className="flex items-start justify-between p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]"
+                  className="flex items-start justify-between p-3 rounded-xl bg-athloniq-surface border border-athloniq-border"
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">

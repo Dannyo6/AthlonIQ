@@ -183,7 +183,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     <div className="space-y-6">
       {/* 1. Onboarding & Equipment Action Banner */}
       {(!profile.onboardingCompleted || !profile.equipmentConfirmed) && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-athloniq-lime/20 via-[#181D2A] to-[#12151E] border-2 border-athloniq-lime/60 p-5 shadow-glow-lime">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-athloniq-lime/20 via-athloniq-surface to-athloniq-card border-2 border-athloniq-lime/60 p-5 shadow-glow-lime">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="p-2.5 rounded-xl bg-athloniq-lime text-slate-950 mt-0.5 shrink-0">
@@ -229,7 +229,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       {/* 2. Top Hero: Deterministic Readiness Snapshot */}
       <div
         data-testid="today-readiness-card"
-        className="relative overflow-hidden rounded-3xl bg-[#12151E] border border-[#1E2330] p-6 sm:p-8"
+        className="relative overflow-hidden rounded-3xl bg-athloniq-card border border-athloniq-border p-6 sm:p-8"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -267,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 {readiness.triggers.slice(0, 3).map((trigger, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-[#181D2A] border border-[#1E2330] text-slate-300 tabular-nums"
+                    className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-athloniq-surface border border-athloniq-border text-slate-300 tabular-nums"
                   >
                     {trigger}
                   </span>
@@ -331,7 +331,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* Inline Quick Check-in Drawer */}
         {checkInOpen && (
-          <div className="mt-6 pt-6 border-t border-[#1E2330] bg-[#181D2A] rounded-2xl p-5 space-y-4">
+          <div className="mt-6 pt-6 border-t border-athloniq-border bg-athloniq-surface rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
@@ -357,7 +357,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   max="16"
                   value={sleepInput}
                   onChange={(e) => setSleepInput(Number(e.target.value))}
-                  className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
+                  className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
                 />
               </div>
 
@@ -368,7 +368,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <select
                   value={qualityInput}
                   onChange={(e) => setQualityInput(Number(e.target.value))}
-                  className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   <option value={5}>5 - Excellent / Deep</option>
                   <option value={4}>4 - Good Rest</option>
@@ -385,7 +385,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <select
                   value={sorenessInput}
                   onChange={(e) => setSorenessInput(Number(e.target.value))}
-                  className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   <option value={1}>1 - Fresh / Zero DOMS</option>
                   <option value={2}>2 - Mild Tightness</option>
@@ -402,7 +402,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <select
                   value={fatigueInput}
                   onChange={(e) => setFatigueInput(Number(e.target.value))}
-                  className="w-full bg-[#12151E] border border-[#1E2330] rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                  className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
                 >
                   <option value={1}>1 - Fully Energized</option>
                   <option value={2}>2 - Normal Energy</option>
@@ -433,7 +433,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: 14-Day Lean-Bulk Energy Calibrator */}
         <Card className="space-y-4 border-athloniq-lime/30">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
             <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-athloniq-lime" />
               <div>
@@ -461,11 +461,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <span className="text-slate-400">Lean-Bulk Corridor:</span>
                 <div className="text-sm font-mono font-bold text-white mt-0.5">+0.10 to +0.25 kg/wk</div>
               </div>
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <span className="text-slate-400">Rolling Weekly Delta:</span>
                 <div className="text-sm font-mono font-bold text-athloniq-lime mt-0.5">
                   {leanBulkCalibration.weekly_delta_kg != null
@@ -490,7 +490,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* Card 2: Multi-Sport Fatigue & Recovery Advisory */}
         <Card className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1E2330] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-athloniq-border pb-3">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-400" />
               <div>
@@ -513,19 +513,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
           <div className="space-y-3 text-xs">
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2.5 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <div className="text-[10px] text-slate-500 font-bold uppercase">Gym</div>
                 <div className="text-base font-bold font-mono text-white mt-0.5">
                   {fatigueAdvisory.gym_sessions_7d} sets/wk
                 </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <div className="text-[10px] text-slate-500 font-bold uppercase">Badminton</div>
                 <div className="text-base font-bold font-mono text-white mt-0.5">
                   {fatigueAdvisory.badminton_minutes_7d.toFixed(0)} min
                 </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <div className="text-[10px] text-slate-500 font-bold uppercase">Running</div>
                 <div className="text-base font-bold font-mono text-white mt-0.5">
                   {fatigueAdvisory.running_km_7d.toFixed(1)} km
@@ -535,7 +535,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
             <p className="text-slate-300 leading-relaxed">{fatigueAdvisory.explanation}</p>
 
-            <div className="p-2.5 rounded-lg bg-[#12151E] border border-[#1E2330] text-[10px] text-slate-500 flex items-center gap-1.5">
+            <div className="p-2.5 rounded-lg bg-athloniq-card border border-athloniq-border text-[10px] text-slate-500 flex items-center gap-1.5">
               <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <span>Workload advisory only; not a clinical injury risk calculation.</span>
             </div>
@@ -547,7 +547,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card A: Nutrition & Macro Target Card */}
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-athloniq-lime" />
               <h3 className="font-bold text-white text-base">Energy & Nutrition</h3>
@@ -584,7 +584,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 )}
               </div>
               {goals.calorieTargetKcal !== null && (
-                <div className="w-full bg-[#181D2A] rounded-full h-1.5 mt-2 overflow-hidden border border-[#1E2330]">
+                <div className="w-full bg-athloniq-surface rounded-full h-1.5 mt-2 overflow-hidden border border-athloniq-border">
                   <div
                     className="bg-athloniq-lime h-full rounded-full transition-all"
                     style={{
@@ -598,7 +598,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               )}
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+            <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-300 font-medium">Daily Protein Intake</span>
                 <ProvenanceBadge provenance={goals.proteinProvenance} />
@@ -609,7 +609,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 </span>
                 <span className="text-xs text-slate-400 font-mono">g</span>
               </div>
-              <div className="w-full bg-[#12151E] rounded-full h-1.5 overflow-hidden border border-[#1E2330]">
+              <div className="w-full bg-athloniq-card rounded-full h-1.5 overflow-hidden border border-athloniq-border">
                 <div
                   className="bg-athloniq-lime h-full rounded-full transition-all"
                   style={{
@@ -638,7 +638,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* Card B: Biometrics & Anthropometric Screening Card */}
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <div className="flex items-center gap-2">
               <Scale className="h-5 w-5 text-athloniq-lime" />
               <h3 className="font-bold text-white text-base">Biometrics & Screening</h3>
@@ -648,7 +648,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <span className="text-[11px] text-slate-400">
                   {latestWeight ? `Weight (${latestWeight.loggedDate})` : "Body Weight"}
                 </span>
@@ -661,7 +661,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   )}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#181D2A] border border-[#1E2330]">
+              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border">
                 <span className="text-[11px] text-slate-400">Height</span>
                 <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
                   {profile.heightCm != null ? profile.heightCm : "Not set"}
@@ -672,7 +672,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-1.5">
+            <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-300">
                   BMI: {bmi.bmi} kg/m²
@@ -684,7 +684,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </p>
             </div>
 
-            <div className="rounded-xl bg-[#181D2A]/60 border border-[#1E2330] p-3 text-xs text-slate-400 flex items-center justify-between">
+            <div className="rounded-xl bg-athloniq-surface/60 border border-athloniq-border p-3 text-xs text-slate-400 flex items-center justify-between">
               <span>Weight Trend:</span>
               <span className="font-mono text-slate-300 text-[11px]">
                 {weightTrend.status === "ok" ? (
@@ -710,7 +710,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* Card C: Training & Equipment Status Card */}
         <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1E2330] pb-3">
+          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
             <div className="flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-athloniq-lime" />
               <h3 className="font-bold text-white text-base">Training & Equipment</h3>
@@ -744,7 +744,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-400">Weekly Frequency</span>
                   <span className="font-mono font-bold text-athloniq-lime">
@@ -758,7 +758,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   {(profile.trainingScope || []).map((scope, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-0.5 rounded bg-[#12151E] border border-[#1E2330] text-[10px] font-mono text-slate-300 uppercase"
+                      className="px-2 py-0.5 rounded bg-athloniq-card border border-athloniq-border text-[10px] font-mono text-slate-300 uppercase"
                     >
                       {scope}
                     </span>
@@ -767,7 +767,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </div>
             )}
 
-            <div className="p-3.5 rounded-xl bg-[#181D2A] border border-[#1E2330] space-y-2">
+            <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">Home Equipment:</span>
                 <span

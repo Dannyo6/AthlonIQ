@@ -24,7 +24,7 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={cn(
-        "rounded-2xl p-6 transition-all duration-150 bg-[#12151E] border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] text-slate-100",
+        "rounded-2xl p-6 transition-all duration-150 bg-athloniq-card border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] text-slate-100",
         hoverEffect && "hover:border-white/[0.14] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]",
         glowStyles,
         className

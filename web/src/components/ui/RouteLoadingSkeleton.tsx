@@ -21,7 +21,7 @@ export const RouteLoadingSkeleton: React.FC = () => {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="p-4 rounded-2xl bg-[#12151E] border border-white/[0.07] space-y-3"
+            className="p-4 rounded-2xl bg-athloniq-card border border-white/[0.07] space-y-3"
           >
             <div className="flex items-center justify-between">
               <div className="h-3 w-16 bg-white/[0.06] rounded" />
@@ -36,7 +36,7 @@ export const RouteLoadingSkeleton: React.FC = () => {
       {/* Main Content Sections Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <div className="p-6 rounded-2xl bg-[#12151E] border border-white/[0.07] space-y-4">
+          <div className="p-6 rounded-2xl bg-athloniq-card border border-white/[0.07] space-y-4">
             <div className="h-5 w-36 bg-white/[0.08] rounded-lg" />
             <div className="h-40 bg-white/[0.03] rounded-xl border border-white/[0.04]" />
             <div className="grid grid-cols-3 gap-3">
@@ -48,7 +48,7 @@ export const RouteLoadingSkeleton: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="p-6 rounded-2xl bg-[#12151E] border border-white/[0.07] space-y-4">
+          <div className="p-6 rounded-2xl bg-athloniq-card border border-white/[0.07] space-y-4">
             <div className="h-5 w-28 bg-white/[0.08] rounded-lg" />
             <div className="h-24 bg-white/[0.03] rounded-xl border border-white/[0.04]" />
             <div className="h-20 bg-white/[0.03] rounded-xl border border-white/[0.04]" />

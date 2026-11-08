@@ -164,7 +164,7 @@ const AppShell: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
+    <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
       {/* PWA Offline Persistent Banner */}
       <PwaOfflineBanner isOnline={isOnline} />
 
@@ -178,7 +178,7 @@ const AppShell: React.FC = () => {
       {/* Re-auth Expired Session Modal */}
       {reAuthRequired && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full bg-[#12151E] border border-amber-500/40 rounded-2xl p-6 shadow-2xl text-center space-y-4">
+          <div className="max-w-md w-full bg-athloniq-card border border-amber-500/40 rounded-2xl p-6 shadow-2xl text-center space-y-4">
             <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
               <ShieldAlert className="h-6 w-6" />
             </div>
@@ -197,7 +197,7 @@ const AppShell: React.FC = () => {
               </button>
               <button
                 onClick={() => signOut()}
-                className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-[#a3e635] transition-all shadow-glow-lime"
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover transition-all shadow-glow-lime"
               >
                 Sign In Again
               </button>
@@ -209,9 +209,9 @@ const AppShell: React.FC = () => {
       {/* Legacy localStorage Migration Modal */}
       {legacyImportAvailable && legacyImportCounts && (
         <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="max-w-md w-full bg-[#12151E] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
+          <div className="max-w-md w-full bg-athloniq-card border border-athloniq-lime/40 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
+              <div className="h-10 w-10 rounded-xl bg-athloniq-lime/10 text-athloniq-lime flex items-center justify-center border border-athloniq-lime/20 shrink-0">
                 <UploadCloud className="h-5 w-5" />
               </div>
               <div>
@@ -221,15 +221,15 @@ const AppShell: React.FC = () => {
                 </p>
                 <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
                   <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
-                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.food}</div>
+                    <div className="text-sm font-bold text-athloniq-emerald tabular-nums">{legacyImportCounts.food}</div>
                     <div className="text-[10px] text-slate-400">Foods</div>
                   </div>
                   <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
-                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.workouts}</div>
+                    <div className="text-sm font-bold text-athloniq-emerald tabular-nums">{legacyImportCounts.workouts}</div>
                     <div className="text-[10px] text-slate-400">Workouts</div>
                   </div>
                   <div className="bg-black/30 p-2 rounded-lg border border-white/[0.06]">
-                    <div className="text-sm font-bold text-cyan-400 tabular-nums">{legacyImportCounts.metrics}</div>
+                    <div className="text-sm font-bold text-athloniq-emerald tabular-nums">{legacyImportCounts.metrics}</div>
                     <div className="text-[10px] text-slate-400">Metrics</div>
                   </div>
                 </div>
@@ -248,7 +248,7 @@ const AppShell: React.FC = () => {
               </button>
               <button
                 onClick={() => runLegacyImport()}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover transition-all flex items-center gap-1.5 shadow-glow-lime"
               >
                 <UploadCloud className="h-3.5 w-3.5" />
                 <span>Import to Cloud</span>
@@ -264,16 +264,16 @@ const AppShell: React.FC = () => {
           <div
             className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md ${
               authToast.type === "success"
-                ? "bg-slate-900/95 border-athloniq-lime/40 text-athloniq-lime shadow-[0_0_20px_rgba(190,242,100,0.15)]"
+                ? "bg-slate-900/95 border-athloniq-emerald/40 text-athloniq-emerald shadow-[0_0_20px_rgba(16,185,129,0.15)]"
                 : authToast.type === "warning"
                 ? "bg-slate-900/95 border-amber-500/40 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                : "bg-slate-900/95 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+                : "bg-slate-900/95 border-athloniq-lime/40 text-athloniq-lime shadow-[0_0_20px_rgba(190,242,100,0.15)]"
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              {authToast.type === "success" && <CheckCircle2 className="h-4 w-4 shrink-0 text-athloniq-lime" />}
+              {authToast.type === "success" && <CheckCircle2 className="h-4 w-4 shrink-0 text-athloniq-emerald" />}
               {authToast.type === "warning" && <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />}
-              {authToast.type === "info" && <Info className="h-4 w-4 shrink-0 text-cyan-400" />}
+              {authToast.type === "info" && <Info className="h-4 w-4 shrink-0 text-athloniq-lime" />}
               <span className="text-xs font-semibold text-slate-100 truncate">{authToast.message}</span>
             </div>
             <button
@@ -293,16 +293,16 @@ const AppShell: React.FC = () => {
           <div
             className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md ${
               toast.type === "success"
-                ? "bg-slate-900/95 border-athloniq-lime/40 text-athloniq-lime shadow-[0_0_20px_rgba(190,242,100,0.15)]"
+                ? "bg-slate-900/95 border-athloniq-emerald/40 text-athloniq-emerald shadow-[0_0_20px_rgba(16,185,129,0.15)]"
                 : toast.type === "warning"
                 ? "bg-slate-900/95 border-amber-500/40 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                : "bg-slate-900/95 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+                : "bg-slate-900/95 border-athloniq-lime/40 text-athloniq-lime shadow-[0_0_20px_rgba(190,242,100,0.15)]"
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              {toast.type === "success" && <CheckCircle2 className="h-4 w-4 shrink-0 text-athloniq-lime" />}
+              {toast.type === "success" && <CheckCircle2 className="h-4 w-4 shrink-0 text-athloniq-emerald" />}
               {toast.type === "warning" && <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />}
-              {toast.type === "info" && <Info className="h-4 w-4 shrink-0 text-cyan-400" />}
+              {toast.type === "info" && <Info className="h-4 w-4 shrink-0 text-athloniq-lime" />}
               <span className="text-xs font-semibold text-slate-100 truncate">{toast.message}</span>
             </div>
             <button
@@ -317,7 +317,7 @@ const AppShell: React.FC = () => {
       )}
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex flex-col border-b border-white/[0.07] bg-[#0C0E15]/95 backdrop-blur-md sticky top-0 z-50">
+      <header className="md:hidden flex flex-col border-b border-white/[0.07] bg-athloniq-dark-nav/95 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-lg bg-athloniq-lime flex items-center justify-center text-slate-950 font-black text-xs shadow-glow-lime">
@@ -336,7 +336,7 @@ const AppShell: React.FC = () => {
           <div className="flex items-center gap-2">
             {/* Sync Status Badge */}
             {syncStatus === "syncing" && (
-              <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold flex items-center gap-1">
+              <div className="px-2 py-0.5 rounded-full bg-athloniq-lime/15 border border-athloniq-lime/30 text-athloniq-lime text-[10px] font-bold flex items-center gap-1">
                 <RefreshCw className="h-2.5 w-2.5 animate-spin" />
                 <span>Syncing</span>
               </div>
@@ -393,7 +393,7 @@ const AppShell: React.FC = () => {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-[#12151E] border border-white/[0.08] text-slate-300"
+              className="p-2 rounded-xl bg-athloniq-card border border-white/[0.08] text-slate-300"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -402,7 +402,7 @@ const AppShell: React.FC = () => {
         </div>
 
         {/* 1-Click Horizontal Quick Rail for Mobile */}
-        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-t border-white/[0.04] bg-[#090A0F]/60">
+        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar border-t border-white/[0.04] bg-athloniq-dark/60">
           {NAV_ITEMS.map((item) => (
             <GuardedNavLink
               key={item.id}
@@ -411,7 +411,7 @@ const AppShell: React.FC = () => {
                 `px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all border shrink-0 ${
                   isActive
                     ? "bg-athloniq-lime text-slate-950 font-bold border-athloniq-lime shadow-glow-lime"
-                    : "bg-[#141824]/80 text-slate-300 border-white/[0.06] hover:text-white"
+                    : "bg-athloniq-card-alt/80 text-slate-300 border-white/[0.06] hover:text-white"
                 }`
               }
             >
@@ -425,7 +425,7 @@ const AppShell: React.FC = () => {
       <aside
         className={`${
           mobileMenuOpen ? "block" : "hidden"
-        } md:flex flex-col w-full md:w-64 bg-[#0C0E15] border-r border-white/[0.07] p-5 shrink-0 z-40 fixed md:sticky top-0 md:h-screen overflow-y-auto`}
+        } md:flex flex-col w-full md:w-64 bg-athloniq-dark-nav border-r border-white/[0.07] p-5 shrink-0 z-40 fixed md:sticky top-0 md:h-screen overflow-y-auto`}
       >
         {/* Brand Header */}
         <div className="hidden md:flex items-center gap-3 mb-6 px-1">
@@ -443,10 +443,10 @@ const AppShell: React.FC = () => {
         </div>
 
         {/* Sync Status Banner */}
-        <div className="mb-4 px-3 py-2 rounded-xl bg-[#12151E] border border-white/[0.07] flex items-center justify-between text-xs">
+        <div className="mb-4 px-3 py-2 rounded-xl bg-athloniq-card border border-white/[0.07] flex items-center justify-between text-xs">
           <span className="text-slate-400 flex items-center gap-2">
-            {syncStatus === "synced" && <CheckCircle2 className="h-3.5 w-3.5 text-athloniq-lime" />}
-            {syncStatus === "syncing" && <RefreshCw className="h-3.5 w-3.5 text-cyan-400 animate-spin" />}
+            {syncStatus === "synced" && <CheckCircle2 className="h-3.5 w-3.5 text-athloniq-emerald" />}
+            {syncStatus === "syncing" && <RefreshCw className="h-3.5 w-3.5 text-athloniq-lime animate-spin" />}
             {syncStatus === "failed" && <CloudOff className="h-3.5 w-3.5 text-rose-400" />}
             <span className="text-[11px] font-medium">
               {syncStatus === "synced" ? "Cloud Synced (RLS)" : syncStatus === "syncing" ? "Syncing..." : "Sync Failed"}
@@ -472,7 +472,7 @@ const AppShell: React.FC = () => {
         {/* Athlete Live Readiness Card (Desktop) */}
         <div
           data-testid="sidebar-readiness-widget"
-          className="hidden md:block mb-6 p-3 rounded-xl bg-[#12151E] border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
+          className="hidden md:block mb-6 p-3 rounded-xl bg-athloniq-card border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
         >
           {hasTodayCheckIn && readiness ? (
             <>
@@ -523,7 +523,7 @@ const AppShell: React.FC = () => {
                   `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all select-none ${
                     isActive
                       ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/30 shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)] font-bold"
-                      : "text-slate-400 hover:text-white hover:bg-[#141824]/60 border border-transparent"
+                      : "text-slate-400 hover:text-white hover:bg-athloniq-card-alt/60 border border-transparent"
                   }`
                 }
               >
@@ -686,7 +686,7 @@ const AppShell: React.FC = () => {
       </main>
 
       {/* Mobile Bottom Navigation Bar for thumb ergonomics */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0C0E15]/95 border-t border-white/[0.08] px-2 py-1.5 flex items-center justify-around z-50 backdrop-blur-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-athloniq-dark-nav/95 border-t border-white/[0.08] px-2 py-1.5 flex items-center justify-around z-50 backdrop-blur-lg">
         {MOBILE_DOCK_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
@@ -749,9 +749,9 @@ export const App: React.FC = () => {
   // Loading state while verifying Supabase session
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#090A0F] text-slate-100 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col items-center justify-center p-6">
         <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-300">
-          <div className="h-14 w-14 rounded-2xl bg-[#12151E] border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-black text-xl shadow-glow-lime">
+          <div className="h-14 w-14 rounded-2xl bg-athloniq-card border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-black text-xl shadow-glow-lime">
             AQ
           </div>
           <div className="flex items-center gap-2 text-xs font-mono text-slate-400 tracking-wider">
