@@ -64,11 +64,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   );
 
   const weightTrend = useMemo(() => {
-    const points = bodyMetrics.map((m) => ({
-      loggedDate: m.loggedDate,
-      weightKg: m.weightKg,
-    }));
-    return calculateWeightTrend(points);
+    return calculateWeightTrend(bodyMetrics);
   }, [bodyMetrics]);
 
   const latestWeight = useMemo(() => {
@@ -202,7 +198,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               variant="primary"
               size="sm"
               className="shrink-0 min-h-[44px] text-xs"
-              onClick={() => onNavigate("profile")}
+              onClick={() =>
+                onNavigate(
+                  !profile.onboardingCompleted
+                    ? "profile?step=biometrics"
+                    : "profile?step=equipment"
+                )
+              }
             >
               <span>
                 {!profile.onboardingCompleted ? "Resume Onboarding" : "Confirm Equipment"}

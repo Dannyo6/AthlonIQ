@@ -83,9 +83,13 @@ export const NutritionCard: React.FC<NutritionCardProps> = ({
               </div>
             </>
           ) : (
-            <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border text-amber-400 text-xs font-semibold">
-              Calorie target not set — finish onboarding
-            </div>
+            <Link
+              to="/profile?step=biometrics"
+              className="block p-3.5 rounded-xl bg-athloniq-surface hover:bg-athloniq-card-alt border border-athloniq-border hover:border-athloniq-lime/40 text-amber-400 hover:text-amber-300 text-xs font-semibold transition-all min-h-[44px] flex items-center justify-between"
+            >
+              <span>Calorie target not set — finish onboarding</span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
+            </Link>
           )}
         </div>
 

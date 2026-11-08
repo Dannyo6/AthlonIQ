@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -114,10 +115,43 @@ export const ProfileView: React.FC = () => {
     }
   }, []);
 
-  const [currentStep, setCurrentStep] = useState<number>(profile.onboardingStep || 1);
-  const [isEditingAfterCompletion, setIsEditingAfterCompletion] = useState<boolean>(
-    !profile.onboardingCompleted
+  const [searchParams] = useSearchParams();
+  const stepParam = searchParams.get("step");
+
+  const stepMapping: Record<string, number> = useMemo(
+    () => ({
+      biometrics: 1,
+      goals: 2,
+      equipment: 3,
+      preferences: 4,
+      training: 4,
+      review: 5,
+    }),
+    []
   );
+
+  const initialStep = useMemo(() => {
+    if (stepParam) {
+      const mapped = stepMapping[stepParam.toLowerCase()];
+      if (mapped) return mapped;
+    }
+    return profile.onboardingStep || 1;
+  }, [stepParam, stepMapping, profile.onboardingStep]);
+
+  const [currentStep, setCurrentStep] = useState<number>(initialStep);
+  const [isEditingAfterCompletion, setIsEditingAfterCompletion] = useState<boolean>(
+    Boolean(stepParam) || !profile.onboardingCompleted
+  );
+
+  useEffect(() => {
+    if (stepParam) {
+      const target = stepMapping[stepParam.toLowerCase()];
+      if (target) {
+        setCurrentStep(target);
+        setIsEditingAfterCompletion(true);
+      }
+    }
+  }, [stepParam, stepMapping]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [exportNotice, setExportNotice] = useState<string | null>(null);
@@ -315,7 +349,19 @@ export const ProfileView: React.FC = () => {
   });
 
   const handleStepNext = (step: number) => {
-    updateProfile({ onboardingStep: step + 1 });
+    if (step === 1) {
+      const currentValues = watch();
+      updateProfile({
+        onboardingStep: 2,
+        age: currentValues.age,
+        heightCm: currentValues.heightCm,
+        weightKg: currentValues.weightKg,
+        sex: currentValues.sex === "unknown" ? null : (currentValues.sex as any),
+        waistCm: currentValues.waistCm || null,
+      });
+    } else {
+      updateProfile({ onboardingStep: step + 1 });
+    }
     setCurrentStep(step + 1);
   };
 
@@ -553,43 +599,68 @@ export const ProfileView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Instant BMI Screening Preview */}
-                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  {liveBmi ? (
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
-                        {liveBmi.bmi}
+                {/* Live Biometrics & Caloric Target Previews */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Instant BMI Screening Preview */}
+                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col justify-between gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300">BMI SCREENING</span>
+                      {liveBmi ? (
+                        <ProvenanceBadge provenance="calculated_estimate" />
+                      ) : (
+                        <Badge variant="neutral">NOT SET</Badge>
+                      )}
+                    </div>
+                    {liveBmi ? (
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
+                          {liveBmi.bmi}
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white flex items-center gap-2">
+                            <span className="font-mono tabular-nums">Calculated BMI: {liveBmi.bmi} kg/m²</span>
+                            <Badge variant="amber">{liveBmi.category.toUpperCase()}</Badge>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {liveBmi.disclaimer}
+                          </p>
+                        </div>
                       </div>
+                    ) : (
+                      <div className="text-xs font-semibold text-slate-300">
+                        Enter height and weight
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Live Mifflin-St Jeor Caloric Target Preview */}
+                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col justify-between gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300">ESTIMATED CALORIC TARGET</span>
+                      {liveEnergy.estimatedKcal ? (
+                        <ProvenanceBadge provenance="calculated_estimate" />
+                      ) : (
+                        <ProvenanceBadge provenance="awaiting_onboarding" />
+                      )}
+                    </div>
+                    {liveEnergy.estimatedKcal ? (
                       <div>
-                        <div className="text-xs font-semibold text-white flex items-center gap-2">
-                          <span>Calculated BMI: {liveBmi.bmi} kg/m²</span>
-                          <Badge variant="amber">{liveBmi.category.toUpperCase()}</Badge>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-black text-athloniq-lime font-mono tabular-nums">
+                            {liveEnergy.estimatedKcal}
+                          </span>
+                          <span className="text-xs text-slate-400 font-mono">kcal/day</span>
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5">
-                          {liveBmi.disclaimer}
+                          Deterministic Mifflin-St Jeor calculation with goal surplus.
                         </p>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 font-mono font-bold text-sm">
-                        --
+                    ) : (
+                      <div className="text-xs text-slate-500">
+                        Complete biometrics to unlock deterministic caloric target.
                       </div>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-300">
-                          Enter height and weight
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Provide your height and weight above to calculate live BMI.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {liveBmi ? (
-                    <ProvenanceBadge provenance="calculated_estimate" />
-                  ) : (
-                    <Badge variant="neutral">NOT SET</Badge>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
@@ -743,10 +814,13 @@ export const ProfileView: React.FC = () => {
                           <Dumbbell className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-white text-sm">
                               {item.itemName}
                             </span>
+                            <Badge variant={item.isConfirmed ? "lime" : "amber"}>
+                              {item.isConfirmed ? "CONFIRMED" : "UNCONFIRMED"}
+                            </Badge>
                             <ProvenanceBadge
                               provenance={
                                 item.isConfirmed
@@ -755,9 +829,8 @@ export const ProfileView: React.FC = () => {
                               }
                             />
                           </div>
-                          <div className="text-xs text-slate-400 font-mono mt-1">
-                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "Not set"}{" "}
-                            • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "Not set"}
+                          <div className="text-xs text-slate-400 font-mono mt-1 tabular-nums">
+                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "Not set"} • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "Not set"}
                           </div>
                         </div>
                       </div>
@@ -768,6 +841,7 @@ export const ProfileView: React.FC = () => {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="min-h-[44px]"
                             onClick={() => {
                               setEditingEquipmentId(item.id);
                               setEditMaxLoad(item.maxLoadKg != null ? String(item.maxLoadKg) : "");
@@ -781,6 +855,7 @@ export const ProfileView: React.FC = () => {
                           type="button"
                           variant={item.isConfirmed ? "outline" : "primary"}
                           size="sm"
+                          className="min-h-[44px]"
                           onClick={() => {
                             updateEquipmentItem(item.id, {
                               isConfirmed: !item.isConfirmed,
@@ -802,7 +877,7 @@ export const ProfileView: React.FC = () => {
                               placeholder="e.g. 70 (or leave blank)"
                               value={editMaxLoad}
                               onChange={(e) => setEditMaxLoad(e.target.value)}
-                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
                           <div className="space-y-1 flex-1 w-full sm:w-auto">
@@ -814,7 +889,7 @@ export const ProfileView: React.FC = () => {
                               placeholder="e.g. 2.5 (or leave blank)"
                               value={editMinIncrement}
                               onChange={(e) => setEditMinIncrement(e.target.value)}
-                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
+                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                             />
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -822,6 +897,7 @@ export const ProfileView: React.FC = () => {
                               type="button"
                               variant="outline"
                               size="sm"
+                              className="min-h-[44px]"
                               onClick={() => setEditingEquipmentId(null)}
                             >
                               Cancel
@@ -830,10 +906,19 @@ export const ProfileView: React.FC = () => {
                               type="button"
                               variant="primary"
                               size="sm"
+                              className="min-h-[44px]"
                               onClick={() => {
+                                const parsedMax = editMaxLoad.trim() === "" ? null : parseFloat(editMaxLoad);
+                                const maxLoadKg =
+                                  parsedMax != null && !isNaN(parsedMax) && parsedMax >= 0 ? parsedMax : null;
+                                const parsedInc =
+                                  editMinIncrement.trim() === "" ? null : parseFloat(editMinIncrement);
+                                const minIncrementKg =
+                                  parsedInc != null && !isNaN(parsedInc) && parsedInc >= 0 ? parsedInc : null;
+
                                 updateEquipmentItem(item.id, {
-                                  maxLoadKg: editMaxLoad.trim() === "" ? null : parseFloat(editMaxLoad),
-                                  minIncrementKg: editMinIncrement.trim() === "" ? null : parseFloat(editMinIncrement),
+                                  maxLoadKg,
+                                  minIncrementKg,
                                   isConfirmed: true,
                                 });
                                 setEditingEquipmentId(null);
@@ -848,10 +933,11 @@ export const ProfileView: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex justify-between pt-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-athloniq-border">
                   <Button
                     type="button"
                     variant="secondary"
+                    className="min-h-[44px] w-full sm:w-auto"
                     onClick={() => handleStepBack(3)}
                   >
                     <ChevronLeft className="h-4 w-4" /> Back
@@ -859,6 +945,7 @@ export const ProfileView: React.FC = () => {
                   <Button
                     type="button"
                     variant="primary"
+                    className="min-h-[44px] w-full sm:w-auto"
                     onClick={() => {
                       // Confirm all equipment if user clicks proceed
                       const all = equipment.map((i) => ({ ...i, isConfirmed: true }));
@@ -866,7 +953,7 @@ export const ProfileView: React.FC = () => {
                       handleStepNext(3);
                     }}
                   >
-                    Confirm All & Proceed <ChevronRight className="h-4 w-4" />
+                    Confirm All Home Gym Equipment <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </Card>
@@ -1363,7 +1450,7 @@ export const ProfileView: React.FC = () => {
       {/* Two-Step Deletion Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md space-y-4 border-rose-500/40 bg-[#0E121A] shadow-2xl">
+          <Card className="w-full max-w-md space-y-4 border-rose-500/40 bg-athloniq-card shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
                 <AlertTriangle className="h-6 w-6" />
@@ -1385,7 +1472,7 @@ export const ProfileView: React.FC = () => {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="Type DELETE to confirm"
-              className="w-full px-3 py-2 text-sm rounded-lg bg-[#141923] border border-[#232936] text-white focus:outline-none focus:border-rose-400 font-mono"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-athloniq-surface border border-athloniq-border text-white focus:outline-none focus:border-rose-400 font-mono"
             />
 
             <div className="flex items-center justify-end gap-3 pt-2">

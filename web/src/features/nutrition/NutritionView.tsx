@@ -427,17 +427,24 @@ export const NutritionView: React.FC = () => {
 
         {/* Calorie target not set — designed null state */}
         {!hasCalorieTarget && (
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#1A1F2E] border border-[#252D42] text-sm">
-            <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-white">
-                Calorie target not set — finish onboarding
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Progress bars and remaining kcal will appear once your TDEE is calibrated.
-                <Link to="/profile" className="ml-1.5 text-athloniq-lime hover:underline">Go to Profile →</Link>
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border text-sm">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-white">
+                  Calorie target not set — finish onboarding
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Progress bars and remaining kcal will appear once your TDEE is calibrated.
+                </p>
+              </div>
             </div>
+            <Link
+              to="/profile?step=biometrics"
+              className="inline-flex items-center justify-center min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover shadow-glow-lime transition-all active:scale-[0.98] shrink-0"
+            >
+              Finish Onboarding →
+            </Link>
           </div>
         )}
 

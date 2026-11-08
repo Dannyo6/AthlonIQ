@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -142,6 +143,12 @@ export const WorkoutsView: React.FC = () => {
 
   const unconfirmedEquipment = equipment.filter((i) => !i.isConfirmed);
   const freeWeights = equipment.find((e) => e.itemKey === "free_weights_70kg");
+  const isEquipmentLocked =
+    !profile.equipmentConfirmed ||
+    unconfirmedEquipment.length > 0 ||
+    equipment.some(
+      (e) => e.itemKey === "free_weights_70kg" && (e.maxLoadKg === null || e.minIncrementKg === null)
+    );
 
   // Rest timer logic — clean single interval on unmount
   useEffect(() => {
@@ -259,12 +266,18 @@ export const WorkoutsView: React.FC = () => {
     const completed = ex.sets.filter((s) => s.isCompleted);
     if (completed.length === 0) return null;
 
-    const maxLoad = freeWeights?.maxLoadKg ?? null;
-    const minIncrement = freeWeights?.minIncrementKg ?? null;
+    const item = ex.equipmentKey
+      ? equipment.find((e) => e.itemKey === ex.equipmentKey)
+      : freeWeights;
+
+    const maxLoad = item?.maxLoadKg ?? null;
+    const minIncrement = item?.minIncrementKg ?? null;
+    const isConfirmed = profile.equipmentConfirmed && Boolean(item?.isConfirmed);
+
     return gatedProgressionSuggestion(
       maxLoad,
       minIncrement,
-      profile.equipmentConfirmed,
+      isConfirmed,
       completed.map((s) => ({ reps: s.reps, loadKg: s.loadKg, rpe: s.rpe, isBodyweight: s.isBodyweight })),
       ex.targetRepsMax,
       ex.exerciseName,
@@ -299,21 +312,29 @@ export const WorkoutsView: React.FC = () => {
         )}
       </div>
 
-      {/* Equipment Warning */}
-      {unconfirmedEquipment.length > 0 && (
+      {/* Equipment Warning / Locked State Banner */}
+      {isEquipmentLocked && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <div className="text-sm font-bold text-white">
-                Confirm your 70 kg Home Gym before applying equipment-specific load progressions
+                Equipment confirmation required for load progressions
               </div>
               <p className="text-xs text-amber-300/90 mt-0.5">
-                {unconfirmedEquipment.length} item(s) unconfirmed — load progression is blocked until verified in Profile → Equipment.
+                Sets can still be logged manually, but automated load/increment recommendations remain locked until home-gym equipment limits are confirmed.
               </p>
             </div>
           </div>
-          <ProvenanceBadge provenance="unconfirmed_equipment" />
+          <div className="flex items-center gap-3 shrink-0">
+            <ProvenanceBadge provenance="unconfirmed_equipment" />
+            <Link
+              to="/profile?step=equipment"
+              className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover shadow-glow-lime transition-all active:scale-[0.98] shrink-0"
+            >
+              Confirm Equipment in Profile →
+            </Link>
+          </div>
         </div>
       )}
 
@@ -516,7 +537,7 @@ export const WorkoutsView: React.FC = () => {
                           <div className="font-bold uppercase tracking-wide text-[10px] mb-0.5">
                             {suggestion.action === "increase_load" ? `+${(suggestion.newLoadKg! - (ex.sets[ex.sets.length - 1]?.loadKg ?? 0)).toFixed(2)} kg suggestion` :
                              suggestion.action === "increase_reps_or_tempo" ? "Reps / Tempo progression" :
-                             suggestion.action === "confirm_equipment_first" ? "⚠ Confirm Equipment First" : "Maintain / Deload"}
+                             suggestion.action === "confirm_equipment_first" ? "Set your equipment limits to get load progressions" : "Maintain / Deload"}
                           </div>
                           <div className="leading-relaxed text-[11px] opacity-90">
                             {suggestion.explanation}
