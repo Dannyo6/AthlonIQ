@@ -4,53 +4,31 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { CalendarCheck, ArrowRight } from "lucide-react";
 import type { WorkoutSession } from "@/types";
+import { calculateWeeklyConsistency } from "@/lib/weeklyConsistency";
 
 interface WeeklyConsistencyCardProps {
   trainingDaysPerWeek?: number | null;
   workoutSessions: WorkoutSession[];
+  timezone?: string | null;
+  today?: string | Date | null;
   onNavigate?: (tab: string) => void;
 }
 
 export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
   trainingDaysPerWeek,
   workoutSessions,
+  timezone,
+  today,
   onNavigate,
 }) => {
-  const isSet = trainingDaysPerWeek != null && trainingDaysPerWeek > 0;
-
-  // Calculate sessions in the rolling 7-day window
-  const sessionsLast7Days = useMemo(() => {
-    const cutoff7d = new Date();
-    cutoff7d.setDate(cutoff7d.getDate() - 7);
-    return workoutSessions.filter((s) => new Date(s.loggedDate) >= cutoff7d);
-  }, [workoutSessions]);
-
-  const uniqueDaysLogged = useMemo(() => {
-    const days = new Set(sessionsLast7Days.map((s) => s.loggedDate));
-    return days.size;
-  }, [sessionsLast7Days]);
-
-  const progressPercent = isSet
-    ? Math.min(100, Math.round((uniqueDaysLogged / trainingDaysPerWeek!) * 100))
-    : 0;
-
-  // Generate weekday activity states (last 7 calendar days)
-  const dayPills = useMemo(() => {
-    const list = [];
-    const loggedDates = new Set(workoutSessions.map((s) => s.loggedDate));
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const iso = d.toISOString().split("T")[0];
-      const dayLetter = d.toLocaleDateString("en-US", { weekday: "narrow" });
-      const isLogged = loggedDates.has(iso);
-      const isToday = i === 0;
-
-      list.push({ iso, dayLetter, isLogged, isToday });
-    }
-    return list;
-  }, [workoutSessions]);
+  const consistency = useMemo(
+    () =>
+      calculateWeeklyConsistency(workoutSessions, trainingDaysPerWeek, {
+        timezone,
+        today,
+      }),
+    [workoutSessions, trainingDaysPerWeek, timezone, today]
+  );
 
   return (
     <Card className="space-y-4">
@@ -59,16 +37,16 @@ export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
           <CalendarCheck className="h-5 w-5 text-athloniq-lime" />
           <h3 className="font-bold text-white text-base">Weekly Consistency</h3>
         </div>
-        {isSet ? (
-          <Badge variant={progressPercent >= 100 ? "lime" : "neutral"}>
-            {progressPercent >= 100 ? "TARGET MET" : "ACTIVE SPLIT"}
+        {consistency.isTargetSet ? (
+          <Badge variant={consistency.isTargetMet ? "lime" : "neutral"}>
+            {consistency.isTargetMet ? "TARGET MET" : "ACTIVE SPLIT"}
           </Badge>
         ) : (
           <Badge variant="amber">NOT SET</Badge>
         )}
       </div>
 
-      {!isSet ? (
+      {!consistency.isTargetSet ? (
         <div className="space-y-3">
           <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border text-xs space-y-1.5">
             <div className="font-semibold text-slate-300">
@@ -94,17 +72,17 @@ export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
             <div className="flex items-baseline justify-between">
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-medium">
-                  7-Day Adherence
+                  Weekly Adherence (Mon–Sun)
                 </span>
                 <div className="text-2xl font-black text-white font-mono mt-0.5 tabular-nums">
-                  {uniqueDaysLogged}{" "}
+                  {consistency.uniqueDaysLogged}{" "}
                   <span className="text-xs text-slate-400 font-mono">
-                    / {trainingDaysPerWeek} days
+                    / {consistency.trainingDaysTarget} days
                   </span>
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-athloniq-lime tabular-nums">
-                {progressPercent}%
+                {consistency.progressPercent}%
               </span>
             </div>
 
@@ -112,13 +90,13 @@ export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
             <div className="w-full bg-athloniq-card rounded-full h-1.5 overflow-hidden border border-athloniq-border">
               <div
                 className="bg-athloniq-lime h-full rounded-full transition-all"
-                style={{ width: `${progressPercent}%` }}
+                style={{ width: `${consistency.progressPercent}%` }}
               />
             </div>
 
-            {/* 7-Day Dots */}
+            {/* Monday - Sunday Days */}
             <div className="flex items-center justify-between pt-1">
-              {dayPills.map((pill, idx) => (
+              {consistency.days.map((pill, idx) => (
                 <div key={idx} className="flex flex-col items-center gap-1">
                   <div
                     className={`h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold font-mono transition-all ${
@@ -126,7 +104,9 @@ export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
                         ? "bg-athloniq-lime text-slate-950 font-black shadow-sm"
                         : "bg-athloniq-card text-slate-500 border border-athloniq-border"
                     } ${pill.isToday ? "ring-2 ring-athloniq-lime/60" : ""}`}
-                    title={`${pill.iso}: ${pill.isLogged ? "Workout logged" : "No workout"}`}
+                    title={`${pill.date} (${pill.dayName}): ${
+                      pill.isLogged ? `${pill.sessionsCount} session(s)` : "Rest day"
+                    }`}
                   >
                     {pill.dayLetter}
                   </div>

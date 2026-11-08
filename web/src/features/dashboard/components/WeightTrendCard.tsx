@@ -4,9 +4,10 @@ import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { Scale, ArrowRight, TrendingUp } from "lucide-react";
 import type { BodyMetric, WeightTrendResult } from "@/types";
+import { generateWeightSparkline } from "@/lib/calculations";
 
 interface WeightTrendCardProps {
-  bodyMetrics: BodyMetric[];
+  bodyMetrics?: BodyMetric[];
   weightTrend: WeightTrendResult;
   latestWeight: BodyMetric | null;
   onNavigate?: (tab: string) => void;
@@ -18,39 +19,13 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
   latestWeight,
   onNavigate,
 }) => {
-  const hasEnoughData = bodyMetrics.length >= 3;
+  const hasEnoughData = weightTrend.status === "ok";
+  const weighInsCount = bodyMetrics ? bodyMetrics.length : weightTrend.entries.length;
 
-  // Generate SVG Sparkline coordinates for >= 3 entries
+  // Generate SVG Sparkline coordinates strictly from calculateWeightTrend output
   const sparklineData = useMemo(() => {
-    if (!hasEnoughData) return null;
-
-    const sorted = [...bodyMetrics].sort((a, b) =>
-      a.loggedDate.localeCompare(b.loggedDate)
-    );
-
-    const weights = sorted.map((m) => m.weightKg);
-    const min = Math.min(...weights);
-    const max = Math.max(...weights);
-    const range = max - min || 1;
-
-    const width = 160;
-    const height = 44;
-    const padding = 4;
-
-    const points = sorted.map((m, idx) => {
-      const x = padding + (idx / Math.max(1, sorted.length - 1)) * (width - padding * 2);
-      const normalizedY = (m.weightKg - min) / range;
-      // Invert Y coordinate for SVG
-      const y = height - padding - normalizedY * (height - padding * 2);
-      return { x, y, weight: m.weightKg, date: m.loggedDate };
-    });
-
-    const pathD = points
-      .map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-      .join(" ");
-
-    return { points, pathD, width, height, min, max };
-  }, [bodyMetrics, hasEnoughData]);
+    return generateWeightSparkline(weightTrend);
+  }, [weightTrend]);
 
   return (
     <Card className="space-y-4">
@@ -75,7 +50,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
               <Badge variant="amber">CALIBRATING</Badge>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              {bodyMetrics.length}/3 weigh-ins logged. Log 3 separate body weight entries to
+              {weighInsCount}/3 weigh-ins logged. Log 3 separate body weight entries to
               unlock the 7-day rolling trend and sparkline.
             </p>
             {latestWeight && (
@@ -137,7 +112,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                     ))}
                   </svg>
                   <span className="text-[9px] font-mono text-slate-500 tabular-nums">
-                    {bodyMetrics.length} weigh-ins
+                    {weighInsCount} weigh-ins
                   </span>
                 </div>
               )}

@@ -66,6 +66,7 @@ describe("UI-2: Today Dashboard Screen & Components (390px spec)", () => {
         { id: "3", loggedDate: "2026-11-05", weightKg: 74.8 },
       ],
       isDemoFixtureActive: false,
+      preferences: { timezone: "Asia/Kolkata" },
       loadDemoFixture: vi.fn(),
       resetDemoFixture: vi.fn(),
       ...overrides,

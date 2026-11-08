@@ -38,6 +38,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     workoutSessions,
     activitySessions,
     bodyMetrics,
+    preferences,
     isDemoFixtureActive,
     loadDemoFixture,
     resetDemoFixture,
@@ -279,6 +280,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <WeeklyConsistencyCard
           trainingDaysPerWeek={profile.trainingDaysPerWeek}
           workoutSessions={workoutSessions}
+          timezone={preferences?.timezone}
           onNavigate={onNavigate}
         />
       </div>

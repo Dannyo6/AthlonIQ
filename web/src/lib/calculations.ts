@@ -633,6 +633,63 @@ export function calculateWeightTrend(entries: WeightPointInput[]): WeightTrendRe
   };
 }
 
+export interface SparklinePoint {
+  x: number;
+  y: number;
+  weight: number;
+  date: string;
+}
+
+export interface WeightSparklineData {
+  points: SparklinePoint[];
+  pathD: string;
+  width: number;
+  height: number;
+  min: number;
+  max: number;
+}
+
+/**
+ * Generates SVG Sparkline coordinates directly from calculateWeightTrend output.
+ * Does not take raw un-trended inputs or perform ad-hoc sorting.
+ */
+export function generateWeightSparkline(
+  trend: WeightTrendResult,
+  width = 160,
+  height = 44,
+  padding = 4
+): WeightSparklineData | null {
+  if (trend.status !== "ok" || trend.entries.length < 3) {
+    return null;
+  }
+
+  const entries = trend.entries;
+  const weights = entries.map((e) => e.weight_kg);
+  const min = Math.min(...weights);
+  const max = Math.max(...weights);
+  const range = max - min || 1;
+
+  const points: SparklinePoint[] = entries.map((e, idx) => {
+    const x = padding + (idx / Math.max(1, entries.length - 1)) * (width - padding * 2);
+    const normalizedY = (e.weight_kg - min) / range;
+    const y = height - padding - normalizedY * (height - padding * 2);
+    return {
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      weight: e.weight_kg,
+      date: e.logged_date,
+    };
+  });
+
+  const pathD = points
+    .map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(" ");
+
+  return { points, pathD, width, height, min, max };
+}
+
+export * from "./weeklyConsistency";
+
 // =============================================================================
 // Phase 5: Adaptive Lean-Bulk Calibrator
 // =============================================================================
