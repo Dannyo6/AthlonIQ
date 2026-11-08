@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { sendCoachChatTurn, fetchWeeklyReview } from "@/services/api";
 import { DashboardView } from "@/features/dashboard/DashboardView";
@@ -156,7 +156,7 @@ describe("Lane B3 Requirements Suite", () => {
       expect(logLink.getAttribute("href")).toBe("/recovery");
     });
 
-    it("Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false", () => {
+    it("Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false", async () => {
       vi.spyOn(AuthContextModule, "useAuth").mockReturnValue({
         user: { id: "test-user-123", email: "athlete@athloniq.io" } as any,
         session: {} as any,
@@ -173,8 +173,16 @@ describe("Lane B3 Requirements Suite", () => {
 
       vi.spyOn(useAthloniqStateModule, "useAthloniqState").mockReturnValue({
         profile: { fullName: "Test Athlete", onboardingCompleted: true } as any,
+        equipment: [],
+        goals: { calorieTargetKcal: 2200, calorieProvenance: "user_confirmed", proteinTargetG: 110, proteinMinG: 88, proteinMaxG: 121, proteinProvenance: "user_confirmed" } as any,
+        todayCheckIn: { date: "2026-10-26", sleepHours: 7.5, sleepQuality: 4, soreness: 2, fatigue: 2, stress: null },
         readiness: null,
         hasTodayCheckIn: false,
+        foodEntries: [],
+        getFoodEntriesForDate: () => [],
+        workoutSessions: [],
+        activitySessions: [],
+        bodyMetrics: [],
         toast: null,
         hideToast: vi.fn(),
         isDemoFixtureActive: false,
@@ -189,13 +197,15 @@ describe("Lane B3 Requirements Suite", () => {
         dismissLegacyImport: vi.fn(),
       } as any);
 
-      render(
-        <MemoryRouter>
-          <App />
-        </MemoryRouter>
-      );
+      await act(async () => {
+        render(
+          <MemoryRouter>
+            <App />
+          </MemoryRouter>
+        );
+      });
 
-      const sidebarWidget = screen.getByTestId("sidebar-readiness-widget");
+      const sidebarWidget = await screen.findByTestId("sidebar-readiness-widget");
       expect(sidebarWidget).toHaveTextContent("No check-in yet");
       expect(sidebarWidget).toHaveTextContent("Not set");
       expect(sidebarWidget).not.toHaveTextContent("80/100");

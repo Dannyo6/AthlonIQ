@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { App } from "@/app/App";
 import * as AuthContextModule from "@/features/auth/AuthContext";
 
@@ -55,7 +55,7 @@ describe("Application Session Gate", () => {
     expect(screen.getByRole("button", { name: /Sign In to AthlonIQ/i })).toBeInTheDocument();
   });
 
-  it("renders authenticated application workspace when session is present", () => {
+  it("renders authenticated application workspace when session is present", async () => {
     const mockUser = {
       id: "athlete-user-123",
       email: "athlete@domain.com",
@@ -87,8 +87,10 @@ describe("Application Session Gate", () => {
       clearAuthToast: vi.fn(),
     });
 
-    render(<App />);
-    expect(screen.getByText(/Today Dashboard/i)).toBeInTheDocument();
+    await act(async () => {
+      render(<App />);
+    });
+    expect(await screen.findByText(/Today Dashboard/i)).toBeInTheDocument();
     expect(screen.getByText(/Readiness State/i)).toBeInTheDocument();
   });
 });

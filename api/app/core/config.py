@@ -38,7 +38,6 @@ class Settings(BaseSettings):
     TRUSTED_PROXIES: Union[List[str], str] = [
         "127.0.0.1",
         "::1",
-        "testclient",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS")

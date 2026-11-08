@@ -26,6 +26,8 @@ def test_settings_cors_and_debug_defaults_and_parsing(monkeypatch: pytest.Monkey
         "http://127.0.0.1:5173",
         "http://localhost:3000",
     ]
+    assert default_cfg.TRUSTED_PROXIES == ["127.0.0.1", "::1"]
+    assert "testclient" not in default_cfg.TRUSTED_PROXIES
 
     # 2. JSON list parsing from environment
     monkeypatch.setenv(

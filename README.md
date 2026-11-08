@@ -144,7 +144,7 @@ supabase db push
 - **Mandatory Environment Variables**:
   - `ENVIRONMENT`: `production` (*Enforces strict security policies; rejects client test overrides such as `force_mode`*)
   - `SUPABASE_URL`: `https://<project-ref>.supabase.co` (*Required for PyJWKClient to fetch public JWKS keys from `/auth/v1/.well-known/jwks.json` and validate the token issuer `https://<project-ref>.supabase.co/auth/v1`*)
-  - `BACKEND_CORS_ORIGINS`: `["https://app.athloniq.io"]` (*Must explicitly include the deployed frontend origin; wildcards are strictly prohibited*)
+  - `BACKEND_CORS_ORIGINS`: `["https://<your-frontend-origin>"]` (*Must explicitly include the deployed frontend origin; wildcards are strictly prohibited*)
   - `DEBUG`: `false` (*Disables debug traces and OpenAPI documentation in production*)
   - `DEV_AUTH_BYPASS`: `false` (*Strictly requires genuine cryptographic JWT verification against Supabase Auth*)
   - `GEMINI_API_KEY`: Production Google Gemini API key

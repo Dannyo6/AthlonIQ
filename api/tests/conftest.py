@@ -7,7 +7,7 @@ from app.domain import coach_tools
 
 @pytest.fixture(autouse=True)
 def configure_test_auth_bypass(monkeypatch):
-    """Enable dev auth bypass explicitly for test execution via monkeypatch.
+    """Enable dev auth bypass and testclient trusted proxy explicitly for test execution via monkeypatch.
     
     This replaces implicit module detection. Individual test suites (e.g. test_jwt_security)
     can explicitly override settings.DEV_AUTH_BYPASS = False or settings.ENVIRONMENT = "production"
@@ -15,6 +15,7 @@ def configure_test_auth_bypass(monkeypatch):
     """
     monkeypatch.setattr(settings, "DEV_AUTH_BYPASS", True)
     monkeypatch.setattr(settings, "ENVIRONMENT", "test")
+    monkeypatch.setattr(settings, "TRUSTED_PROXIES", ["127.0.0.1", "::1", "testclient"])
 
 
 @pytest.fixture(autouse=True)
