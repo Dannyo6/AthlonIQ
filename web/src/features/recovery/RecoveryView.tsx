@@ -203,7 +203,7 @@ export const RecoveryView: React.FC = () => {
                         setStress(null);
                         setStressTouched(false);
                       }}
-                      className="text-xs text-rose-400 hover:text-rose-300 underline underline-offset-2 ml-1"
+                      className="min-h-[44px] inline-flex items-center text-xs text-rose-400 hover:text-rose-300 underline underline-offset-2 ml-1"
                     >
                       Clear
                     </button>

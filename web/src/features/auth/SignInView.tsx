@@ -132,14 +132,14 @@ export const SignInView: React.FC = () => {
   return (
     <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden font-sans select-none">
       {/* Dynamic Background Atmosphere */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-lime-400/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-athloniq-lime/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Main Authentication Card */}
       <div className="w-full max-w-md bg-athloniq-card border border-white/[0.08] rounded-2xl shadow-2xl p-6 sm:p-8 relative z-10 backdrop-blur-xl">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-lime-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-[0_0_25px_rgba(163,230,53,0.35)] mb-3">
+          <div className="h-12 w-12 rounded-xl bg-athloniq-lime text-slate-950 font-black text-xl flex items-center justify-center shadow-glow-lime mb-3">
             AQ
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-1">
@@ -148,7 +148,7 @@ export const SignInView: React.FC = () => {
           <p className="text-xs text-slate-400 font-medium">
             Personal AI Performance & Physique OS
           </p>
-          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-400 text-[10px] font-mono tracking-wider">
+          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-athloniq-lime/10 border border-athloniq-lime/30 text-athloniq-lime text-[10px] font-mono tracking-wider">
             <ShieldCheck className="h-3 w-3" />
             <span>ROW-LEVEL SECURITY GATEWAY</span>
           </div>
@@ -163,9 +163,9 @@ export const SignInView: React.FC = () => {
               setErrorMessage(null);
               setCheckEmailMessage(null);
             }}
-            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all ${
               mode === "signin"
-                ? "bg-athloniq-card text-lime-400 shadow-sm border border-white/[0.06]"
+                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-white/[0.06]"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -178,9 +178,9 @@ export const SignInView: React.FC = () => {
               setErrorMessage(null);
               setCheckEmailMessage(null);
             }}
-            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all ${
               mode === "signup"
-                ? "bg-athloniq-card text-lime-400 shadow-sm border border-white/[0.06]"
+                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-white/[0.06]"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -191,7 +191,7 @@ export const SignInView: React.FC = () => {
         {/* "Check Your Email" State Screen */}
         {checkEmailMessage ? (
           <div className="text-center py-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="h-12 w-12 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-400 flex items-center justify-center mx-auto mb-4">
+            <div className="h-12 w-12 rounded-full bg-athloniq-lime/10 border border-athloniq-lime/30 text-athloniq-lime flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <h2 className="text-lg font-bold text-white mb-2">Check Your Email</h2>
@@ -241,7 +241,7 @@ export const SignInView: React.FC = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Alex Mercer"
                     disabled={loading}
-                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-lime-400/60 focus:ring-1 focus:ring-lime-400/40 transition-all"
+                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
                   />
                 </div>
               </div>
@@ -261,7 +261,7 @@ export const SignInView: React.FC = () => {
                   placeholder="athlete@domain.com"
                   disabled={loading}
                   required
-                  className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white tabular-nums placeholder-slate-600 focus:outline-none focus:border-lime-400/60 focus:ring-1 focus:ring-lime-400/40 transition-all"
+                  className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white tabular-nums placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
                 />
               </div>
             </div>
@@ -280,7 +280,7 @@ export const SignInView: React.FC = () => {
                         setMode("reset");
                         setErrorMessage(null);
                       }}
-                      className="text-[10px] text-lime-400/90 hover:text-lime-300 transition-colors"
+                      className="text-[10px] text-athloniq-lime/90 hover:text-athloniq-lime-hover transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -296,7 +296,7 @@ export const SignInView: React.FC = () => {
                     disabled={loading}
                     required
                     minLength={6}
-                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-lime-400/60 focus:ring-1 focus:ring-lime-400/40 transition-all"
+                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
                   />
                 </div>
               </div>
@@ -306,7 +306,7 @@ export const SignInView: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 bg-lime-400 hover:bg-lime-300 active:scale-[0.99] text-slate-950 font-bold text-xs rounded-xl shadow-[0_0_20px_rgba(163,230,53,0.25)] flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full min-h-[44px] mt-2 py-3 px-4 bg-athloniq-lime hover:bg-athloniq-lime-hover active:scale-[0.99] text-slate-950 font-bold text-xs rounded-xl shadow-glow-lime flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>

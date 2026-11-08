@@ -289,7 +289,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#0F121B] border border-athloniq-border rounded-3xl shadow-2xl overflow-hidden my-auto">
+      <div className="relative w-full max-w-2xl bg-athloniq-card border border-athloniq-border rounded-3xl shadow-2xl overflow-hidden my-auto">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-athloniq-border bg-athloniq-card">
           <div className="flex items-center gap-2.5">
@@ -404,7 +404,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                   type="button"
                   data-testid="vision-try-again-button"
                   onClick={() => resetState()}
-                  className="px-4 py-2.5 rounded-xl bg-athloniq-surface hover:bg-athloniq-border border border-[#2A3142] text-slate-300 hover:text-white font-semibold text-xs transition-all"
+                  className="min-h-[44px] px-4 py-2.5 rounded-xl bg-athloniq-surface hover:bg-athloniq-border border border-athloniq-border-alt text-slate-300 hover:text-white font-semibold text-xs transition-all"
                 >
                   Try Another Photo
                 </button>

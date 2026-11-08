@@ -1,40 +1,42 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-08 11:45 IST  
+**Timestamp**: 2026-11-08 16:35 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
 **Current Branch**: `main`  
+**Node Version**: `v22.23.4` (Node 22 LTS pinned via `.nvmrc`)  
 
 ---
 
 ## 1. Git State & Recent Commit Log
 
-### Recent Commits (`git log --oneline -n 8`)
+### Recent Commits (`git log --oneline -n 5`)
 ```text
-ea2efe1 chore: use obvious placeholders in .env.example; build tampered test token at runtime" -m "Removes JWT-shaped literals so the secret scan passes without weakening its rules.
-b377c92 docs: refresh handoff state from real command output
-57f06e2 ci: run api, web and RLS tests on every push; add tracked-file secret scan" -m "Scan prints locations only. Read-only workflow permissions, no secrets. Not verified: first run on GitHub Actions.
-2c7f7a9 feat(web): show vision unavailable message and manual-entry action; never prefill from fallback" -m "Fallback returns no candidates and shows Vision unavailable, log manually. Demo samples only in demo mode and labelled. Not verified: real-device UI, live Gemini
-a18deef docs(readme): align with current code and remove unsupported claims" -m "Removes HIPAA/GDPR and autonomous wording. Corrects test counts from real runs. Deployment now lists SUPABASE_URL (JWKS and issuer), BACKEND_CORS_ORIGINS with the deployed frontend origin, and ENVIRONMENT=production.
-4fe82bb feat(web): typed vision response with provider and mode badge, remove unsafe cast" -m "Badge shows Provider not reported when the API gives no provider or mode. Removed the any cast and the default live label. New tests cover live, fallback, demo and missing values." -m "Tests: 75 passing, build clean in the last reported run. Not verified: real-device UI. Fallback message and manual-entry button are still to do.
-0a1e144 chore: stop tracking env backup; ignore .env*; refresh handoff state" -m "Hosted RLS and token checks still NOT RUN.
-785922d .gitignore and docs only
+f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
+bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
+1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
+c865914 refactor(web): replace arbitrary hex classes with brand tokens
+2cdb248 fix(ci): pin Node 22 via .nvmrc; jsdom 30 requires 22.22.2 or later
 ```
 
-### Current Working Tree (`git status -sb`)
+### Current Working Tree (`git status -s`)
 ```text
-## main...origin/main
- M .github/workflows/ci.yml
- M README.md
- M api/app/core/config.py
- M api/tests/conftest.py
- M api/tests/test_cors_config.py
  M docs/HANDOFF_STATE.md
- M web/src/test/auth-gate.test.tsx
- M web/src/test/lane-b3.test.tsx
+ M web/src/components/ui/Badge.tsx
+ M web/src/components/ui/Button.tsx
+ M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/auth/SignInView.tsx
+ M web/src/features/coach/CoachView.tsx
+ M web/src/features/nutrition/NutritionView.tsx
+ M web/src/features/nutrition/components/MealPhotoUploader.tsx
+ M web/src/features/progress/ProgressView.tsx
+ M web/src/features/pwa/PwaComponents.tsx
+ M web/src/features/recovery/RecoveryView.tsx
+ M web/src/test/routes-navigation.test.tsx
+ M web/src/test/tailwind-tokens.test.ts
 ```
-*(Zero unapproved agent commits. All working tree changes staged/inspected without auto-commit).*
+*(Zero unapproved agent commits. All working tree changes inspected without auto-commit).*
 
 ---
 
@@ -42,12 +44,12 @@ a18deef docs(readme): align with current code and remove unsupported claims" -m 
 
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest** (`api/`) | `cd api; .\.venv\Scripts\pytest` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 4.40s |
-| **Vitest** (`web/`) | `cd web; npm test` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, Lane B4/B5 MealPhotoUploader & CandidateReview (0 `act` warnings) | **79 passed** (12 files) | 21.64s |
-| **Vite Production Build** (`web/`) | `cd web; npm run build` | TypeScript strict mode (`tsc`) + Vite bundler | **0 errors** (18 chunks generated, PWA precache 31 entries) | 5.67s |
-| **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~5s |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 145 tracked files | <3s |
-| **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~3s |
+| **Pytest** (`api/`) | `api\.venv\Scripts\python.exe -m pytest -q` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 5.20s |
+| **Vitest** (`web/`) | `npx -y node@22 ... test` | Full client test suite across 16 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, and UI-4 Full-App Theme Token & Zero-Hex Enforcement | **107 passed** (16 files) | 23.82s |
+| **Vite Production Build** (`web/`) | `npx -y node@22 ... run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 4.46s |
+| **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~3s |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 159 tracked files | <3s |
+| **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~2s |
 | **Hosted Supabase RLS** (`tools/`) | `node tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 | **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 
@@ -55,63 +57,48 @@ a18deef docs(readme): align with current code and remove unsupported claims" -m 
 
 ## 3. Raw Execution Outputs
 
-### A. Git Status (`git status -sb`)
+### A. Git Status (`git status -s`)
 ```text
-## main...origin/main
- M .github/workflows/ci.yml
- M README.md
- M api/app/core/config.py
- M api/tests/conftest.py
- M api/tests/test_cors_config.py
  M docs/HANDOFF_STATE.md
- M web/src/test/auth-gate.test.tsx
- M web/src/test/lane-b3.test.tsx
+ M web/src/components/ui/Badge.tsx
+ M web/src/components/ui/Button.tsx
+ M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/auth/SignInView.tsx
+ M web/src/features/coach/CoachView.tsx
+ M web/src/features/nutrition/NutritionView.tsx
+ M web/src/features/nutrition/components/MealPhotoUploader.tsx
+ M web/src/features/progress/ProgressView.tsx
+ M web/src/features/pwa/PwaComponents.tsx
+ M web/src/features/recovery/RecoveryView.tsx
+ M web/src/test/routes-navigation.test.tsx
+ M web/src/test/tailwind-tokens.test.ts
 ```
 
-### B. Git Log (`git log --oneline -n 8`)
+### B. Git Log (`git log --oneline -n 5`)
 ```text
-ea2efe1 chore: use obvious placeholders in .env.example; build tampered test token at runtime" -m "Removes JWT-shaped literals so the secret scan passes without weakening its rules.
-b377c92 docs: refresh handoff state from real command output
-57f06e2 ci: run api, web and RLS tests on every push; add tracked-file secret scan" -m "Scan prints locations only. Read-only workflow permissions, no secrets. Not verified: first run on GitHub Actions.
-2c7f7a9 feat(web): show vision unavailable message and manual-entry action; never prefill from fallback" -m "Fallback returns no candidates and shows Vision unavailable, log manually. Demo samples only in demo mode and labelled. Not verified: real-device UI, live Gemini
-a18deef docs(readme): align with current code and remove unsupported claims" -m "Removes HIPAA/GDPR and autonomous wording. Corrects test counts from real runs. Deployment now lists SUPABASE_URL (JWKS and issuer), BACKEND_CORS_ORIGINS with the deployed frontend origin, and ENVIRONMENT=production.
-4fe82bb feat(web): typed vision response with provider and mode badge, remove unsafe cast" -m "Badge shows Provider not reported when the API gives no provider or mode. Removed the any cast and the default live label. New tests cover live, fallback, demo and missing values." -m "Tests: 75 passing, build clean in the last reported run. Not verified: real-device UI. Fallback message and manual-entry button are still to do.
-0a1e144 chore: stop tracking env backup; ignore .env*; refresh handoff state" -m "Hosted RLS and token checks still NOT RUN.
-785922d .gitignore and docs only
+f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
+bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
+1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
+c865914 refactor(web): replace arbitrary hex classes with brand tokens
+2cdb248 fix(ci): pin Node 22 via .nvmrc; jsdom 30 requires 22.22.2 or later
 ```
 
 ### C. Pytest Output (`api/`)
 ```text
-============================= test session starts =============================
-platform win32 -- Python 3.14.4, pytest-9.1.1, pluggy-1.7.0
-rootdir: C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\api
-configfile: pyproject.toml
-testpaths: tests
-plugins: anyio-4.15.1, asyncio-1.4.0
-asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 154 items
-
-tests\test_cors_config.py .....                                          [  3%]
-tests\test_health.py ..........                                          [  9%]
-tests\test_jwt_security.py ............                                  [ 17%]
-tests\test_phase2_tracking.py .......................................... [ 44%]
-.......................                                                  [ 59%]
-tests\test_phase3_vision.py ..........................                   [ 76%]
-tests\test_phase4_coach.py ................                              [ 87%]
-tests\test_phase5_acceptance.py ............                             [ 94%]
-tests\test_server_today.py ........                                      [100%]
-
+........................................................................ [ 46%]
+........................................................................ [ 93%]
+..........                                                               [100%]
 ============================== warnings summary ===============================
-.venv\Lib\site-packages\google\genai\types.py:42
+api\.venv\Lib\site-packages\google\genai\types.py:42
   C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\api\.venv\Lib\site-packages\google\genai\types.py:42: DeprecationWarning: '_UnionGenericAlias' is deprecated and slated for removal in Python 3.17
     VersionedUnionType = Union[builtin_types.UnionType, _UnionGenericAlias]
 
-.venv\Lib\site-packages\fastapi\testclient.py:1
+api\.venv\Lib\site-packages\fastapi\testclient.py:1
   C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\api\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================= 154 passed, 2 warnings in 4.40s =======================
+154 passed, 2 warnings in 5.20s
 ```
 
 ### D. Vitest Output (`web/`)
@@ -122,61 +109,49 @@ tests\test_server_today.py ........                                      [100%]
 
  RUN  v2.1.9 C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web
 
- ✓ src/test/legacy-import.test.ts (2 tests) 44ms
- ✓ src/test/pwa-caching.test.ts (8 tests) 43ms
- ✓ src/test/progression-fallbacks.test.ts (9 tests) 31ms
- ✓ src/test/repo-zod.test.ts (9 tests) 103ms
-stderr | src/test/optimistic-rollback.test.tsx > Optimistic Updates and Rollback Behavior > applies optimistic update immediately, then rolls back and shows AthlonToast on repository failure
-[AthlonIQ Repo Sync Failed]: Error: Database connection dropped (Network Failure)
-    at C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\test\optimistic-rollback.test.tsx:105:7
-    at file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:146:14
-    at file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:533:11
-    at runWithTimeout (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:39:7)
-    at runTest (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1056:17)
-    at processTicksAndRejections (node:internal/process/task_queues:104:5)
-    at runSuite (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1205:15)
-    at runSuite (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1205:15)
-    at runFiles (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1262:5)
-    at startTests (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1271:3)
+ ✓ src/test/pwa-caching.test.ts (8 tests) 32ms
+ ✓ src/test/weekly-consistency.test.ts (15 tests) 232ms
+ ✓ src/test/repo-zod.test.ts (9 tests) 27ms
+ ✓ src/test/optimistic-rollback.test.tsx (2 tests) 280ms
+ ✓ src/test/signout-isolation.test.tsx (1 test) 345ms
+   ✓ Sign-Out and Cross-Athlete State Isolation > resets all in-memory athlete state on sign out and prevents leakage when signing in as User B 344ms
+ ✓ src/test/meal-photo-uploader.test.tsx (16 tests) 2457ms
+   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > MealPhotoUploader UI badge updates from API result > displays live provider and mode when API returns gemini/live 314ms
+   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > Lane B5: Vision Fallback, Demo Labeling & Live Confirmation > live shows candidates needing confirmation (ai_estimated until the user confirms) 1250ms
+ ✓ src/test/lane-b2-features.test.tsx (4 tests) 2435ms
+   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 1064ms
+   ✓ RecoveryView Stress Slider & Null State > sends stress value when user touches slider and supports clearing back to 'Not set' 430ms
+   ✓ ProfileView Live BMI Validation > shows 'Enter height and weight' when height or weight is empty, never a BMI from seed values 357ms
+   ✓ ProfileView Live BMI Validation > calculates live BMI when valid height and weight are entered, and reverts to 'Enter height and weight' if cleared 582ms
+ ✓ src/test/onboarding-equipment-gate.test.tsx (4 tests) 3007ms
+   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > navigating to /profile?step=equipment opens Step 3 and displays 'Not set' for null limits and '70 kg' for free_weights_70kg 2080ms
+   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > clicking 'Confirm All Home Gym Equipment' marks equipment confirmed without fabricating non-null increments 628ms
+ ✓ src/test/today-dashboard-ui2.test.tsx (6 tests) 3369ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > renders quick-action links with correct href destinations and touch target classes 1779ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > null calorie target displays fallback message and strictly hides kcal ratios 462ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > greeting uses profile name only when set, falling back to clean greeting without null 360ms
+ ✓ src/test/lane-b3.test.tsx (8 tests) 3378ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 1550ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false 1292ms
+ ✓ src/test/routes-navigation.test.tsx (15 tests) 6882ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 1013ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 2474ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /nutrition view directly 1228ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /workouts view directly 567ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders designed 404 page for unknown paths with link to /today 531ms
+ ✓ src/test/progression-fallbacks.test.ts (9 tests) 4ms
+ ✓ src/test/legacy-import.test.ts (2 tests) 6ms
+ ✓ src/test/tailwind-tokens.test.ts (3 tests) 84ms
+ ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1309ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 971ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 336ms
+ ✓ src/test/auth-gate.test.tsx (3 tests) 572ms
+   ✓ Application Session Gate > gates application and renders SignInView when athlete is unauthenticated 321ms
 
- ✓ src/test/optimistic-rollback.test.tsx (2 tests) 188ms
- ✓ src/test/signout-isolation.test.tsx (1 test) 314ms
-   ✓ Sign-Out and Cross-Athlete State Isolation > resets all in-memory athlete state on sign out and prevents leakage when signing in as User B 312ms
-stderr | src/test/meal-photo-uploader.test.tsx > Lane B4: MealPhotoUploader Provider & Mode Handling > Lane B5: Vision Fallback, Demo Labeling & Live Confirmation > handles API error by showing fallback message and manual-entry button without prefilling foods
-Vision API failed or server unreachable: Error: Network Error
-    at C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\web\src\test\meal-photo-uploader.test.tsx:291:68
-    at file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:146:14
-    at file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:533:11
-    at runWithTimeout (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:39:7)
-    at runTest (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1056:17)
-    at runSuite (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1205:15)
-    at runSuite (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1205:15)
-    at runFiles (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1262:5)
-    at startTests (file:///C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web/node_modules/@vitest/runner/dist/index.js:1271:3)
-
- ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1859ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 1315ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 532ms
- ✓ src/test/lane-b2-features.test.tsx (4 tests) 1686ms
-   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 873ms
-   ✓ RecoveryView Stress Slider & Null State > sends stress value when user touches slider and supports clearing back to 'Not set' 322ms
- ✓ src/test/meal-photo-uploader.test.tsx (16 tests) 1827ms
-   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > MealPhotoUploader UI badge updates from API result > displays live provider and mode when API returns gemini/live 428ms
-   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > Lane B5: Vision Fallback, Demo Labeling & Live Confirmation > live shows candidates needing confirmation (ai_estimated until the user confirms) 737ms
- ✓ src/test/lane-b3.test.tsx (8 tests) 2018ms
-   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 858ms
-   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false 822ms
- ✓ src/test/routes-navigation.test.tsx (15 tests) 3351ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 675ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 820ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /nutrition view directly 631ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders designed 404 page for unknown paths with link to /today 354ms
- ✓ src/test/auth-gate.test.tsx (3 tests) 210ms
-
- Test Files  12 passed (12)
-      Tests  79 passed (79)
-   Start at  11:42:13
-   Duration  21.64s (transform 5.97s, setup 23.13s, collect 18.55s, tests 11.67s, environment 102.57s, prepare 17.66s)
+ Test Files  16 passed (16)
+      Tests  107 passed (107)
+   Start at  16:31:05
+   Duration  23.82s (transform 12.51s, setup 18.14s, collect 38.86s, tests 24.42s, environment 104.62s, prepare 10.39s)
 ```
 
 ### E. Web Production Build (`web/`)
@@ -186,32 +161,32 @@ Vision API failed or server unreachable: Error: Network Error
 
 vite v5.4.21 building for production...
 transforming...
-✓ 1733 modules transformed.
+✓ 1742 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/manifest.webmanifest                          0.59 kB
 dist/index.html                                    2.20 kB │ gzip:  0.95 kB
-dist/assets/index-BzGJYuBz.css                    52.94 kB │ gzip:  9.11 kB
-dist/assets/Button-CSx913oX.js                     1.95 kB │ gzip:  0.80 kB
+dist/assets/index-B0gfO29p.css                    50.71 kB │ gzip:  8.77 kB
+dist/assets/Card-HnRmJ3Pj.js                       1.97 kB │ gzip:  0.79 kB
 dist/assets/workbox-window.prod.es5-BqEJf4Xk.js    5.71 kB │ gzip:  2.34 kB
-dist/assets/RecoveryView-BjPvM1tG.js              10.83 kB │ gzip:  3.17 kB
-dist/assets/ActivitiesView-DDuNNqIO.js            13.15 kB │ gzip:  3.45 kB
-dist/assets/WorkoutsView-DSDAtJfB.js              20.55 kB │ gzip:  5.57 kB
-dist/assets/DashboardView-CsHNi_Pw.js             23.06 kB │ gzip:  5.75 kB
-dist/assets/vendor-icons-DeLAjw6t.js              28.04 kB │ gzip:  5.70 kB
-dist/assets/CoachView-vAARcg7-.js                 28.84 kB │ gzip:  7.61 kB
-dist/assets/ProgressView-D_WIEtgu.js              31.32 kB │ gzip:  6.81 kB
+dist/assets/RecoveryView-FU5fyeEp.js              11.01 kB │ gzip:  3.19 kB
+dist/assets/ActivitiesView-KV-JAi0g.js            13.48 kB │ gzip:  3.46 kB
+dist/assets/WorkoutsView-B_i1odA6.js              21.37 kB │ gzip:  5.72 kB
+dist/assets/vendor-icons-C8Lldopg.js              28.97 kB │ gzip:  5.82 kB
+dist/assets/CoachView-BQDe0DDr.js                 29.44 kB │ gzip:  7.53 kB
+dist/assets/ProgressView-DH2rkR5Q.js              31.95 kB │ gzip:  6.83 kB
 dist/assets/vendor-query-DG3adNQi.js              36.35 kB │ gzip: 11.32 kB
-dist/assets/NutritionView-BGGKiskx.js             39.29 kB │ gzip:  9.55 kB
-dist/assets/ProfileView-BA33SezX.js               75.29 kB │ gzip: 21.38 kB
-dist/assets/vendor-router-BCYiucz2.js            172.63 kB │ gzip: 56.86 kB
-dist/assets/index-BGLIxXNS.js                    203.28 kB │ gzip: 53.82 kB
+dist/assets/NutritionView-DxCeRUdf.js             40.35 kB │ gzip:  9.61 kB
+dist/assets/DashboardView-CxXq_C51.js             43.14 kB │ gzip:  9.27 kB
+dist/assets/ProfileView-CtiwXIK9.js               77.58 kB │ gzip: 21.73 kB
+dist/assets/vendor-router-C0CbzL8b.js            173.50 kB │ gzip: 57.21 kB
+dist/assets/index-DjPYnZHD.js                    204.42 kB │ gzip: 53.96 kB
 dist/assets/vendor-supabase-f4bNl52y.js          227.07 kB │ gzip: 58.98 kB
-✓ built in 5.67s
+✓ built in 4.46s
 
 PWA v2.0.0
 mode      generateSW
-precache  31 entries (1211.74 KiB)
+precache  31 entries (1237.81 KiB)
 files generated
   dist/sw.js
   dist/workbox-98f7a950.js
@@ -313,10 +288,21 @@ files generated
 > scan:secrets
 > node tools/scan-secrets.mjs
 
-Secrets scan clean: 0 violations found across 145 tracked files.
+Secrets scan clean: 0 violations found across 159 tracked files.
 ```
 
-### H. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
+### H. Secret Scanner Unit Verification (`test:scan`)
+```text
+> test:scan
+> node tools/test-scan-secrets.mjs
+
+--- Starting scan-secrets unit verification ---
+✓ Test 1 Passed: Clean repo exits 0 and .env.example is permitted.
+✓ Test 2 Passed: Dirty repo exits 1, prints file:line only, and never leaks secret values.
+--- All scan-secrets tests passed successfully ---
+```
+
+### I. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
 **Status: NOT RUN** (Awaiting real athlete credentials in environment)
 
 Both throwaway signup paths and password reading from `.env.local` have been completely removed. The script strictly requires pre-existing verified credentials from `process.env`:
@@ -341,7 +327,7 @@ Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, li
 ```
 *Full live run against hosted Supabase marked as NOT RUN until real athlete credentials are provided in the environment.*
 
-### I. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
+### J. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
 **Status: NOT RUN** (Awaiting real athlete credentials in environment for positive 200 OK)
 
 Enforces strict environment-only credentials, never reads passwords from `.env.local`, never prints raw tokens or passwords, and prints only status codes and response bodies. Requires 3 distinct checks:
@@ -378,28 +364,31 @@ Supabase Auth Status Code: 400
 
 ## 4. Completed Scope Summary
 
-### 1. CI Workflow Node Version Alignment (Stage 1 Root Cause Fix)
-- **Root Cause**: `jsdom@30.1.3`, `@supabase/supabase-js@2.118.0`, and `@testing-library/jest-dom@7.0.1` require Node 22+ (specifically Node 24 for ESM `require()` compatibility with `html-encoding-sniffer` and `@exodus/bytes`). In `.github/workflows/ci.yml`, `node-version: 20` caused `web-ci` to fail with `ERR_REQUIRE_ESM`.
-- **Resolution**: Updated `node-version` to `24` in `.github/workflows/ci.yml` across `scan-secrets`, `web-ci`, and `tools-rls`.
+### 1. Full-App Theme Token & Canonical Palette Enforcement (UI-1 & UI-4)
+- **Zero Arbitrary `[#hex]` Classes**: Every remaining one-off hex color in `CoachView.tsx`, `MealPhotoUploader.tsx`, `NutritionView.tsx`, and `Button.tsx` was replaced with canonical design tokens (`athloniq-lime`, `athloniq-surface`, `athloniq-card`, `athloniq-border-alt`, etc.).
+- **Zero Default `lime-*` Classes**: All legacy Tailwind lime classes (`lime-300`, `lime-400`, `lime-500`) in `Badge.tsx`, `SignInView.tsx`, `CoachView.tsx`, `NutritionView.tsx`, and `PwaComponents.tsx` were replaced with `athloniq-lime`, `athloniq-lime-hover`, and theme opacity variants (`athloniq-lime/10`, `athloniq-lime/20`, etc.).
+- **Automated Vitest Token Gate**: Expanded `web/src/test/tailwind-tokens.test.ts` to scan all `.tsx` components under `web/src/features/`, `web/src/components/`, and `web/src/app/`, asserting zero arbitrary `[#hex]` classes and zero default `lime-*` classes anywhere in the UI tree.
 
-### 2. Cleanups & Hygiene (Stage 2)
-- **`TRUSTED_PROXIES` Config Isolation**: Removed `"testclient"` from the production default in `api/app/core/config.py`. Set `"testclient"` as a trusted proxy strictly inside the autouse test fixture in `api/tests/conftest.py`. Added assertions in `test_cors_config.py` confirming `"testclient"` is not present in default `Settings`.
-- **Zero Act Warnings**: Wrapped state updates in `web/src/test/auth-gate.test.tsx` and `web/src/test/lane-b3.test.tsx` using `await act(async () => { ... })` and provided complete `todayCheckIn` fixture data, eliminating all React `act(...)` and suspended resource warnings across the test suite.
-- **README CORS Placeholder**: Replaced the example placeholder domain `https://app.athloniq.io` in `README.md` with `https://<your-frontend-origin>`.
+### 2. 390px Mobile-First Ergonomics & Numerical Precision (UI-2, UI-3, UI-4)
+- **44px Touch Targets**: Enforced `min-h-[44px]` across all primary action buttons, tab switchers, slot cards, and controls in `NutritionView.tsx`, `ActivitiesView.tsx`, `RecoveryView.tsx`, `ProgressView.tsx`, and `CoachView.tsx`.
+- **`tabular-nums` Numeric Formatting**: Applied mono tabular numbering across all numeric displays, macro tallies, reps/sets counters, effort selectors, and pace indicators to prevent layout shifts.
+- **Responsive Layout Protection**: Added `overflow-x-auto` to prompt chip bars, tab selectors, and wide action rows to prevent horizontal viewport blowout on 390px mobile screens.
 
 ---
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
-1. **Hosted Supabase Live Session Execution (`tools/test-hosted-rls.mjs`)**:
+1. **Hosted Cross-User RLS with 2 Confirmed Accounts (`tools/test-hosted-rls.mjs`)**:
    - **Status: NOT RUN**.
    - Hermetic PGlite suite (`npm --prefix tools run test:rls`, 279 checks) ran and passed with 100% success.
-   - Hosted multi-tenant script against `ghxotyoiquyyowydxshb.supabase.co` remains **NOT RUN**. All throwaway signup logic and `.env.local` password parsing have been removed. Requires pre-existing verified credentials for Athlete A and Athlete B supplied via `$env:TEST_ATHLETE_A_EMAIL`, `$env:TEST_ATHLETE_A_PASSWORD`, `$env:TEST_ATHLETE_B_EMAIL`, and `$env:TEST_ATHLETE_B_PASSWORD`. Exits with non-zero code until all 17 tables and 2 storage buckets pass (19/19).
-2. **Positive 200 Live Token Execution (`tools/verify_hosted_token.py`)**:
+   - Hosted multi-tenant script against `ghxotyoiquyyowydxshb.supabase.co` remains **NOT RUN**. Requires real athlete credentials for Athlete A and Athlete B supplied via environment variables.
+2. **Positive 200 Live FastAPI Token Verification (`tools/verify_hosted_token.py`)**:
    - **Status: NOT RUN**.
-   - The unauthenticated rejection (no header 401) and tampered token rejection (tampered token 401) logic is wired and verified.
-   - The positive 200 OK check against live JWKS via Supabase Auth remains **NOT RUN**. Requires real athlete credentials supplied in the terminal environment via `$env:TEST_ATHLETE_A_EMAIL` and `$env:TEST_ATHLETE_A_PASSWORD`. Exits with non-zero code until real output exists.
-3. **Physical Mobile Device Testing**:
-   - PWA caching, service worker generation, and offline state handling were verified via automated Vitest suites (79 passing) and production bundle generation. Physical hardware testing on iOS Safari / Android Chrome devices remains open.
-4. **Owner Review of Staged Changes**:
-   - Working tree changes remain uncommitted awaiting owner review and explicit commit approval.
+   - Negative paths (401 on missing token, 401 on tampered token) pass deterministically.
+   - Positive 200 OK verification against live JWKS via Supabase Auth remains **NOT RUN** until verified user credentials exist in the terminal environment.
+3. **Physical Browser Back-Button Guard Check**:
+   - Component-level navigation guards and code-splitting fallbacks pass automated Vitest checks. Physical device verification of hardware back-button gestures and browser history navigation remains open.
+4. **Live Gemini Vision API Call**:
+   - Meal vision fallback and demo mode handling are covered with 16 automated tests in `src/test/meal-photo-uploader.test.tsx`. A live multimodal call using real image bytes against Google Gemini API endpoints remains open until live API tokens are tested.
+5. **Owner Review of Staged Changes**:
+   - Working tree changes remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).

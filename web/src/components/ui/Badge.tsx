@@ -20,8 +20,8 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    lime: "bg-athloniq-lime/15 text-lime-300 border-lime-400/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
-    cyan: "bg-athloniq-lime/15 text-lime-300 border-lime-400/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
+    lime: "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
+    cyan: "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
     emerald: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]",
     violet: "bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15)]",
     amber: "bg-amber-500/15 text-amber-300 border-amber-500/30 shadow-[inset_0_1px_0_0_rgba(245,158,11,0.15)]",
@@ -64,7 +64,7 @@ export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({
     },
     calculated_estimate: {
       label: "CALCULATED ESTIMATE",
-      style: "bg-athloniq-lime/15 text-lime-300 border-lime-400/40 font-semibold",
+      style: "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/40 font-semibold",
     },
     user_confirmed: {
       label: "USER CONFIRMED",

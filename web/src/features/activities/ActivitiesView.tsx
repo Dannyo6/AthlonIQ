@@ -188,12 +188,12 @@ export const ActivitiesView: React.FC = () => {
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-athloniq-lime" /> Log New Activity
             </h3>
-            <div className="flex items-center p-0.5 rounded-xl bg-athloniq-surface border border-athloniq-border gap-0.5">
+            <div className="flex flex-wrap items-center p-0.5 rounded-xl bg-athloniq-surface border border-athloniq-border gap-0.5">
               {(["running", "badminton", "calisthenics", "other"] as ActivityType[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setActiveMode(mode)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
+                  className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
                     activeMode === mode
                       ? "bg-athloniq-lime text-slate-950"
                       : "text-slate-400 hover:text-white"
@@ -271,7 +271,7 @@ export const ActivitiesView: React.FC = () => {
                     <button
                       key={fmt}
                       onClick={() => setMatchFormat(fmt)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
+                      className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
                         matchFormat === fmt
                           ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
                           : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
@@ -342,12 +342,12 @@ export const ActivitiesView: React.FC = () => {
             <label className="text-xs text-slate-400 font-medium">
               Perceived Effort (1–10) {effort ? `— ${EFFORT_LABELS[effort as number] ?? ""}` : ""}
             </label>
-            <div className="flex gap-1 mt-1 flex-wrap">
+            <div className="flex gap-1.5 mt-1 flex-wrap">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
                   onClick={() => setEffort(n)}
-                  className={`w-8 h-8 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
+                  className={`min-h-[44px] min-w-[36px] px-2 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
                     effort === n
                       ? "bg-athloniq-lime text-slate-950"
                       : "bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-white"
@@ -459,7 +459,7 @@ export const ActivitiesView: React.FC = () => {
                 </div>
                 <button
                   onClick={() => deleteActivitySession(session.id)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

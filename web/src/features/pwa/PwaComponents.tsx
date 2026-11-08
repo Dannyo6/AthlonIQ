@@ -26,16 +26,16 @@ export const PwaUpdateBanner: React.FC<PwaUpdateBannerProps> = ({
 
   return (
     <div className="fixed top-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-[10000] animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="bg-athloniq-card border border-lime-400/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(163,230,53,0.2)] backdrop-blur-xl flex flex-col gap-3">
+      <div className="bg-athloniq-card border border-athloniq-lime/40 rounded-2xl p-4 shadow-[0_0_30px_rgba(163,230,53,0.2)] backdrop-blur-xl flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-lime-400/10 border border-lime-400/30 flex items-center justify-center text-lime-400 shrink-0">
+            <div className="h-9 w-9 rounded-xl bg-athloniq-lime/10 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime shrink-0">
               <RefreshCw className="h-4 w-4" />
             </div>
             <div>
               <div className="text-xs font-bold text-white flex items-center gap-1.5">
                 <span>Update available</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-lime-400 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-athloniq-lime animate-pulse" />
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
                 A new performance release of AthlonIQ is ready. Reload to apply updates.
@@ -44,7 +44,7 @@ export const PwaUpdateBanner: React.FC<PwaUpdateBannerProps> = ({
           </div>
           <button
             onClick={onDismiss}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0 transition-colors"
+            className="p-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0 transition-colors"
             aria-label="Dismiss update notification"
           >
             <X className="h-3.5 w-3.5" />
@@ -54,13 +54,13 @@ export const PwaUpdateBanner: React.FC<PwaUpdateBannerProps> = ({
         <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/[0.06]">
           <button
             onClick={onDismiss}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/[0.04] border border-white/[0.08] transition-colors"
+            className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/[0.04] border border-white/[0.08] transition-colors"
           >
             Later
           </button>
           <button
             onClick={onUpdate}
-            className="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-lime-400 hover:bg-lime-300 transition-all flex items-center gap-1.5 shadow-glow-lime cursor-pointer"
+            className="min-h-[44px] px-4 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover transition-all flex items-center gap-1.5 shadow-glow-lime cursor-pointer"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>Reload</span>
@@ -110,7 +110,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
     return (
       <div className="rounded-2xl bg-athloniq-card p-4 border border-white/[0.08] flex items-center justify-between gap-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-athloniq-lime/10 border border-athloniq-lime/20 text-athloniq-lime flex items-center justify-center">
             <CheckCircle2 className="h-5 w-5" />
           </div>
           <div>
@@ -120,7 +120,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
             </div>
           </div>
         </div>
-        <div className="px-2.5 py-1 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-400 text-[10px] font-mono font-bold tracking-wider">
+        <div className="px-2.5 py-1 rounded-full bg-athloniq-lime/10 border border-athloniq-lime/30 text-athloniq-lime text-[10px] font-mono font-bold tracking-wider">
           INSTALLED
         </div>
       </div>
@@ -129,15 +129,15 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
 
   if (canInstall) {
     return (
-      <div className="rounded-2xl bg-athloniq-card p-4 border border-lime-400/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
+      <div className="rounded-2xl bg-athloniq-card p-4 border border-athloniq-lime/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-lime-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-glow-lime">
+          <div className="h-10 w-10 rounded-xl bg-athloniq-lime text-slate-950 font-black text-sm flex items-center justify-center shadow-glow-lime">
             AQ
           </div>
           <div>
             <div className="text-xs font-bold text-white flex items-center gap-2">
               <span>Install AthlonIQ App</span>
-              <span className="px-1.5 py-0.5 rounded bg-lime-400/10 text-lime-400 text-[9px] font-mono">
+              <span className="px-1.5 py-0.5 rounded bg-athloniq-lime/10 text-athloniq-lime text-[9px] font-mono">
                 PWA
               </span>
             </div>
@@ -148,7 +148,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
         </div>
         <button
           onClick={onInstall}
-          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-lime-400 hover:bg-lime-300 transition-all flex items-center justify-center gap-2 shadow-glow-lime shrink-0 cursor-pointer active:scale-95"
+          className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-athloniq-lime hover:bg-athloniq-lime-hover transition-all flex items-center justify-center gap-2 shadow-glow-lime shrink-0 cursor-pointer active:scale-95"
         >
           <Download className="h-3.5 w-3.5" />
           <span>Install Now</span>
@@ -169,7 +169,7 @@ export const PwaInstallCard: React.FC<PwaInstallCardProps> = ({
         <p className="text-[11px] text-slate-400 leading-relaxed">
           To install AthlonIQ on iOS: Tap the <Share className="h-3 w-3 inline text-slate-300 mx-0.5" />{" "}
           <span className="text-slate-200 font-semibold">Share</span> icon in Safari toolbar, scroll down, and select{" "}
-          <span className="text-lime-400 font-semibold">
+          <span className="text-athloniq-lime font-semibold">
             <PlusSquare className="h-3 w-3 inline mx-0.5" /> Add to Home Screen
           </span>.
         </p>

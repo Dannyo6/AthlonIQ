@@ -26,7 +26,7 @@ export const Button: React.FC<ButtonProps> = ({
     primary:
       "bg-athloniq-lime hover:bg-athloniq-lime-hover text-slate-950 font-bold shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30)] hover:brightness-105 active:scale-[0.99]",
     secondary:
-      "bg-athloniq-card-alt hover:bg-[#1C2234] text-white border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] hover:border-white/[0.16]",
+      "bg-athloniq-card-alt hover:bg-athloniq-surface-alt text-white border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] hover:border-white/[0.16]",
     outline:
       "border border-white/[0.12] hover:border-athloniq-lime/60 hover:text-athloniq-lime text-slate-300 bg-transparent shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]",
     ghost: "text-slate-400 hover:text-white hover:bg-white/[0.05]",

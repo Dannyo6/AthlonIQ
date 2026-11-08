@@ -733,7 +733,7 @@ export const ProgressView: React.FC = () => {
               {photo.notes && <div className="text-[11px] text-slate-400 truncate">{photo.notes}</div>}
               <button
                 onClick={() => deleteProgressPhoto(photo.id)}
-                className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-950/80 text-slate-400 hover:text-red-400 transition-colors"
+                className="absolute top-4 right-4 min-h-[44px] min-w-[44px] flex items-center justify-center p-1.5 rounded-lg bg-slate-950/80 text-slate-400 hover:text-red-400 transition-colors"
                 title="Delete photo record"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -939,7 +939,7 @@ export const ProgressView: React.FC = () => {
                   </div>
                   <button
                     onClick={() => deleteBodyMetric(metric.id)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0 ml-2"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0 ml-2"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

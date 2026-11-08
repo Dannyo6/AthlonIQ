@@ -253,7 +253,7 @@ export const NutritionView: React.FC = () => {
               <button
                 key={slot.id}
                 onClick={() => setSelectedSlot(slot.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   selectedSlot === slot.id
                     ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
                     : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
@@ -361,7 +361,7 @@ export const NutritionView: React.FC = () => {
                   <button
                     key={q}
                     onClick={() => { setQuantity(q); setCustomQty(""); }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
+                    className={`min-h-[44px] min-w-[36px] px-3 py-2 rounded-lg text-xs font-mono font-bold tabular-nums transition-colors ${
                       quantity === q && !customQty
                         ? "bg-athloniq-lime text-slate-950"
                         : "bg-athloniq-surface text-slate-300 border border-athloniq-border hover:border-athloniq-lime/40"
@@ -457,7 +457,7 @@ export const NutritionView: React.FC = () => {
             </div>
             <div className="h-3 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
               <div
-                className="h-full bg-gradient-to-r from-athloniq-lime to-lime-300 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-athloniq-lime to-athloniq-lime-hover rounded-full transition-all duration-500"
                 style={{ width: `${pct(ct.caloriesKcal, targetKcal!)}%` }}
               />
             </div>
@@ -557,7 +557,7 @@ export const NutritionView: React.FC = () => {
                   setShowAddPanel(true);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="p-1.5 rounded-lg bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg bg-athloniq-surface border border-athloniq-border text-slate-400 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -589,14 +589,14 @@ export const NutritionView: React.FC = () => {
                     <div className="flex items-center gap-1 ml-3 shrink-0">
                       <button
                         onClick={() => handleDuplicate(entry)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-athloniq-lime hover:bg-athloniq-lime/10 transition-colors"
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-athloniq-lime hover:bg-athloniq-lime/10 transition-colors"
                         title="Duplicate"
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => deleteFoodEntry(entry.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
