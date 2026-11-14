@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-14 15:10 IST  
+**Timestamp**: 2026-11-14 15:30 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -13,17 +13,16 @@
 
 ### Recent Commits (`git log --oneline -n 5`)
 ```text
+61383f7 test(web): expand tailwind token audit to full src tree and sync handoff state
 27f777e style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
 bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
-1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
- M web/src/test/tailwind-tokens.test.ts
 ```
 *(Zero unapproved agent commits. All working tree changes inspected without auto-commit).*
 
@@ -41,7 +40,7 @@ bb12008 feat(web): restructure Today for mobile with quick actions and progressi
 | **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~5s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only inspection | 18/18 public tables `rls_enabled: true`, 72 active policies, storage buckets `meal-photos` & `progress-photos` private | **Verified 100% compliant** | — |
 | **Hosted Token Verification** (`tools/`) | `.\api\.venv\Scripts\python.exe tools\verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **401, 401, 200 ALL PASSED (100%)** | 3.65s |
-| **Hosted Supabase RLS** (`tools/`) | `npx -y node@22 tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **Athlete Alpha Authenticated (200 OK); Athlete Bravo blocked by GoTrue 429 email rate limit** | — |
+| **Hosted Supabase RLS** (`tools/`) | `npx -y node@22 tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **19/19 CHECKS PASSED (100%)** | 8.24s |
 
 ---
 
@@ -50,16 +49,15 @@ bb12008 feat(web): restructure Today for mobile with quick actions and progressi
 ### A. Git Status (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
- M web/src/test/tailwind-tokens.test.ts
 ```
 
 ### B. Git Log (`git log --oneline -n 5`)
 ```text
+61383f7 test(web): expand tailwind token audit to full src tree and sync handoff state
 27f777e style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
 bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
-1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 ```
 
 ### C. Pytest Output (`api/`)
@@ -300,13 +298,10 @@ Secrets scan clean: 0 violations found across 159 tracked files.
 3. Active RLS policies in public schema:
    Total active policies = 72 (exactly 4 per table: SELECT, INSERT, UPDATE, DELETE).
 
-4. Active users in auth.users:
+4. Active test users in auth.users:
    - athloniq.rls.a@gmail.com: is_email_confirmed = true
+   - athloniq.rls.b@gmail.com: is_email_confirmed = true
    - dhanushvk611@gmail.com: is_email_confirmed = true
-   - test.athlete.alpha.1793003270953@gmail.com: is_email_confirmed = false
-   - test.athlete.alpha.1793002797723@gmail.com: is_email_confirmed = false
-   - test.athlete.alpha.1792582634403@gmail.com: is_email_confirmed = false
-   - test.athlete.alpha.1792582469480@gmail.com: is_email_confirmed = false
 ```
 
 ### J. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
@@ -314,7 +309,7 @@ Secrets scan clean: 0 violations found across 159 tracked files.
 
 Raw terminal execution:
 ```text
-PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> $env:TEST_ATHLETE_A_EMAIL = 'athloniq.rls.a@gmail.com'; .\api\.venv\Scripts\python.exe tools\verify_hosted_token.py
+PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> $env:TEST_ATHLETE_A_EMAIL = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_A_EMAIL", "User"); $env:TEST_ATHLETE_B_EMAIL = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_B_EMAIL", "User"); $env:TEST_ATHLETE_A_PASSWORD = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_A_PASSWORD", "User"); $env:TEST_ATHLETE_B_PASSWORD = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_B_PASSWORD", "User"); .\api\.venv\Scripts\python.exe tools\verify_hosted_token.py
 C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ\api\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
   from starlette.testclient import TestClient as TestClient  # noqa
 ================================================================================
@@ -346,12 +341,12 @@ ALL HOSTED TOKEN VERIFICATION CHECKS PASSED (401, 401, 200)
 ================================================================================
 ```
 
-### K. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
-**Status: Athlete Alpha 200 OK Authenticated; Athlete Bravo Blocked by GoTrue 429 Rate Limit**
+### K. Hosted Supabase Cross-Tenant RLS Suite (`tools/test-hosted-rls.mjs`)
+**Status: PASSED 100% (19/19 Checks Passed across 17 Tables & 2 Storage Buckets)**
 
 Raw terminal execution:
 ```text
-PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> $env:TEST_ATHLETE_A_EMAIL = 'athloniq.rls.a@gmail.com'; $env:TEST_ATHLETE_B_EMAIL = 'athloniq.rls.b@gmail.com'; npx -y node@22 tools/test-hosted-rls.mjs
+PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> $env:TEST_ATHLETE_A_EMAIL = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_A_EMAIL", "User"); $env:TEST_ATHLETE_B_EMAIL = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_B_EMAIL", "User"); $env:TEST_ATHLETE_A_PASSWORD = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_A_PASSWORD", "User"); $env:TEST_ATHLETE_B_PASSWORD = [System.Environment]::GetEnvironmentVariable("TEST_ATHLETE_B_PASSWORD", "User"); npx -y node@22 tools/test-hosted-rls.mjs
 
 ================================================================================
 ATHLONIQ HOSTED RLS & MULTI-TENANT ISOLATION VERIFICATION
@@ -359,15 +354,52 @@ Endpoint: https://ghxotyoiquyyowydxshb.supabase.co
 ================================================================================
 Authenticating Athlete Alpha: athloniq.rls.a@gmail.com
 Authenticating Athlete Bravo: athloniq.rls.b@gmail.com
+✓ Authenticated Athlete Alpha ID: 4abaf47b-2595-443a-aed5-9327037d59a2
+✓ Authenticated Athlete Bravo ID: d0e45142-29d2-4cfa-b6e6-8169761c96a6
 
-[RLS Verification Error]: Authentication failed for athloniq.rls.b@gmail.com: Invalid login credentials
+--- Multi-Tenant Database Table Isolation Tests ---
+  [PASS] profiles                     RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] user_equipment               RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] user_goals                   RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] user_preferences             RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] custom_foods                 RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] food_entries                 RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] workout_templates            RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] workout_template_exercises   RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] workout_sessions             RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] exercise_sets                RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] activity_sessions            RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] body_metrics                 RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] recovery_logs                RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] coach_conversations          RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] coach_messages               RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] weekly_reports               RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+  [PASS] progress_photos              RLS Isolation Verified (SELECT/INSERT/UPDATE/DELETE blocked)
+
+--- Storage Path Isolation Tests ---
+  [PASS] Storage progress-photos      Path Isolation Verified (cross-tenant read/write/delete blocked)
+  [PASS] Storage meal-photos          Path Isolation Verified (cross-tenant read/write/delete blocked)
+
+================================================================================
+RESULTS: 19/19 security isolation checks PASSED.
+================================================================================
+ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 ```
 
 ---
 
 ## 4. Completed Scope Summary
 
-### 1. Hosted FastAPI Live JWT Cryptographic Verification (PASSED)
+### 1. Hosted Multi-Tenant Cross-Tenant RLS & Storage Isolation (PASSED 19/19)
+- **Live Supabase GoTrue Dual Authentication**: Both Athlete A (`athloniq.rls.a@gmail.com`) and Athlete B (`athloniq.rls.b@gmail.com`) authenticated successfully via publishable API keys against `ghxotyoiquyyowydxshb.supabase.co`.
+- **17 Database Tables Fully Isolated**:
+  - `profiles`, `user_equipment`, `user_goals`, `user_preferences`, `custom_foods`, `food_entries`, `workout_templates`, `workout_template_exercises`, `workout_sessions`, `exercise_sets`, `activity_sessions`, `body_metrics`, `recovery_logs`, `coach_conversations`, `coach_messages`, `weekly_reports`, `progress_photos`.
+  - Athlete A cannot read (SELECT returns 0 rows), cannot spoof insert (blocked by WITH CHECK), cannot update (0 rows affected), and cannot delete Athlete B's rows (0 rows affected).
+- **2 Private Storage Buckets Fully Isolated**:
+  - `meal-photos` and `progress-photos`.
+  - Athlete A cannot download Athlete B's private objects, cannot upload into Athlete B's folder path, and cannot delete Athlete B's objects.
+
+### 2. Hosted FastAPI Live JWT Cryptographic Verification (PASSED)
 - **Live Supabase GoTrue Auth Token Exchange**: Athlete A (`athloniq.rls.a@gmail.com`) authenticates via Supabase Auth password grant against `ghxotyoiquyyowydxshb.supabase.co`, receiving a real asymmetric ES256 JWT.
 - **FastAPI PyJWKClient Cryptographic Validation**: Validates the token against hosted JWKS (`auth/v1/.well-known/jwks.json`) with `DEV_AUTH_BYPASS=False`.
 - **Protected Endpoints Return 200 OK**:
@@ -377,12 +409,12 @@ Authenticating Athlete Bravo: athloniq.rls.b@gmail.com
   - Missing Authorization Header -> HTTP 401.
   - Tampered Token Signature / Header -> HTTP 401.
 
-### 2. Full-App Theme Token & Canonical Palette Enforcement (UI-1 & UI-4)
+### 3. Full-App Theme Token & Canonical Palette Enforcement (UI-1 & UI-4)
 - **Zero Arbitrary `[#hex]` Classes**: Every one-off hex color in `CoachView.tsx`, `MealPhotoUploader.tsx`, `NutritionView.tsx`, `CandidateReviewForm.tsx`, and `Button.tsx` was replaced with canonical design tokens (`athloniq-lime`, `athloniq-surface`, `athloniq-card`, `athloniq-border-alt`, etc.).
 - **Zero Default `lime-*` Classes**: All legacy Tailwind lime classes (`lime-300`, `lime-400`, `lime-500`) in `Badge.tsx`, `SignInView.tsx`, `CoachView.tsx`, `NutritionView.tsx`, and `PwaComponents.tsx` were replaced with `athloniq-lime`, `athloniq-lime-hover`, and theme opacity variants (`athloniq-lime/10`, `athloniq-lime/20`, etc.).
 - **Automated Vitest Token Gate**: Expanded `web/src/test/tailwind-tokens.test.ts` to scan all `.tsx` components recursively across the entire UI tree (`["../**/*.tsx"]`), asserting zero arbitrary `[#hex]` classes and zero default `lime-*` classes anywhere in the project.
 
-### 3. 390px Mobile-First Ergonomics & Numerical Precision (UI-2, UI-3, UI-4)
+### 4. 390px Mobile-First Ergonomics & Numerical Precision (UI-2, UI-3, UI-4)
 - **44px Touch Targets**: Enforced `min-h-[44px]` across all primary action buttons, tab switchers, slot cards, delete buttons, and controls in `NutritionView.tsx`, `CandidateReviewForm.tsx`, `ActivitiesView.tsx`, `RecoveryView.tsx`, `ProgressView.tsx`, and `CoachView.tsx`.
 - **`tabular-nums` Numeric Formatting**: Applied mono tabular numbering across all numeric displays, macro tallies, reps/sets counters, effort selectors, and pace indicators to prevent layout shifts.
 - **Responsive Layout Protection**: Added `overflow-x-auto` to prompt chip bars, tab selectors, and wide action rows to prevent horizontal viewport blowout on 390px mobile screens.
@@ -391,13 +423,9 @@ Authenticating Athlete Bravo: athloniq.rls.b@gmail.com
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
-1. **Hosted Cross-User RLS with Athlete Bravo (`tools/test-hosted-rls.mjs`)**:
-   - **Status: Athlete Alpha READY (200 OK), Athlete Bravo BLOCKED by GoTrue 429 rate limit**.
-   - Hermetic PGlite suite (`npm --prefix tools run test:rls`, 279 checks) passes 100% locally.
-   - On hosted Supabase, Athlete Alpha (`athloniq.rls.a@gmail.com`) is confirmed and authenticates successfully. Athlete Bravo (`athloniq.rls.b@gmail.com`) signup hit GoTrue's email send quota limit (`over_email_send_rate_limit: 429`). Once the hourly rate limit window elapses, signing up and verifying Athlete Bravo will allow the 19 cross-tenant RLS checks in `test-hosted-rls.mjs` to run against hosted Supabase.
-2. **Physical Browser Back-Button Guard Check**:
+1. **Physical Browser Back-Button Guard Check**:
    - Component-level navigation guards and code-splitting fallbacks pass automated Vitest checks. Physical device verification of hardware back-button gestures and browser history navigation remains open.
-3. **Live Gemini Vision API Call**:
+2. **Live Gemini Vision API Call**:
    - Meal vision fallback and demo mode handling are covered with 16 automated tests in `src/test/meal-photo-uploader.test.tsx`. A live multimodal call using real image bytes against Google Gemini API endpoints remains open until live API tokens are tested.
-4. **Owner Review of Staged Changes**:
+3. **Owner Review of Staged Changes**:
    - Working tree changes remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).
