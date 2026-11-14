@@ -372,10 +372,12 @@ export const ActivitiesView: React.FC = () => {
           </div>
 
           <div className="flex gap-2 pt-1">
-            <Button variant="primary" size="sm" onClick={handleSubmit}>
+            <Button variant="primary" size="md" className="min-h-[44px]" onClick={handleSubmit}>
               <Zap className="h-4 w-4" /> Log {activeMode.charAt(0).toUpperCase() + activeMode.slice(1)}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button variant="outline" size="md" className="min-h-[44px]" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
           </div>
         </Card>
       )}

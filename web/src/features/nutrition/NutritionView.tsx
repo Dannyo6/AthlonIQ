@@ -242,7 +242,7 @@ export const NutritionView: React.FC = () => {
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-athloniq-lime" /> Add Meal Entry
             </h3>
-            <button onClick={() => setShowAddPanel(false)} className="text-slate-400 hover:text-white">
+            <button onClick={() => setShowAddPanel(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -383,16 +383,16 @@ export const NutritionView: React.FC = () => {
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1">
             <Button
               variant="primary"
-              size="sm"
+              size="md"
               onClick={handleAddEntry}
-              className={selectedFood ? "" : "opacity-50 cursor-not-allowed"}
+              className={`min-h-[44px] ${selectedFood ? "" : "opacity-50 cursor-not-allowed"}`}
             >
               <CheckCircle2 className="h-4 w-4" /> Add to {selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowCustomModal(true)}>
+            <Button variant="outline" size="md" className="min-h-[44px]" onClick={() => setShowCustomModal(true)}>
               <Plus className="h-4 w-4" /> Create Custom Food
             </Button>
           </div>
@@ -616,7 +616,7 @@ export const NutritionView: React.FC = () => {
           <div className="w-full max-w-md bg-athloniq-card border border-athloniq-border rounded-2xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white">Create Custom Food</h3>
-              <button onClick={() => setShowCustomModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowCustomModal(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -642,10 +642,10 @@ export const NutritionView: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <Button variant="primary" size="sm" onClick={handleAddCustomFood} className="flex-1">
+              <Button variant="primary" size="md" onClick={handleAddCustomFood} className="flex-1 min-h-[44px]">
                 <CheckCircle2 className="h-4 w-4" /> Add Custom Food
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowCustomModal(false)}>Cancel</Button>
+              <Button variant="outline" size="md" className="min-h-[44px]" onClick={() => setShowCustomModal(false)}>Cancel</Button>
             </div>
           </div>
         </div>

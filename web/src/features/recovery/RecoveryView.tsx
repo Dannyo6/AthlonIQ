@@ -9,10 +9,10 @@ import { Moon, Bed, Activity, ShieldCheck, CheckCircle2 } from "lucide-react";
 export const RecoveryView: React.FC = () => {
   const { todayCheckIn, hasTodayCheckIn, readiness, submitCheckIn } = useAthloniqState();
 
-  const [sleepHours, setSleepHours] = useState(todayCheckIn.sleepHours);
-  const [sleepQuality, setSleepQuality] = useState(todayCheckIn.sleepQuality);
-  const [soreness, setSoreness] = useState(todayCheckIn.soreness);
-  const [fatigue, setFatigue] = useState(todayCheckIn.fatigue);
+  const [sleepHours, setSleepHours] = useState(todayCheckIn?.sleepHours ?? 7.5);
+  const [sleepQuality, setSleepQuality] = useState(todayCheckIn?.sleepQuality ?? 4);
+  const [soreness, setSoreness] = useState(todayCheckIn?.soreness ?? 2);
+  const [fatigue, setFatigue] = useState(todayCheckIn?.fatigue ?? 2);
   const [stress, setStress] = useState<number | null>(null);
   const [stressTouched, setStressTouched] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);

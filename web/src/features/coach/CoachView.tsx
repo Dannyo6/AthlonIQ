@@ -638,10 +638,10 @@ export const CoachView: React.FC = () => {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleLoadWeeklyReview}
               disabled={isLoadingReview || !isOnline}
-              className="text-xs font-bold"
+              className="text-xs font-bold min-h-[44px]"
             >
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoadingReview ? "animate-spin" : ""}`} />
               Regenerate Review
@@ -712,20 +712,20 @@ export const CoachView: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Food Logging Days</span>
-                      <span className="text-lg font-bold text-white">
+                      <span className="text-lg font-bold text-white font-mono tabular-nums">
                         {weeklyReport.nutrition_consistency.days_logging_food} / 7
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         ({weeklyReport.nutrition_consistency.logging_consistency_pct}% consistency)
                       </span>
                     </div>
 
                     <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Daily Protein Target</span>
-                      <span className="text-lg font-bold text-athloniq-lime">
+                      <span className="text-lg font-bold text-athloniq-lime font-mono tabular-nums">
                         {weeklyReport.nutrition_consistency.current_protein_target_g} g
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         Latest Confirmed: {weeklyReport.nutrition_consistency.latest_confirmed_protein_g} g
                       </span>
                     </div>
@@ -751,22 +751,22 @@ export const CoachView: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">Weigh-Ins Found</span>
-                      <span className="text-lg font-bold text-white">
+                      <span className="text-lg font-bold text-white font-mono tabular-nums">
                         {weeklyReport.weight_trend_review.weigh_in_count}
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         Latest: {weeklyReport.weight_trend_review.latest_weight_kg || profile.weightKg} kg
                       </span>
                     </div>
 
                     <div className="p-3 rounded-xl bg-athloniq-card-alt border border-athloniq-border">
                       <span className="text-slate-400 block mb-1">7-Day Rolling Trend</span>
-                      <span className="text-lg font-bold text-sky-300">
+                      <span className="text-lg font-bold text-sky-300 font-mono tabular-nums">
                         {weeklyReport.weight_trend_review.rolling_7d_kg
                           ? `${weeklyReport.weight_trend_review.rolling_7d_kg} kg`
                           : "Needs 3+ Entries"}
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         Delta: {weeklyReport.weight_trend_review.weekly_delta_kg ? `${weeklyReport.weight_trend_review.weekly_delta_kg} kg` : "N/A"}
                       </span>
                     </div>
@@ -799,30 +799,30 @@ export const CoachView: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Gym Sessions</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.gym_sessions_completed} / {weeklyReport.training_and_sports_load.gym_sessions_target}
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.gym_total_volume_kg} kg
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Badminton</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.badminton_sessions}
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.badminton_total_min} min
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Running</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.running_sessions}
                       </span>
-                      <span className="text-[10px] text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-mono tabular-nums">
                         {weeklyReport.training_and_sports_load.running_total_km} km
                       </span>
                     </div>
@@ -848,21 +848,21 @@ export const CoachView: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Avg Sleep</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.recovery_patterns.average_sleep_hours}h
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Sleep Quality</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.recovery_patterns.average_sleep_quality} / 5
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-athloniq-card-alt border border-athloniq-border text-center">
                       <span className="text-slate-400 block text-[11px]">Soreness</span>
-                      <span className="text-base font-bold text-white">
+                      <span className="text-base font-bold text-white font-mono tabular-nums">
                         {weeklyReport.recovery_patterns.average_soreness} / 5
                       </span>
                     </div>

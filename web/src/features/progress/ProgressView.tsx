@@ -144,9 +144,9 @@ export const ProgressView: React.FC = () => {
       gymSessions7d,
       badmintonMinutes7d,
       runningKm7d,
-      todayCheckIn.sleepHours,
-      todayCheckIn.soreness,
-      todayCheckIn.fatigue
+      todayCheckIn?.sleepHours ?? 8,
+      todayCheckIn?.soreness ?? 2,
+      todayCheckIn?.fatigue ?? 2
     );
   }, [workoutSessions, activitySessions, todayCheckIn]);
 
@@ -628,10 +628,10 @@ export const ProgressView: React.FC = () => {
             )}
 
             <div className="flex gap-2 pt-2">
-              <Button variant="primary" size="sm" onClick={handleAddPhoto} disabled={!photoUrl}>
+              <Button variant="primary" size="md" className="min-h-[44px]" onClick={handleAddPhoto} disabled={!photoUrl}>
                 <CheckCircle2 className="h-4 w-4" /> Save Photo Record
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowPhotoForm(false)}>
+              <Button variant="outline" size="md" className="min-h-[44px]" onClick={() => setShowPhotoForm(false)}>
                 Cancel
               </Button>
             </div>
@@ -826,10 +826,10 @@ export const ProgressView: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="primary" size="sm" onClick={handleAddWeight}>
+            <Button variant="primary" size="md" className="min-h-[44px]" onClick={handleAddWeight}>
               <CheckCircle2 className="h-4 w-4" /> Save Weigh-In
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowWeightForm(false)}>
+            <Button variant="outline" size="md" className="min-h-[44px]" onClick={() => setShowWeightForm(false)}>
               Cancel
             </Button>
           </div>

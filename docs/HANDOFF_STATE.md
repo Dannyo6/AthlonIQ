@@ -13,16 +13,23 @@
 
 ### Recent Commits (`git log --oneline -n 5`)
 ```text
+927407b docs(handoff): record passing 19/19 hosted RLS and live FastAPI ES256 JWT checks
 61383f7 test(web): expand tailwind token audit to full src tree and sync handoff state
 27f777e style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
-bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
+ M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/coach/CoachView.tsx
+ M web/src/features/nutrition/NutritionView.tsx
+ M web/src/features/progress/ProgressView.tsx
+ M web/src/features/recovery/RecoveryView.tsx
+ M web/src/features/workouts/WorkoutsView.tsx
+?? web/src/test/mobile-ergonomics-ui5.test.tsx
 ```
 *(Zero unapproved agent commits. All working tree changes inspected without auto-commit).*
 
@@ -33,8 +40,8 @@ bb12008 feat(web): restructure Today for mobile with quick actions and progressi
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
 | **Pytest** (`api/`) | `api\.venv\Scripts\python.exe -m pytest -q` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 13.12s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 16 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, and UI-4 Full-App Theme Token & Zero-Hex Enforcement across all UI files | **107 passed** (16 files) | 24.35s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 11.37s |
+| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 17 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, UI-4 Full-App Theme Token & Zero-Hex Enforcement, and UI-5 390px Ergonomics Regression Suite | **124 passed** (17 files) | ~12s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 3.27s |
 | **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~5s |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 159 tracked files | <3s |
 | **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~5s |
@@ -49,15 +56,22 @@ bb12008 feat(web): restructure Today for mobile with quick actions and progressi
 ### A. Git Status (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
+ M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/coach/CoachView.tsx
+ M web/src/features/nutrition/NutritionView.tsx
+ M web/src/features/progress/ProgressView.tsx
+ M web/src/features/recovery/RecoveryView.tsx
+ M web/src/features/workouts/WorkoutsView.tsx
+?? web/src/test/mobile-ergonomics-ui5.test.tsx
 ```
 
 ### B. Git Log (`git log --oneline -n 5`)
 ```text
+927407b docs(handoff): record passing 19/19 hosted RLS and live FastAPI ES256 JWT checks
 61383f7 test(web): expand tailwind token audit to full src tree and sync handoff state
 27f777e style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
-bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 ```
 
 ### C. Pytest Output (`api/`)
@@ -419,13 +433,22 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **`tabular-nums` Numeric Formatting**: Applied mono tabular numbering across all numeric displays, macro tallies, reps/sets counters, effort selectors, and pace indicators to prevent layout shifts.
 - **Responsive Layout Protection**: Added `overflow-x-auto` to prompt chip bars, tab selectors, and wide action rows to prevent horizontal viewport blowout on 390px mobile screens.
 
+### 5. 390px Mobile Ergonomics Regression Suite & Truth in UI (UI-5)
+- **17 Automated Regression Tests (`web/src/test/mobile-ergonomics-ui5.test.tsx`)**:
+  - Covers all 6 core feature views: `NutritionView`, `WorkoutsView`, `ActivitiesView`, `RecoveryView`, `ProgressView`, and `CoachView`.
+  - Asserts mobile touch target ergonomics (`min-h-[44px]`) on all primary action buttons, meal slot triggers, workout tabs, sport mode selectors, drawer buttons, and sub-tab triggers.
+  - Asserts numerical precision and layout stability via `tabular-nums` on macro bars, set/rep counters, pace/distance metrics, readiness scores, and weight trends.
+  - Enforces Truth in UI (AGENTS.md): uncalibrated goals render explicit `"Calorie target not set — finish onboarding"`, empty history states show `"No sessions logged yet"` and `"No activities logged yet"`, and insufficient weigh-ins (<3) display `"0/3 WEIGH-INS"` and `"Insufficient Data"` without fabricating numbers.
+
 ---
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
 1. **Physical Browser Back-Button Guard Check**:
    - Component-level navigation guards and code-splitting fallbacks pass automated Vitest checks. Physical device verification of hardware back-button gestures and browser history navigation remains open.
-2. **Live Gemini Vision API Call**:
-   - Meal vision fallback and demo mode handling are covered with 16 automated tests in `src/test/meal-photo-uploader.test.tsx`. A live multimodal call using real image bytes against Google Gemini API endpoints remains open until live API tokens are tested.
+2. **Live Gemini Vision Multimodal Inference**:
+   - `GEMINI_API_KEY` is confirmed configured (`True`) in `api/.env`.
+   - Live authenticated `TestClient` smoke check executed against `POST /api/v1/vision/analyze-meal` with a valid 1x1 PNG payload: safely executes deterministic fallback (`status=200`, `provider="mock"`, `mode="fallback"`, `message="Vision unavailable — log manually"`, `candidates=[]`).
+   - Full live inference against upstream Gemini API (`provider="gemini"`, `mode="live"`) will activate once the backend model parameter is aligned with the new Google AI Studio project availability (`gemini-3.8-flash`).
 3. **Owner Review of Staged Changes**:
    - Working tree changes remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).

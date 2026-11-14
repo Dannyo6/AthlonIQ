@@ -339,12 +339,12 @@ export const WorkoutsView: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-athloniq-border pb-2">
+      <div className="flex items-center gap-2 border-b border-athloniq-border pb-2 overflow-x-auto">
         {(["templates", "active", "history"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors capitalize ${
+            className={`min-h-[44px] inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-semibold transition-colors capitalize shrink-0 ${
               activeTab === tab
                 ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/40"
                 : "text-slate-400 hover:text-white hover:bg-athloniq-surface"
@@ -648,7 +648,7 @@ export const WorkoutsView: React.FC = () => {
 
                     <button
                       onClick={() => addSet(ex.id)}
-                      className="w-full py-1.5 rounded-xl border border-dashed border-athloniq-border text-xs text-slate-500 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors font-mono"
+                      className="w-full min-h-[44px] py-1.5 rounded-xl border border-dashed border-athloniq-border text-xs text-slate-500 hover:text-athloniq-lime hover:border-athloniq-lime/40 transition-colors font-mono inline-flex items-center justify-center"
                     >
                       + Add Set
                     </button>
@@ -719,7 +719,7 @@ export const WorkoutsView: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-bold text-white">{session.title}</h3>
-                        <div className="text-xs text-slate-400 font-mono mt-0.5">
+                        <div className="text-xs text-slate-400 font-mono mt-0.5 tabular-nums">
                           {session.loggedDate}
                           {session.durationMinutes && ` · ${session.durationMinutes} min`}
                           {session.sessionRpe && ` · RPE ${session.sessionRpe}`}
@@ -732,7 +732,7 @@ export const WorkoutsView: React.FC = () => {
                         </Badge>
                         <button
                           onClick={() => deleteWorkoutSession(session.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
+                          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
                           title="Delete workout entry"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
