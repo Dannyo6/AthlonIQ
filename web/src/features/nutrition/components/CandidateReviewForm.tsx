@@ -203,7 +203,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                   key={slot.id}
                   type="button"
                   onClick={() => setSelectedSlot(slot.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                     selectedSlot === slot.id
                       ? "bg-athloniq-lime text-slate-950 font-bold shadow-glow-lime"
                       : "bg-athloniq-surface text-slate-400 border border-athloniq-border hover:text-white"
@@ -315,7 +315,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteItem(idx)}
-                    className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors shrink-0"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-rose-500/10 transition-colors shrink-0"
                     title="Remove hallucinated item"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -334,7 +334,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                         key={q}
                         type="button"
                         onClick={() => handleUpdateQuantity(idx, q)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all ${
+                        className={`min-h-[44px] min-w-[36px] px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all ${
                           Math.abs(item.quantity - q) < 0.01
                             ? "bg-athloniq-lime text-slate-950 font-bold"
                             : "bg-athloniq-surface text-slate-400 hover:text-white border border-athloniq-border"
@@ -353,7 +353,7 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                         onChange={(e) =>
                           handleUpdateQuantity(idx, parseFloat(e.target.value) || 1)
                         }
-                        className="w-16 bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white text-center font-mono focus:border-athloniq-lime focus:outline-none"
+                        className="w-16 min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white text-center font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
                       />
                     </div>
                   </div>

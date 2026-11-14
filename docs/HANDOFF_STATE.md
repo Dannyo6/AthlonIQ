@@ -1,11 +1,11 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-08 16:35 IST  
+**Timestamp**: 2026-11-14 14:16 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
 **Current Branch**: `main`  
-**Node Version**: `v22.23.4` (Node 22 LTS pinned via `.nvmrc`)  
+**Node Version**: `v22.23.5` (Node 22 LTS pinned via `.nvmrc`)  
 
 ---
 
@@ -13,28 +13,17 @@
 
 ### Recent Commits (`git log --oneline -n 5`)
 ```text
+6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
 bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 c865914 refactor(web): replace arbitrary hex classes with brand tokens
-2cdb248 fix(ci): pin Node 22 via .nvmrc; jsdom 30 requires 22.22.2 or later
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
- M web/src/components/ui/Badge.tsx
- M web/src/components/ui/Button.tsx
- M web/src/features/activities/ActivitiesView.tsx
- M web/src/features/auth/SignInView.tsx
- M web/src/features/coach/CoachView.tsx
- M web/src/features/nutrition/NutritionView.tsx
- M web/src/features/nutrition/components/MealPhotoUploader.tsx
- M web/src/features/progress/ProgressView.tsx
- M web/src/features/pwa/PwaComponents.tsx
- M web/src/features/recovery/RecoveryView.tsx
- M web/src/test/routes-navigation.test.tsx
- M web/src/test/tailwind-tokens.test.ts
+ M web/src/features/nutrition/components/CandidateReviewForm.tsx
 ```
 *(Zero unapproved agent commits. All working tree changes inspected without auto-commit).*
 
@@ -44,12 +33,13 @@ c865914 refactor(web): replace arbitrary hex classes with brand tokens
 
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest** (`api/`) | `api\.venv\Scripts\python.exe -m pytest -q` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 5.20s |
-| **Vitest** (`web/`) | `npx -y node@22 ... test` | Full client test suite across 16 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, and UI-4 Full-App Theme Token & Zero-Hex Enforcement | **107 passed** (16 files) | 23.82s |
-| **Vite Production Build** (`web/`) | `npx -y node@22 ... run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 4.46s |
-| **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~3s |
+| **Pytest** (`api/`) | `api\.venv\Scripts\python.exe -m pytest -q` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 13.12s |
+| **Vitest** (`web/`) | `npx -y node@22 ... test` | Full client test suite across 16 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, and UI-4 Full-App Theme Token & Zero-Hex Enforcement | **107 passed** (16 files) | 71.56s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 9.34s |
+| **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~5s |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 159 tracked files | <3s |
-| **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~2s |
+| **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~5s |
+| **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only inspection | 18/18 public tables `rls_enabled: true`, 72 active policies, storage buckets `meal-photos` & `progress-photos` private | **Verified 100% compliant** | — |
 | **Hosted Supabase RLS** (`tools/`) | `node tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 | **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **NOT RUN** (Requires confirmed athlete credentials in environment) | — |
 
@@ -60,27 +50,16 @@ c865914 refactor(web): replace arbitrary hex classes with brand tokens
 ### A. Git Status (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
- M web/src/components/ui/Badge.tsx
- M web/src/components/ui/Button.tsx
- M web/src/features/activities/ActivitiesView.tsx
- M web/src/features/auth/SignInView.tsx
- M web/src/features/coach/CoachView.tsx
- M web/src/features/nutrition/NutritionView.tsx
- M web/src/features/nutrition/components/MealPhotoUploader.tsx
- M web/src/features/progress/ProgressView.tsx
- M web/src/features/pwa/PwaComponents.tsx
- M web/src/features/recovery/RecoveryView.tsx
- M web/src/test/routes-navigation.test.tsx
- M web/src/test/tailwind-tokens.test.ts
+ M web/src/features/nutrition/components/CandidateReviewForm.tsx
 ```
 
 ### B. Git Log (`git log --oneline -n 5`)
 ```text
+6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
 f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
 bb12008 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 1f49f70 feat(web): restructure Today for mobile with quick actions and progressive disclosure
 c865914 refactor(web): replace arbitrary hex classes with brand tokens
-2cdb248 fix(ci): pin Node 22 via .nvmrc; jsdom 30 requires 22.22.2 or later
 ```
 
 ### C. Pytest Output (`api/`)
@@ -98,7 +77,7 @@ api\.venv\Lib\site-packages\fastapi\testclient.py:1
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-154 passed, 2 warnings in 5.20s
+154 passed, 2 warnings in 13.12s
 ```
 
 ### D. Vitest Output (`web/`)
@@ -109,49 +88,43 @@ api\.venv\Lib\site-packages\fastapi\testclient.py:1
 
  RUN  v2.1.9 C:/Users/vijay/OneDrive/Documents/GitHub/AthlonIQ/web
 
- ✓ src/test/pwa-caching.test.ts (8 tests) 32ms
- ✓ src/test/weekly-consistency.test.ts (15 tests) 232ms
- ✓ src/test/repo-zod.test.ts (9 tests) 27ms
- ✓ src/test/optimistic-rollback.test.tsx (2 tests) 280ms
- ✓ src/test/signout-isolation.test.tsx (1 test) 345ms
-   ✓ Sign-Out and Cross-Athlete State Isolation > resets all in-memory athlete state on sign out and prevents leakage when signing in as User B 344ms
- ✓ src/test/meal-photo-uploader.test.tsx (16 tests) 2457ms
-   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > MealPhotoUploader UI badge updates from API result > displays live provider and mode when API returns gemini/live 314ms
-   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > Lane B5: Vision Fallback, Demo Labeling & Live Confirmation > live shows candidates needing confirmation (ai_estimated until the user confirms) 1250ms
- ✓ src/test/lane-b2-features.test.tsx (4 tests) 2435ms
-   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 1064ms
-   ✓ RecoveryView Stress Slider & Null State > sends stress value when user touches slider and supports clearing back to 'Not set' 430ms
-   ✓ ProfileView Live BMI Validation > shows 'Enter height and weight' when height or weight is empty, never a BMI from seed values 357ms
-   ✓ ProfileView Live BMI Validation > calculates live BMI when valid height and weight are entered, and reverts to 'Enter height and weight' if cleared 582ms
- ✓ src/test/onboarding-equipment-gate.test.tsx (4 tests) 3007ms
-   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > navigating to /profile?step=equipment opens Step 3 and displays 'Not set' for null limits and '70 kg' for free_weights_70kg 2080ms
-   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > clicking 'Confirm All Home Gym Equipment' marks equipment confirmed without fabricating non-null increments 628ms
- ✓ src/test/today-dashboard-ui2.test.tsx (6 tests) 3369ms
-   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > renders quick-action links with correct href destinations and touch target classes 1779ms
-   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > null calorie target displays fallback message and strictly hides kcal ratios 462ms
-   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > greeting uses profile name only when set, falling back to clean greeting without null 360ms
- ✓ src/test/lane-b3.test.tsx (8 tests) 3378ms
-   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 1550ms
-   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false 1292ms
- ✓ src/test/routes-navigation.test.tsx (15 tests) 6882ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 1013ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 2474ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /nutrition view directly 1228ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /workouts view directly 567ms
-   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders designed 404 page for unknown paths with link to /today 531ms
- ✓ src/test/progression-fallbacks.test.ts (9 tests) 4ms
- ✓ src/test/legacy-import.test.ts (2 tests) 6ms
- ✓ src/test/tailwind-tokens.test.ts (3 tests) 84ms
- ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1309ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 971ms
-   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 336ms
- ✓ src/test/auth-gate.test.tsx (3 tests) 572ms
-   ✓ Application Session Gate > gates application and renders SignInView when athlete is unauthenticated 321ms
+ ✓ src/test/pwa-caching.test.ts (8 tests) 56ms
+ ✓ src/test/weekly-consistency.test.ts (15 tests) 107ms
+ ✓ src/test/repo-zod.test.ts (9 tests) 32ms
+ ✓ src/test/meal-photo-uploader.test.tsx (16 tests) 1291ms
+   ✓ Lane B4: MealPhotoUploader Provider & Mode Handling > Lane B5: Vision Fallback, Demo Labeling & Live Confirmation > live shows candidates needing confirmation (ai_estimated until the user confirms) 505ms
+ ✓ src/test/lane-b2-features.test.tsx (4 tests) 1364ms
+   ✓ RecoveryView Stress Slider & Null State > initializes stress state to null, displays 'Not set', and submits stress: null when untouched 658ms
+ ✓ src/test/optimistic-rollback.test.tsx (2 tests) 205ms
+ ✓ src/test/signout-isolation.test.tsx (1 test) 304ms
+ ✓ src/test/progression-fallbacks.test.ts (9 tests) 16ms
+ ✓ src/test/onboarding-equipment-gate.test.tsx (4 tests) 2067ms
+   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > navigating to /profile?step=equipment opens Step 3 and displays 'Not set' for null limits and '70 kg' for free_weights_70kg 1369ms
+   ✓ UI-3: First-Run Onboarding Flow & Equipment-Confirmation Gate > clicking 'Confirm All Home Gym Equipment' marks equipment confirmed without fabricating non-null increments 483ms
+ ✓ src/test/coach-weekly-review-offline.test.tsx (2 tests) 1884ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > shows 'Weekly review needs a connection' and retry button on fetch failure without synthesized values 1226ms
+   ✓ CoachView Weekly Review Offline Catch & Retry > retries fetching weekly review when retry button is clicked 654ms
+ ✓ src/test/tailwind-tokens.test.ts (3 tests) 24ms
+ ✓ src/test/today-dashboard-ui2.test.tsx (6 tests) 2583ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > renders quick-action links with correct href destinations and touch target classes 1196ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > null calorie target displays fallback message and strictly hides kcal ratios 417ms
+   ✓ UI-2: Today Dashboard Screen & Components (390px spec) > greeting uses profile name only when set, falling back to clean greeting without null 369ms
+ ✓ src/test/lane-b3.test.tsx (8 tests) 2643ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Today card renders 'No check-in yet' and link when hasTodayCheckIn is false 1263ms
+   ✓ Lane B3 Requirements Suite > Item 2: Readiness widget and Today card show 'No check-in yet' when unlogged > Sidebar readiness widget renders 'No check-in yet' and link when hasTodayCheckIn is false 998ms
+ ✓ src/test/legacy-import.test.ts (2 tests) 16ms
+ ✓ src/test/routes-navigation.test.tsx (15 tests) 4795ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /today view with Today Dashboard heading 647ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > redirects '/' root path to '/today' 1779ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /nutrition view directly 959ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders /workouts view directly 343ms
+   ✓ AthlonIQ Routing, Code Splitting & Unsaved Guard > renders designed 404 page for unknown paths with link to /today 362ms
+ ✓ src/test/auth-gate.test.tsx (3 tests) 659ms
 
  Test Files  16 passed (16)
       Tests  107 passed (107)
-   Start at  16:31:05
-   Duration  23.82s (transform 12.51s, setup 18.14s, collect 38.86s, tests 24.42s, environment 104.62s, prepare 10.39s)
+   Start at  14:10:41
+   Duration  71.56s (transform 9.38s, setup 108.73s, collect 54.49s, tests 18.05s, environment 529.31s, prepare 22.55s)
 ```
 
 ### E. Web Production Build (`web/`)
@@ -167,26 +140,26 @@ computing gzip size...
 dist/manifest.webmanifest                          0.59 kB
 dist/index.html                                    2.20 kB │ gzip:  0.95 kB
 dist/assets/index-B0gfO29p.css                    50.71 kB │ gzip:  8.77 kB
-dist/assets/Card-HnRmJ3Pj.js                       1.97 kB │ gzip:  0.79 kB
+dist/assets/Card-Dg0imFJD.js                       1.97 kB │ gzip:  0.79 kB
 dist/assets/workbox-window.prod.es5-BqEJf4Xk.js    5.71 kB │ gzip:  2.34 kB
-dist/assets/RecoveryView-FU5fyeEp.js              11.01 kB │ gzip:  3.19 kB
-dist/assets/ActivitiesView-KV-JAi0g.js            13.48 kB │ gzip:  3.46 kB
-dist/assets/WorkoutsView-B_i1odA6.js              21.37 kB │ gzip:  5.72 kB
+dist/assets/RecoveryView-DZZJ6HFy.js              11.01 kB │ gzip:  3.19 kB
+dist/assets/ActivitiesView-BO-IHpLE.js            13.48 kB │ gzip:  3.46 kB
+dist/assets/WorkoutsView-BNU-_tWD.js              21.37 kB │ gzip:  5.72 kB
 dist/assets/vendor-icons-C8Lldopg.js              28.97 kB │ gzip:  5.82 kB
-dist/assets/CoachView-BQDe0DDr.js                 29.44 kB │ gzip:  7.53 kB
-dist/assets/ProgressView-DH2rkR5Q.js              31.95 kB │ gzip:  6.83 kB
+dist/assets/CoachView-CgVvV1Un.js                 29.44 kB │ gzip:  7.53 kB
+dist/assets/ProgressView-r9pzYnqY.js              31.95 kB │ gzip:  6.83 kB
 dist/assets/vendor-query-DG3adNQi.js              36.35 kB │ gzip: 11.32 kB
-dist/assets/NutritionView-DxCeRUdf.js             40.35 kB │ gzip:  9.61 kB
-dist/assets/DashboardView-CxXq_C51.js             43.14 kB │ gzip:  9.27 kB
-dist/assets/ProfileView-CtiwXIK9.js               77.58 kB │ gzip: 21.73 kB
+dist/assets/NutritionView-leOw33uN.js             40.47 kB │ gzip:  9.62 kB
+dist/assets/DashboardView-St-3-LnI.js             43.14 kB │ gzip:  9.27 kB
+dist/assets/ProfileView-BJbjAuWx.js               77.58 kB │ gzip: 21.73 kB
 dist/assets/vendor-router-C0CbzL8b.js            173.50 kB │ gzip: 57.21 kB
-dist/assets/index-DjPYnZHD.js                    204.42 kB │ gzip: 53.96 kB
+dist/assets/index-CGRQ5ENQ.js                    204.42 kB │ gzip: 53.97 kB
 dist/assets/vendor-supabase-f4bNl52y.js          227.07 kB │ gzip: 58.98 kB
-✓ built in 4.46s
+✓ built in 9.34s
 
 PWA v2.0.0
 mode      generateSW
-precache  31 entries (1237.81 KiB)
+precache  31 entries (1237.93 KiB)
 files generated
   dist/sw.js
   dist/workbox-98f7a950.js
@@ -302,7 +275,24 @@ Secrets scan clean: 0 violations found across 159 tracked files.
 --- All scan-secrets tests passed successfully ---
 ```
 
-### I. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
+### I. Hosted Supabase MCP Audit (`ghxotyoiquyyowydxshb`)
+```text
+1. Public schema tables & Row Level Security:
+   Found 18 tables: activity_sessions, body_metrics, coach_conversations, coach_messages,
+   custom_foods, exercise_sets, exercises, food_entries, profiles, progress_photos,
+   recovery_logs, user_equipment, user_goals, user_preferences, weekly_reports,
+   workout_sessions, workout_template_exercises, workout_templates.
+   All 18 tables: rowsecurity (RLS) = true.
+
+2. Storage buckets configuration:
+   - meal-photos: public = false
+   - progress-photos: public = false
+
+3. Active RLS policies in public schema:
+   Total active policies = 72 (exactly 4 per table: SELECT, INSERT, UPDATE, DELETE).
+```
+
+### J. Hosted Supabase RLS Execution (`tools/test-hosted-rls.mjs`)
 **Status: NOT RUN** (Awaiting real athlete credentials in environment)
 
 Both throwaway signup paths and password reading from `.env.local` have been completely removed. The script strictly requires pre-existing verified credentials from `process.env`:
@@ -327,7 +317,7 @@ Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, li
 ```
 *Full live run against hosted Supabase marked as NOT RUN until real athlete credentials are provided in the environment.*
 
-### J. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
+### K. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
 **Status: NOT RUN** (Awaiting real athlete credentials in environment for positive 200 OK)
 
 Enforces strict environment-only credentials, never reads passwords from `.env.local`, never prints raw tokens or passwords, and prints only status codes and response bodies. Requires 3 distinct checks:
@@ -365,12 +355,12 @@ Supabase Auth Status Code: 400
 ## 4. Completed Scope Summary
 
 ### 1. Full-App Theme Token & Canonical Palette Enforcement (UI-1 & UI-4)
-- **Zero Arbitrary `[#hex]` Classes**: Every remaining one-off hex color in `CoachView.tsx`, `MealPhotoUploader.tsx`, `NutritionView.tsx`, and `Button.tsx` was replaced with canonical design tokens (`athloniq-lime`, `athloniq-surface`, `athloniq-card`, `athloniq-border-alt`, etc.).
+- **Zero Arbitrary `[#hex]` Classes**: Every remaining one-off hex color in `CoachView.tsx`, `MealPhotoUploader.tsx`, `NutritionView.tsx`, `CandidateReviewForm.tsx`, and `Button.tsx` was replaced with canonical design tokens (`athloniq-lime`, `athloniq-surface`, `athloniq-card`, `athloniq-border-alt`, etc.).
 - **Zero Default `lime-*` Classes**: All legacy Tailwind lime classes (`lime-300`, `lime-400`, `lime-500`) in `Badge.tsx`, `SignInView.tsx`, `CoachView.tsx`, `NutritionView.tsx`, and `PwaComponents.tsx` were replaced with `athloniq-lime`, `athloniq-lime-hover`, and theme opacity variants (`athloniq-lime/10`, `athloniq-lime/20`, etc.).
 - **Automated Vitest Token Gate**: Expanded `web/src/test/tailwind-tokens.test.ts` to scan all `.tsx` components under `web/src/features/`, `web/src/components/`, and `web/src/app/`, asserting zero arbitrary `[#hex]` classes and zero default `lime-*` classes anywhere in the UI tree.
 
 ### 2. 390px Mobile-First Ergonomics & Numerical Precision (UI-2, UI-3, UI-4)
-- **44px Touch Targets**: Enforced `min-h-[44px]` across all primary action buttons, tab switchers, slot cards, and controls in `NutritionView.tsx`, `ActivitiesView.tsx`, `RecoveryView.tsx`, `ProgressView.tsx`, and `CoachView.tsx`.
+- **44px Touch Targets**: Enforced `min-h-[44px]` across all primary action buttons, tab switchers, slot cards, delete buttons, and controls in `NutritionView.tsx`, `CandidateReviewForm.tsx`, `ActivitiesView.tsx`, `RecoveryView.tsx`, `ProgressView.tsx`, and `CoachView.tsx`.
 - **`tabular-nums` Numeric Formatting**: Applied mono tabular numbering across all numeric displays, macro tallies, reps/sets counters, effort selectors, and pace indicators to prevent layout shifts.
 - **Responsive Layout Protection**: Added `overflow-x-auto` to prompt chip bars, tab selectors, and wide action rows to prevent horizontal viewport blowout on 390px mobile screens.
 
