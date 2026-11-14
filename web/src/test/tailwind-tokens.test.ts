@@ -12,7 +12,7 @@ import { describe, it, expect } from "vitest";
 describe("Tailwind Token, Hex & Default Lime Enforcement (UI-4)", () => {
   // Eagerly import all UI .tsx files as raw text using Vite's glob import
   const uiModules = import.meta.glob<string>(
-    ["../features/**/*.tsx", "../components/**/*.tsx", "../app/**/*.tsx"],
+    ["../**/*.tsx"],
     {
       query: "?raw",
       import: "default",
