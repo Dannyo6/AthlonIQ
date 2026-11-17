@@ -164,6 +164,8 @@ async function runHostedRlsVerification() {
           protein_g: 12,
           carbs_g: 60,
           fat_g: 5,
+          provenance: "verified_reference",
+          is_confirmed: true,
         };
       } else if (table === "workout_templates") {
         insertPayload = { user_id: userB.id, name: "Bravo Routine" };

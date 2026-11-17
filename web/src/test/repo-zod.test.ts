@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { supabase } from "@/lib/supabase";
 import { ProfileDbRowSchema, mapDbProfileToDomain } from "@/services/repo/profilesRepo";
-import { FoodEntryDbRowSchema, mapDbFoodEntryToDomain } from "@/services/repo/foodEntriesRepo";
+import { FoodEntryDbRowSchema, mapDbFoodEntryToDomain, foodEntriesRepo } from "@/services/repo/foodEntriesRepo";
 import { WorkoutSessionDbRowSchema, ExerciseSetDbRowSchema, mapDbSetToDomain } from "@/services/repo/workoutSessionsRepo";
 import { RecoveryDbRowSchema, mapDbRecoveryToDomain } from "@/services/repo/recoveryRepo";
 import { EquipmentDbRowSchema, mapDbEquipmentToDomain } from "@/services/repo/equipmentRepo";
@@ -116,6 +117,72 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
       };
 
       expect(() => FoodEntryDbRowSchema.parse(invalidFood)).toThrow();
+    });
+
+    it("ensures foodEntriesRepo.createEntry always sends explicit provenance and is_confirmed on insert", async () => {
+      let capturedPayload: any = null;
+      const fakeRow = {
+        id: "019488a0-7f28-7a54-8e47-cf42861e69ab",
+        user_id: "019488a0-7f28-7a54-8e47-cf42861e69ac",
+        logged_date: "2026-10-20",
+        meal_slot: "breakfast",
+        food_name: "Morning Oats",
+        quantity: 1,
+        serving_label: "1 bowl",
+        calories_kcal: 350,
+        protein_g: 15,
+        carbs_g: 60,
+        fat_g: 5,
+        provenance: "manual_entry",
+        is_confirmed: true,
+        notes: null,
+      };
+
+      vi.spyOn(supabase, "from").mockReturnValue({
+        insert: (payload: any) => {
+          capturedPayload = payload;
+          return {
+            select: () => ({
+              single: async () => ({ data: fakeRow, error: null }),
+            }),
+          };
+        },
+      } as any);
+
+      // Omitting provenance and isConfirmed in caller input
+      await foodEntriesRepo.createEntry("019488a0-7f28-7a54-8e47-cf42861e69ac", {
+        loggedDate: "2026-10-20",
+        mealSlot: "breakfast",
+        foodName: "Morning Oats",
+        quantity: 1,
+        servingLabel: "1 bowl",
+        caloriesKcal: 350,
+        proteinG: 15,
+        carbsG: 60,
+        fatG: 5,
+      } as any);
+
+      expect(capturedPayload).not.toBeNull();
+      expect(capturedPayload.provenance).toBe("manual_entry");
+      expect(capturedPayload.is_confirmed).toBe(true);
+
+      // Explicitly supplying ai_estimated and false
+      await foodEntriesRepo.createEntry("019488a0-7f28-7a54-8e47-cf42861e69ac", {
+        loggedDate: "2026-10-20",
+        mealSlot: "lunch",
+        foodName: "AI Scanned Chicken",
+        quantity: 1,
+        servingLabel: "100g",
+        caloriesKcal: 165,
+        proteinG: 31,
+        carbsG: 0,
+        fatG: 3.6,
+        provenance: "ai_estimated",
+        isConfirmed: false,
+      });
+
+      expect(capturedPayload.provenance).toBe("ai_estimated");
+      expect(capturedPayload.is_confirmed).toBe(false);
     });
   });
 

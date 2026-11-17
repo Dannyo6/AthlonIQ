@@ -219,8 +219,8 @@ async function runRlsTests() {
 
   // Food entry
   const bEntry = await db.query(`
-    INSERT INTO public.food_entries (user_id, meal_slot, food_name, serving_label, calories_kcal, protein_g, carbs_g, fat_g)
-    VALUES ($1, 'breakfast', 'B Morning Oats', '1 bowl', 350, 15, 60, 5)
+    INSERT INTO public.food_entries (user_id, meal_slot, food_name, serving_label, calories_kcal, protein_g, carbs_g, fat_g, provenance, is_confirmed)
+    VALUES ($1, 'breakfast', 'B Morning Oats', '1 bowl', 350, 15, 60, 5, 'verified_reference', true)
     RETURNING id;
   `, [USER_B_ID]);
   const bEntryId = bEntry.rows[0].id;
@@ -519,6 +519,55 @@ async function runRlsTests() {
   }
   assert(threw, "Role 'anon' must NOT be able to INSERT rows!");
   console.log("  ✓ Role 'anon' write attempts REJECTED by RLS");
+
+  // 10. Test Explicit Provenance & is_confirmed Constraints on food_entries
+  console.log("\n10. Testing Explicit Provenance & is_confirmed Enforcement (food_entries):");
+  await setSession(db, USER_A_ID);
+
+  // Attempt 1: Omitting provenance must fail NOT NULL constraint
+  let provThrew = false;
+  try {
+    await db.query(`
+      INSERT INTO public.food_entries (user_id, meal_slot, food_name, serving_label, calories_kcal, protein_g, carbs_g, fat_g, is_confirmed)
+      VALUES ($1, 'breakfast', 'A Provenance Missing', '1 bowl', 300, 10, 50, 5, true)
+    `, [USER_A_ID]);
+  } catch (err) {
+    provThrew = true;
+    assert(
+      err.message.includes('null value in column "provenance"') || err.message.includes("not-null constraint"),
+      `Expected not-null constraint failure for provenance, got: ${err.message}`
+    );
+  }
+  assert(provThrew, "Inserting food_entry without provenance MUST fail!");
+  console.log("  ✓ INSERT food_entry without provenance BLOCKED by not-null constraint");
+
+  // Attempt 2: Omitting is_confirmed must fail NOT NULL constraint
+  let confThrew = false;
+  try {
+    await db.query(`
+      INSERT INTO public.food_entries (user_id, meal_slot, food_name, serving_label, calories_kcal, protein_g, carbs_g, fat_g, provenance)
+      VALUES ($1, 'breakfast', 'A is_confirmed Missing', '1 bowl', 300, 10, 50, 5, 'verified_reference')
+    `, [USER_A_ID]);
+  } catch (err) {
+    confThrew = true;
+    assert(
+      err.message.includes('null value in column "is_confirmed"') || err.message.includes("not-null constraint"),
+      `Expected not-null constraint failure for is_confirmed, got: ${err.message}`
+    );
+  }
+  assert(confThrew, "Inserting food_entry without is_confirmed MUST fail!");
+  console.log("  ✓ INSERT food_entry without is_confirmed BLOCKED by not-null constraint");
+
+  // Attempt 3: Providing both explicit provenance and is_confirmed succeeds
+  const validEntry = await db.query(`
+    INSERT INTO public.food_entries (user_id, meal_slot, food_name, serving_label, calories_kcal, protein_g, carbs_g, fat_g, provenance, is_confirmed)
+    VALUES ($1, 'breakfast', 'A Explicit Entry', '1 bowl', 300, 10, 50, 5, 'verified_reference', true)
+    RETURNING id, provenance, is_confirmed;
+  `, [USER_A_ID]);
+  assert(validEntry.rows.length === 1, "Inserting food_entry with explicit provenance and is_confirmed must succeed");
+  assert(validEntry.rows[0].provenance === "verified_reference", "Provenance must match inserted value");
+  assert(validEntry.rows[0].is_confirmed === true, "is_confirmed must match inserted value");
+  console.log("  ✓ INSERT food_entry with explicit provenance & is_confirmed SUCCEEDS");
 
   await db.close();
 

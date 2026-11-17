@@ -68,6 +68,16 @@ export const foodEntriesRepo = {
   },
 
   async createEntry(userId: string, entry: Omit<FoodEntry, "id">): Promise<FoodEntry> {
+    // Explicitly enforce valid non-null provenance and is_confirmed boolean
+    const provenance: FoodProvenance =
+      entry.provenance || ("manual_entry" as FoodProvenance);
+    const isConfirmed: boolean =
+      entry.isConfirmed !== undefined
+        ? Boolean(entry.isConfirmed)
+        : (entry as any).is_confirmed !== undefined
+        ? Boolean((entry as any).is_confirmed)
+        : true;
+
     const payload = {
       user_id: userId,
       logged_date: entry.loggedDate,
@@ -79,8 +89,8 @@ export const foodEntriesRepo = {
       protein_g: entry.proteinG,
       carbs_g: entry.carbsG,
       fat_g: entry.fatG,
-      provenance: entry.provenance,
-      is_confirmed: entry.isConfirmed,
+      provenance,
+      is_confirmed: isConfirmed,
       notes: entry.notes || null,
     };
 
