@@ -45,7 +45,7 @@ f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px 
 | **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~5s |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 159 tracked files | <3s |
 | **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~5s |
-| **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only inspection | 18/18 public tables `rls_enabled: true`, 72 active policies, storage buckets `meal-photos` & `progress-photos` private | **Verified 100% compliant** | — |
+| **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only inspection | 18/18 public tables `rls_enabled: true`, 72 active policies, storage buckets `meal-photos` & `progress-photos` private, 1 advisor warning (`auth_leaked_password_protection`) | **Verified 100% compliant** | — |
 | **Hosted Token Verification** (`tools/`) | `.\api\.venv\Scripts\python.exe tools\verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **401, 401, 200 ALL PASSED (100%)** | 3.65s |
 | **Hosted Supabase RLS** (`tools/`) | `npx -y node@22 tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **19/19 CHECKS PASSED (100%)** | 8.24s |
 
@@ -297,6 +297,15 @@ Secrets scan clean: 0 violations found across 159 tracked files.
 ```
 
 ### I. Hosted Supabase MCP Audit (`ghxotyoiquyyowydxshb`)
+
+#### Live Hosted Supabase Audit Results
+| Security & Infrastructure Check | Live Configuration / Telemetry | Status |
+| :--- | :--- | :--- |
+| **Row Level Security (RLS)** | 18/18 public schema tables enabled (`rowsecurity = true`) | ✅ 100% Compliant |
+| **Active RLS Policies** | 72 active policies (4 per table: SELECT, INSERT, UPDATE, DELETE) | ✅ 100% Compliant |
+| **Storage Buckets** | 2 private buckets (`meal-photos`, `progress-photos`) with `public = false` | ✅ 100% Isolated |
+| **Supabase Advisors** | 1 security warning: `auth_leaked_password_protection` (HaveIBeenPwned check disabled) | ⚠️ 1 Warning (Config) |
+
 ```text
 1. Public schema tables & Row Level Security:
    Found 18 tables: activity_sessions, body_metrics, coach_conversations, coach_messages,
@@ -312,10 +321,13 @@ Secrets scan clean: 0 violations found across 159 tracked files.
 3. Active RLS policies in public schema:
    Total active policies = 72 (exactly 4 per table: SELECT, INSERT, UPDATE, DELETE).
 
-4. Active test users in auth.users:
-   - athloniq.rls.a@gmail.com: is_email_confirmed = true
-   - athloniq.rls.b@gmail.com: is_email_confirmed = true
-   - dhanushvk611@gmail.com: is_email_confirmed = true
+4. Active users in auth.users:
+   - test account A: is_email_confirmed = true
+   - test account B: is_email_confirmed = true
+   - developer account: is_email_confirmed = true
+
+5. Supabase Advisor Audit:
+   - 1 security warning: auth_leaked_password_protection (WARN)
 ```
 
 ### J. Live FastAPI Token Verification Tool (`tools/verify_hosted_token.py`)
@@ -366,8 +378,8 @@ PS C:\Users\vijay\OneDrive\Documents\GitHub\AthlonIQ> $env:TEST_ATHLETE_A_EMAIL 
 ATHLONIQ HOSTED RLS & MULTI-TENANT ISOLATION VERIFICATION
 Endpoint: https://ghxotyoiquyyowydxshb.supabase.co
 ================================================================================
-Authenticating Athlete Alpha: athloniq.rls.a@gmail.com
-Authenticating Athlete Bravo: athloniq.rls.b@gmail.com
+Authenticating Athlete Alpha: test account A
+Authenticating Athlete Bravo: test account B
 ✓ Authenticated Athlete Alpha ID: 4abaf47b-2595-443a-aed5-9327037d59a2
 ✓ Authenticated Athlete Bravo ID: d0e45142-29d2-4cfa-b6e6-8169761c96a6
 
@@ -405,7 +417,7 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 ## 4. Completed Scope Summary
 
 ### 1. Hosted Multi-Tenant Cross-Tenant RLS & Storage Isolation (PASSED 19/19)
-- **Live Supabase GoTrue Dual Authentication**: Both Athlete A (`athloniq.rls.a@gmail.com`) and Athlete B (`athloniq.rls.b@gmail.com`) authenticated successfully via publishable API keys against `ghxotyoiquyyowydxshb.supabase.co`.
+- **Live Supabase GoTrue Dual Authentication**: Both Athlete A (test account A) and Athlete B (test account B) authenticated successfully via publishable API keys against `ghxotyoiquyyowydxshb.supabase.co`.
 - **17 Database Tables Fully Isolated**:
   - `profiles`, `user_equipment`, `user_goals`, `user_preferences`, `custom_foods`, `food_entries`, `workout_templates`, `workout_template_exercises`, `workout_sessions`, `exercise_sets`, `activity_sessions`, `body_metrics`, `recovery_logs`, `coach_conversations`, `coach_messages`, `weekly_reports`, `progress_photos`.
   - Athlete A cannot read (SELECT returns 0 rows), cannot spoof insert (blocked by WITH CHECK), cannot update (0 rows affected), and cannot delete Athlete B's rows (0 rows affected).
@@ -414,7 +426,7 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
   - Athlete A cannot download Athlete B's private objects, cannot upload into Athlete B's folder path, and cannot delete Athlete B's objects.
 
 ### 2. Hosted FastAPI Live JWT Cryptographic Verification (PASSED)
-- **Live Supabase GoTrue Auth Token Exchange**: Athlete A (`athloniq.rls.a@gmail.com`) authenticates via Supabase Auth password grant against `ghxotyoiquyyowydxshb.supabase.co`, receiving a real asymmetric ES256 JWT.
+- **Live Supabase GoTrue Auth Token Exchange**: Athlete A (test account A) authenticates via Supabase Auth password grant against `ghxotyoiquyyowydxshb.supabase.co`, receiving a real asymmetric ES256 JWT.
 - **FastAPI PyJWKClient Cryptographic Validation**: Validates the token against hosted JWKS (`auth/v1/.well-known/jwks.json`) with `DEV_AUTH_BYPASS=False`.
 - **Protected Endpoints Return 200 OK**:
   - `GET /api/v1/coaching/tools` -> HTTP 200 OK (returns 8 allowlisted deterministic tools).

@@ -70,16 +70,24 @@ All metrics below reflect live, un-doctored terminal runs recorded in [`docs/HAN
 | Test Suite | Command | Scope & Contracts | Raw Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Backend Pytest** (`api/`) | `pytest` | API routes, PyJWKClient JWT auth, CORS allowlists, timezone resolution, rate limits with trusted proxies, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings (4.40s) | ✅ PASS |
-| **Web Vitest** (`web/`) | `npm test` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile BMI, offline weekly review, Lane B3 null states, MealPhotoUploader & CandidateReview (0 `act` warnings) | **79 passed** across 12 files (21.64s) | ✅ PASS |
-| **Vite Production Build** (`web/`) | `npm run build` | TypeScript strict mode (`tsc`) + Vite production bundler | **0 errors** (18 chunks, 31 PWA precache entries, 5.67s) | ✅ PASS |
+| **Web Vitest** (`web/`) | `npm test` | React UI, routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile BMI, offline weekly review, Lane B3 null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding, UI-4 Theme Tokens, UI-5 Ergonomics | **124 passed** across 17 files (~12s) | ✅ PASS |
+| **Vite Production Build** (`web/`) | `npm run build` | TypeScript strict mode (`tsc`) + Vite production bundler | **0 errors** (18 chunks, 31 PWA precache entries, 3.22s) | ✅ PASS |
 | **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 public tables, dual-tenant isolation, storage bucket security, anti-spoofing policies | **279 checks passed** (0 failures, ~5s) | ✅ PASS |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **0 violations found** across 145 tracked files | ✅ PASS |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **0 violations found** across 159 tracked files | ✅ PASS |
 | **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **2 tests passed** (0 violations, ~3s) | ✅ PASS |
-| **Hosted Supabase RLS** (`tools/`) | `node tools/test-hosted-rls.mjs` | Multi-tenant RLS isolation check against live hosted Supabase instance (17 tables, 2 buckets) | **NOT RUN** (Requires confirmed athlete credentials in environment) | ⏸️ NOT RUN |
-| **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live Supabase Auth JWKS | **NOT RUN** (Requires confirmed athlete credentials in environment) | ⏸️ NOT RUN |
+| **Hosted Supabase RLS** (`tools/`) | `npx -y node@22 tools/test-hosted-rls.mjs` | Multi-tenant RLS isolation check against live hosted Supabase instance (17 tables, 2 buckets) | **19/19 checks passed** (test account A & test account B isolated) | ✅ PASS |
+| **Hosted Token Verification** (`tools/`) | `python tools/verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live Supabase Auth JWKS | **401, 401, 200 ALL PASSED** (test account A live JWT verified) | ✅ PASS |
+
+### Live Hosted Supabase Audit Results
+| Security & Infrastructure Check | Live Configuration / Telemetry | Status |
+| :--- | :--- | :--- |
+| **Row Level Security (RLS)** | 18/18 public schema tables enabled (`rowsecurity = true`) | ✅ 100% Compliant |
+| **Active RLS Policies** | 72 active policies (4 per table: SELECT, INSERT, UPDATE, DELETE) | ✅ 100% Compliant |
+| **Storage Buckets** | 2 private buckets (`meal-photos`, `progress-photos`) with `public = false` | ✅ 100% Isolated |
+| **Supabase Advisors** | 1 security warning: `auth_leaked_password_protection` (HaveIBeenPwned check disabled) | ⚠️ 1 Warning (Config) |
 
 > [!IMPORTANT] Hosted Verification Execution Policy
-> Hosted Supabase RLS isolation checks (`node tools/test-hosted-rls.mjs`) and live token verification (`python tools/verify_hosted_token.py`) are performed only when actual raw terminal outputs are recorded in [`docs/HANDOFF_STATE.md`](HANDOFF_STATE.md). Currently, they remain marked **NOT RUN** pending live confirmed test athlete credentials (`TEST_ATHLETE_A_EMAIL` / `TEST_ATHLETE_B_EMAIL`) in the execution environment.
+> Hosted Supabase RLS isolation checks (`node tools/test-hosted-rls.mjs`) and live token verification (`python tools/verify_hosted_token.py`) are verified and recorded in [`docs/HANDOFF_STATE.md`](HANDOFF_STATE.md) using test account A and test account B.
 
 ---
 
