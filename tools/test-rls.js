@@ -569,6 +569,44 @@ async function runRlsTests() {
   assert(validEntry.rows[0].is_confirmed === true, "is_confirmed must match inserted value");
   console.log("  ✓ INSERT food_entry with explicit provenance & is_confirmed SUCCEEDS");
 
+  // 11. Test Explicit is_completed Enforcement (exercise_sets)
+  console.log("\n11. Testing Explicit is_completed Enforcement (exercise_sets):");
+  await setSession(db, USER_A_ID);
+
+  const aWk = await db.query(`
+    INSERT INTO public.workout_sessions (user_id, title)
+    VALUES ($1, 'A Session for Set Tests')
+    RETURNING id;
+  `, [USER_A_ID]);
+  const aWkId = aWk.rows[0].id;
+
+  // Attempt 1: Omitting is_completed must fail NOT NULL constraint
+  let setThrew = false;
+  try {
+    await db.query(`
+      INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg)
+      VALUES ($1, $2, 'A Uncompleted Set', 1, 10, 50)
+    `, [aWkId, USER_A_ID]);
+  } catch (err) {
+    setThrew = true;
+    assert(
+      err.message.includes('null value in column "is_completed"') || err.message.includes("not-null constraint"),
+      `Expected not-null constraint failure for is_completed, got: ${err.message}`
+    );
+  }
+  assert(setThrew, "Inserting exercise_set without is_completed MUST fail!");
+  console.log("  ✓ INSERT exercise_set without is_completed BLOCKED by not-null constraint");
+
+  // Attempt 2: Providing explicit is_completed succeeds
+  const validSet = await db.query(`
+    INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg, is_completed)
+    VALUES ($1, $2, 'A Explicit Completed Set', 1, 10, 50, true)
+    RETURNING id, is_completed;
+  `, [aWkId, USER_A_ID]);
+  assert(validSet.rows.length === 1, "Inserting exercise_set with explicit is_completed must succeed");
+  assert(validSet.rows[0].is_completed === true, "is_completed must match inserted value");
+  console.log("  ✓ INSERT exercise_set with explicit is_completed SUCCEEDS");
+
   await db.close();
 
   console.log("\n================================================================");

@@ -14,7 +14,7 @@ export const ExerciseSetDbRowSchema = z.object({
   is_bodyweight: z.boolean().default(false),
   rpe: z.coerce.number().min(1).max(10).nullable().default(null),
   rir: z.coerce.number().int().min(0).max(10).nullable().default(null),
-  is_completed: z.boolean().default(true),
+  is_completed: z.boolean(),
   is_pr: z.boolean().default(false),
   notes: z.string().nullable().default(null),
 });

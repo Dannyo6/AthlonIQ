@@ -178,7 +178,7 @@ async function runHostedRlsVerification() {
       } else if (table === "exercise_sets") {
         // Create session first
         const { data: sess } = await clientB.from("workout_sessions").insert({ user_id: userB.id, logged_date: "2026-10-20", title: "Bravo Parent" }).select().single();
-        insertPayload = { user_id: userB.id, session_id: sess?.id, exercise_name: "Bravo Bench", set_order: 1, reps: 10, load_kg: 50 };
+        insertPayload = { user_id: userB.id, session_id: sess?.id, exercise_name: "Bravo Bench", set_order: 1, reps: 10, load_kg: 50, is_completed: true };
       } else if (table === "activity_sessions") {
         insertPayload = { user_id: userB.id, logged_date: "2026-10-20", activity_type: "running", duration_minutes: 30 };
       } else if (table === "body_metrics") {
