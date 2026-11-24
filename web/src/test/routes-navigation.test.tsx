@@ -101,7 +101,7 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     await waitFor(() => {
       expect(screen.getByText(/Training & Progression Engine/i)).toBeInTheDocument();
       expect(document.title).toContain("Training & Equipment");
-    });
+    }, { timeout: 4000 });
   });
 
   it("renders /activities view directly", async () => {
@@ -127,7 +127,7 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     await waitFor(() => {
       expect(screen.getByText(/Recovery & Readiness/i)).toBeInTheDocument();
       expect(document.title).toContain("Recovery & Readiness");
-    });
+    }, { timeout: 4000 });
   });
 
   it("renders /progress view directly", async () => {

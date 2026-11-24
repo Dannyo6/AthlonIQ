@@ -86,6 +86,9 @@ jobs:
             exit 1
           fi
 
+      - name: Verify generated API types are not stale
+        run: node tools/generate-api-types.mjs --check
+
       - name: Install dependencies
         working-directory: web
         run: npm ci

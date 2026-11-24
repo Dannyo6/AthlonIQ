@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Shared golden-value test fixtures for deterministic AthlonIQ domain calculations. Verified identically by both pytest (Python) and Vitest (TypeScript).",
+  "bmi": [
+    {
+      "description": "Alex underweight baseline (55 kg, 173 cm)",
+      "weight_kg": 55.0,
+      "height_cm": 173.0,
+      "expected_bmi": 18.4,
+      "expected_category": "underweight"
+    },
+    {
+      "description": "Normal weight athlete (70 kg, 175 cm)",
+      "weight_kg": 70.0,
+      "height_cm": 175.0,
+      "expected_bmi": 22.9,
+      "expected_category": "normal_weight"
+    },
+    {
+      "description": "Overweight threshold (82 kg, 178 cm)",
+      "weight_kg": 82.0,
+      "height_cm": 178.0,
+      "expected_bmi": 25.9,
+      "expected_category": "overweight"
+    },
+    {
+      "description": "Obese threshold (95 kg, 170 cm)",
+      "weight_kg": 95.0,
+      "height_cm": 170.0,
+      "expected_bmi": 32.9,
+      "expected_category": "obese"
+    },
+    {
+      "description": "Lean tall athlete (65 kg, 180 cm)",
+      "weight_kg": 65.0,
+      "height_cm": 180.0,
+      "expected_bmi": 20.1,
+      "expected_category": "normal_weight"
+    }
+  ],
+  "protein_band": [
+    {
+      "description": "Default protein recommendation (2.0 g/kg) for 55 kg",
+      "weight_kg": 55.0,
+      "custom_target_g": null,
+      "expected_min_g": 88,
+      "expected_max_g": 121,
+      "expected_target_g": 110,
+      "expected_provenance": "provisional_default"
+    },
+    {
+      "description": "Default protein recommendation (2.0 g/kg) for 75 kg",
+      "weight_kg": 75.0,
+      "custom_target_g": null,
+      "expected_min_g": 120,
+      "expected_max_g": 165,
+      "expected_target_g": 150,
+      "expected_provenance": "provisional_default"
+    },
+    {
+      "description": "Custom protein target within valid band (80 kg, target 150 g)",
+      "weight_kg": 80.0,
+      "custom_target_g": 150,
+      "expected_min_g": 128,
+      "expected_max_g": 176,
+      "expected_target_g": 150,
+      "expected_provenance": "user_confirmed"
+    },
+    {
+      "description": "Custom protein target clamped to maximum (70 kg, target 180 g -> max 154 g)",
+      "weight_kg": 70.0,
+      "custom_target_g": 180,
+      "expected_min_g": 112,
+      "expected_max_g": 154,
+      "expected_target_g": 154,
+      "expected_provenance": "user_confirmed"
+    },
+    {
+      "description": "Custom protein target clamped to minimum (70 kg, target 90 g -> min 112 g)",
+      "weight_kg": 70.0,
+      "custom_target_g": 90,
+      "expected_min_g": 112,
+      "expected_max_g": 154,
+      "expected_target_g": 112,
+      "expected_provenance": "user_confirmed"
+    }
+  ],
+  "weight_trend": [
+    {
+      "description": "Insufficient data gate with 2 entries (< 3)",
+      "entries": [
+        { "logged_date": "2026-11-01", "weight_kg": 75.0 },
+        { "logged_date": "2026-11-02", "weight_kg": 75.2 }
+      ],
+      "expected_status": "insufficient_data",
+      "expected_rolling_7d_kg": null,
+      "expected_weekly_delta_kg": null
+    },
+    {
+      "description": "7 daily weigh-ins full week trend",
+      "entries": [
+        { "logged_date": "2026-11-01", "weight_kg": 70.0 },
+        { "logged_date": "2026-11-02", "weight_kg": 70.2 },
+        { "logged_date": "2026-11-03", "weight_kg": 70.1 },
+        { "logged_date": "2026-11-04", "weight_kg": 70.4 },
+        { "logged_date": "2026-11-05", "weight_kg": 70.3 },
+        { "logged_date": "2026-11-06", "weight_kg": 70.5 },
+        { "logged_date": "2026-11-07", "weight_kg": 70.7 }
+      ],
+      "expected_status": "ok",
+      "expected_rolling_7d_kg": 70.31,
+      "expected_weekly_delta_kg": 0.31
+    },
+    {
+      "description": "3 minimum weigh-ins downward trend",
+      "entries": [
+        { "logged_date": "2026-11-01", "weight_kg": 80.0 },
+        { "logged_date": "2026-11-02", "weight_kg": 79.5 },
+        { "logged_date": "2026-11-03", "weight_kg": 79.0 }
+      ],
+      "expected_status": "ok",
+      "expected_rolling_7d_kg": 79.5,
+      "expected_weekly_delta_kg": -0.5
+    }
+  ],
+  "pace": [
+    {
+      "description": "5 km in 27.5 minutes (5.5 min/km)",
+      "distance_km": 5.0,
+      "duration_minutes": 27.5,
+      "expected_pace_decimal": 5.5,
+      "expected_pace_formatted": "5:30 /km"
+    },
+    {
+      "description": "10 km in 50 minutes exact (5.0 min/km)",
+      "distance_km": 10.0,
+      "duration_minutes": 50.0,
+      "expected_pace_decimal": 5.0,
+      "expected_pace_formatted": "5:00 /km"
+    },
+    {
+      "description": "5 km in 24 minutes (4.8 min/km)",
+      "distance_km": 5.0,
+      "duration_minutes": 24.0,
+      "expected_pace_decimal": 4.8,
+      "expected_pace_formatted": "4:48 /km"
+    },
+    {
+      "description": "3.2 km in 18.2 minutes (5.69 min/km)",
+      "distance_km": 3.2,
+      "duration_minutes": 18.2,
+      "expected_pace_decimal": 5.69,
+      "expected_pace_formatted": "5:41 /km"
+    },
+    {
+      "description": "Marathon distance in 210 minutes (4.98 min/km)",
+      "distance_km": 42.195,
+      "duration_minutes": 210.0,
+      "expected_pace_decimal": 4.98,
+      "expected_pace_formatted": "4:59 /km"
+    }
+  ],
+  "nutrition_totals": [
+    {
+      "description": "All confirmed breakfast entries",
+      "entries": [
+        {
+          "name": "Rolled Oats",
+          "calories_kcal": 150.0,
+          "protein_g": 5.0,
+          "carbs_g": 27.0,
+          "fat_g": 3.0,
+          "quantity": 1.5,
+          "is_confirmed": true
+        },
+        {
+          "name": "Whey Protein Isolate",
+          "calories_kcal": 120.0,
+          "protein_g": 24.0,
+          "carbs_g": 3.0,
+          "fat_g": 1.5,
+          "quantity": 1.0,
+          "is_confirmed": true
+        }
+      ],
+      "expected_confirmed": {
+        "calories_kcal": 345.0,
+        "protein_g": 31.5,
+        "carbs_g": 43.5,
+        "fat_g": 6.0,
+        "entry_count": 2
+      },
+      "expected_unconfirmed": {
+        "calories_kcal": 0.0,
+        "protein_g": 0.0,
+        "carbs_g": 0.0,
+        "fat_g": 0.0,
+        "entry_count": 0
+      }
+    },
+    {
+      "description": "Mixed confirmed lunch and unconfirmed AI vision candidate",
+      "entries": [
+        {
+          "name": "Grilled Chicken Breast",
+          "calories_kcal": 165.0,
+          "protein_g": 31.0,
+          "carbs_g": 0.0,
+          "fat_g": 3.6,
+          "quantity": 2.0,
+          "is_confirmed": true
+        },
+        {
+          "name": "White Basmati Rice",
+          "calories_kcal": 130.0,
+          "protein_g": 2.7,
+          "carbs_g": 28.0,
+          "fat_g": 0.4,
+          "quantity": 1.5,
+          "is_confirmed": true
+        },
+        {
+          "name": "Estimated Protein Shake (Unconfirmed)",
+          "calories_kcal": 200.0,
+          "protein_g": 30.0,
+          "carbs_g": 10.0,
+          "fat_g": 2.0,
+          "quantity": 1.0,
+          "is_confirmed": false
+        }
+      ],
+      "expected_confirmed": {
+        "calories_kcal": 525.0,
+        "protein_g": 66.1,
+        "carbs_g": 42.0,
+        "fat_g": 7.8,
+        "entry_count": 2
+      },
+      "expected_unconfirmed": {
+        "calories_kcal": 200.0,
+        "protein_g": 30.0,
+        "carbs_g": 10.0,
+        "fat_g": 2.0,
+        "entry_count": 1
+      }
+    }
+  ]
+}

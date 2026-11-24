@@ -6,6 +6,8 @@
     "scan:secrets": "node tools/scan-secrets.mjs",
     "test:scan": "node tools/test-scan-secrets.mjs",
     "test:rls": "npm --prefix tools run test:rls",
-    "audit:migrations": "npm --prefix tools run audit"
+    "audit:migrations": "npm --prefix tools run audit",
+    "generate:api-types": "node tools/generate-api-types.mjs",
+    "check:api-types": "node tools/generate-api-types.mjs --check"
   }
 }
