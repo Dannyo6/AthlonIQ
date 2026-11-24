@@ -1,15 +1,9 @@
 import React from "react";
 import { Card } from "@/components/ui/Card";
+import { MEAL_SLOTS } from "../constants";
 import { FoodEntry, MealSlot, FoodProvenance } from "@/types";
 import { Plus, Copy, Trash2, Edit3 } from "lucide-react";
 import { NutritionTabId } from "./NutritionMealTabs";
-
-const MEAL_SLOTS: { id: MealSlot; label: string }[] = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch" },
-  { id: "dinner", label: "Dinner" },
-  { id: "snack", label: "Snack" },
-];
 
 const PROVENANCE_LABELS: Record<FoodProvenance, string> = {
   verified_reference: "VERIFIED REFERENCE",

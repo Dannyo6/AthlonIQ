@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
 import { calculateDailyNutritionTotals } from "@/lib/calculations";
 import { resolveDateInTimezone } from "@/lib/weeklyConsistency";
-import { FoodEntry, MealSlot } from "@/types";
+import { FoodEntry, MealSlot, FoodProvenance } from "@/types";
 import { NutritionDateNav } from "./components/NutritionDateNav";
 import { NutritionMealTabs, NutritionTabId } from "./components/NutritionMealTabs";
 import { NutritionTotalsHeader } from "./components/NutritionTotalsHeader";
@@ -113,14 +113,19 @@ export const NutritionView: React.FC = () => {
   };
 
   const handleConfirmUnconfirmedEntry = (entry: FoodEntry) => {
+    // Confirming directly retains provenance (ai_estimated) and sets isConfirmed: true
+    const updates = {
+      isConfirmed: true,
+      is_confirmed: true,
+      provenance: entry.provenance ?? ("ai_estimated" as FoodProvenance),
+    };
     if (updateFoodEntry) {
-      updateFoodEntry(entry.id, { isConfirmed: true, is_confirmed: true });
+      updateFoodEntry(entry.id, updates);
     } else {
       deleteFoodEntry(entry.id);
       addFoodEntry({
         ...entry,
-        isConfirmed: true,
-        is_confirmed: true,
+        ...updates,
       });
     }
   };

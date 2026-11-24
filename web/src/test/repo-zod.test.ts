@@ -119,7 +119,37 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
       expect(() => FoodEntryDbRowSchema.parse(invalidFood)).toThrow();
     });
 
-    it("ensures foodEntriesRepo.createEntry always sends explicit provenance and is_confirmed on insert", async () => {
+    it("throws a clear error when provenance or isConfirmed is missing from createEntry", async () => {
+      const baseEntry = {
+        loggedDate: "2026-10-20",
+        mealSlot: "breakfast" as const,
+        foodName: "Morning Oats",
+        quantity: 1,
+        servingLabel: "1 bowl",
+        caloriesKcal: 350,
+        proteinG: 15,
+        carbsG: 60,
+        fatG: 5,
+      };
+
+      // Missing provenance
+      await expect(
+        foodEntriesRepo.createEntry("019488a0-7f28-7a54-8e47-cf42861e69ac", {
+          ...baseEntry,
+          isConfirmed: true,
+        } as any)
+      ).rejects.toThrow("[foodEntriesRepo] Explicit provenance is required to create a food entry.");
+
+      // Missing isConfirmed
+      await expect(
+        foodEntriesRepo.createEntry("019488a0-7f28-7a54-8e47-cf42861e69ac", {
+          ...baseEntry,
+          provenance: "manual_entry",
+        } as any)
+      ).rejects.toThrow("[foodEntriesRepo] Explicit isConfirmed boolean is required to create a food entry.");
+    });
+
+    it("ensures foodEntriesRepo.createEntry sends explicit provenance and is_confirmed on insert", async () => {
       let capturedPayload: any = null;
       const fakeRow = {
         id: "019488a0-7f28-7a54-8e47-cf42861e69ab",
@@ -149,7 +179,7 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
         },
       } as any);
 
-      // Omitting provenance and isConfirmed in caller input
+      // Explicitly supplying manual_entry and true
       await foodEntriesRepo.createEntry("019488a0-7f28-7a54-8e47-cf42861e69ac", {
         loggedDate: "2026-10-20",
         mealSlot: "breakfast",
@@ -160,7 +190,9 @@ describe("Repository Zod Schema Validation & Domain Mapping", () => {
         proteinG: 15,
         carbsG: 60,
         fatG: 5,
-      } as any);
+        provenance: "manual_entry",
+        isConfirmed: true,
+      });
 
       expect(capturedPayload).not.toBeNull();
       expect(capturedPayload.provenance).toBe("manual_entry");

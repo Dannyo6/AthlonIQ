@@ -1,20 +1,12 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
+import { MEAL_SLOTS, QUANTITY_OPTIONS } from "../constants";
+import { useNutritionFormDirty } from "../hooks/useNutritionFormDirty";
 import { searchFoodCatalog } from "@/lib/calculations";
 import { FoodCatalogItem, FoodEntry, MealSlot } from "@/types";
 import { Plus, Search, X, CheckCircle2, Camera } from "lucide-react";
-
-const MEAL_SLOTS: { id: MealSlot; label: string }[] = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch" },
-  { id: "dinner", label: "Dinner" },
-  { id: "snack", label: "Snack" },
-];
-
-const QUANTITY_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3];
 
 interface NutritionAddPanelProps {
   isOpen: boolean;
@@ -42,25 +34,20 @@ export const NutritionAddPanel: React.FC<NutritionAddPanelProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [customQty, setCustomQty] = useState("");
 
-  const { setFormDirty } = useUnsavedWork();
-
   const hasUnsavedFoodInput = Boolean(searchQuery.trim() || customQty.trim() || selectedFood);
 
-  useEffect(() => {
-    if (isOpen) {
-      setFormDirty("meal-entry-search", hasUnsavedFoodInput, "Meal Search & Add");
-    }
-    return () => {
-      setFormDirty("meal-entry-search", false);
-    };
-  }, [hasUnsavedFoodInput, isOpen, setFormDirty]);
+  useNutritionFormDirty("meal-entry-search", isOpen && hasUnsavedFoodInput, "Meal Search & Add");
 
   const searchResults = useMemo(
     () => (searchQuery.length >= 1 ? searchFoodCatalog(searchQuery) : []),
     [searchQuery]
   );
 
-  const effectiveQty = customQty ? parseFloat(customQty) || 1 : quantity;
+  const parsedQty = parseFloat(customQty);
+  const effectiveQty =
+    customQty.trim() !== "" && !isNaN(parsedQty) && parsedQty > 0
+      ? parsedQty
+      : quantity;
 
   const handleAdd = () => {
     if (!selectedFood) return;

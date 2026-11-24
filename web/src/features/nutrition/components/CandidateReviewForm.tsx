@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ProvenanceBadge, Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { MEAL_SLOTS, QUANTITY_OPTIONS } from "../constants";
 import { CandidateFoodItem, FoodEntry, MealSlot, FoodProvenance } from "@/types";
 import {
   CheckCircle2,
@@ -11,15 +12,6 @@ import {
   ShieldCheck,
   Layers,
 } from "lucide-react";
-
-const MEAL_SLOTS: { id: MealSlot; label: string }[] = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch" },
-  { id: "dinner", label: "Dinner" },
-  { id: "snack", label: "Snack" },
-];
-
-const QUANTITY_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3];
 
 interface ReviewItemState extends CandidateFoodItem {
   isModifiedByUser: boolean;
@@ -350,9 +342,10 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
                         max="10"
                         step="0.1"
                         value={item.quantity}
-                        onChange={(e) =>
-                          handleUpdateQuantity(idx, parseFloat(e.target.value) || 1)
-                        }
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          handleUpdateQuantity(idx, !isNaN(val) && val > 0 ? val : 1);
+                        }}
                         className="w-16 min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white text-center font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
                       />
                     </div>

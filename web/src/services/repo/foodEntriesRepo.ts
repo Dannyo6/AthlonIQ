@@ -22,8 +22,8 @@ export const FoodEntryDbRowSchema = z.object({
     "manual_entry",
     "user_corrected",
     "ai_estimated",
-  ]).default("verified_reference"),
-  is_confirmed: z.boolean().default(true),
+  ]),
+  is_confirmed: z.boolean(),
   notes: z.string().nullable().default(null),
 });
 
@@ -67,16 +67,13 @@ export const foodEntriesRepo = {
     return (data || []).map((row) => mapDbFoodEntryToDomain(FoodEntryDbRowSchema.parse(row)));
   },
 
-  async createEntry(userId: string, entry: Omit<FoodEntry, "id">): Promise<FoodEntry> {
-    // Explicitly enforce valid non-null provenance and is_confirmed boolean
-    const provenance: FoodProvenance =
-      entry.provenance || ("manual_entry" as FoodProvenance);
-    const isConfirmed: boolean =
-      entry.isConfirmed !== undefined
-        ? Boolean(entry.isConfirmed)
-        : (entry as any).is_confirmed !== undefined
-        ? Boolean((entry as any).is_confirmed)
-        : true;
+  async createEntry(userId: string, entry: Omit<FoodEntry, "id"> & { provenance: FoodProvenance; isConfirmed: boolean }): Promise<FoodEntry> {
+    if (!entry.provenance) {
+      throw new Error("[foodEntriesRepo] Explicit provenance is required to create a food entry.");
+    }
+    if (entry.isConfirmed === undefined || entry.isConfirmed === null) {
+      throw new Error("[foodEntriesRepo] Explicit isConfirmed boolean is required to create a food entry.");
+    }
 
     const payload = {
       user_id: userId,
@@ -89,8 +86,8 @@ export const foodEntriesRepo = {
       protein_g: entry.proteinG,
       carbs_g: entry.carbsG,
       fat_g: entry.fatG,
-      provenance,
-      is_confirmed: isConfirmed,
+      provenance: entry.provenance,
+      is_confirmed: entry.isConfirmed,
       notes: entry.notes || null,
     };
 

@@ -249,8 +249,8 @@ async function runRlsTests() {
   const bWkId = bWk.rows[0].id;
 
   const bSet = await db.query(`
-    INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg)
-    VALUES ($1, $2, 'Incline Dumbbell Press', 1, 10, 32.5)
+    INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg, is_completed)
+    VALUES ($1, $2, 'Incline Dumbbell Press', 1, 10, 32.5, true)
     RETURNING id;
   `, [bWkId, USER_B_ID]);
   const bSetId = bSet.rows[0].id;
@@ -422,8 +422,8 @@ async function runRlsTests() {
   threw = false;
   try {
     await db.query(`
-      INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg)
-      VALUES ($1, $2, 'Spoofed Set', 1, 10, 50)
+      INSERT INTO public.exercise_sets (session_id, user_id, exercise_name, set_order, reps, load_kg, is_completed)
+      VALUES ($1, $2, 'Spoofed Set', 1, 10, 50, true)
     `, [bWkId, USER_B_ID]);
   } catch (err) {
     threw = true;

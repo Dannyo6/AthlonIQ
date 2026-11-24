@@ -8,8 +8,19 @@ import { NutritionDateNav } from "@/features/nutrition/components/NutritionDateN
 import { NutritionMealEntries } from "@/features/nutrition/components/NutritionMealEntries";
 import { NutritionUnconfirmedSection } from "@/features/nutrition/components/NutritionUnconfirmedSection";
 import { NutritionPreviousDayReview } from "@/features/nutrition/components/NutritionPreviousDayReview";
+import { NutritionAddPanel } from "@/features/nutrition/components/NutritionAddPanel";
+import { NutritionCustomFoodModal } from "@/features/nutrition/components/NutritionCustomFoodModal";
+import { NutritionEditEntryModal } from "@/features/nutrition/components/NutritionEditEntryModal";
+import { CandidateReviewForm } from "@/features/nutrition/components/CandidateReviewForm";
+import {
+  MacroFields,
+  validateMacroInput,
+  parseMacroInput,
+  validateAllMacros,
+} from "@/features/nutrition/components/MacroFields";
+import { MEAL_SLOTS, QUANTITY_OPTIONS } from "@/features/nutrition/constants";
 import { resolveDateInTimezone } from "@/lib/weeklyConsistency";
-import { FoodEntry, UserGoals } from "@/types";
+import { FoodEntry, UserGoals, CandidateFoodItem } from "@/types";
 
 // Mock external services
 vi.mock("@/services/api", () => ({
@@ -399,6 +410,362 @@ describe("Nutrition Components & Ergonomics Test Suite", () => {
       // Skeleton pulse animation container must exist
       const pulseSkeleton = container.querySelector(".animate-pulse");
       expect(pulseSkeleton).not.toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // 6. Explicit provenance and is_confirmed across all callers
+  // =========================================================================
+  describe("6. Explicit provenance and is_confirmed across callers", () => {
+    it("NutritionAddPanel passes explicit provenance and isConfirmed=true on add", () => {
+      const onAddEntry = vi.fn();
+      render(
+        <MemoryRouter>
+          <UnsavedWorkProvider>
+            <NutritionAddPanel
+              isOpen={true}
+              onClose={vi.fn()}
+              selectedDate="2026-10-20"
+              selectedSlot="breakfast"
+              onSlotChange={vi.fn()}
+              onAddEntry={onAddEntry}
+              onOpenCustomModal={vi.fn()}
+              onOpenPhotoModal={vi.fn()}
+            />
+          </UnsavedWorkProvider>
+        </MemoryRouter>
+      );
+
+      // Search for an item from catalog
+      const searchInput = screen.getByPlaceholderText(/Search Indian & athletic foods/i);
+      fireEvent.change(searchInput, { target: { value: "Oats" } });
+
+      // Click to select the first search result
+      const catalogItem = screen.getAllByRole("button").find((btn) =>
+        btn.textContent?.includes("Rolled Oats")
+      );
+      expect(catalogItem).toBeDefined();
+      fireEvent.click(catalogItem!);
+
+      // Click Add button
+      const addButton = screen.getByRole("button", { name: /Add to Breakfast/i });
+      fireEvent.click(addButton);
+
+      expect(onAddEntry).toHaveBeenCalledTimes(1);
+      const added = onAddEntry.mock.calls[0][0];
+      expect(added.provenance).toBe("verified_reference");
+      expect(added.isConfirmed).toBe(true);
+      expect(added.foodName).toBe("Rolled Oats");
+    });
+
+    it("NutritionCustomFoodModal passes explicit provenance='manual_entry' and isConfirmed=true", () => {
+      const onAddEntry = vi.fn();
+      render(
+        <MemoryRouter>
+          <UnsavedWorkProvider>
+            <NutritionCustomFoodModal
+              isOpen={true}
+              onClose={vi.fn()}
+              selectedDate="2026-10-20"
+              selectedSlot="lunch"
+              onAddEntry={onAddEntry}
+            />
+          </UnsavedWorkProvider>
+        </MemoryRouter>
+      );
+
+      // Fill in fields with explicit values, including an explicit 0 for fat
+      fireEvent.change(screen.getByPlaceholderText("Food name *"), {
+        target: { value: "Homemade Protein Khichdi" },
+      });
+      fireEvent.change(screen.getByTestId("macro-input-caloriesKcal"), {
+        target: { value: "320" },
+      });
+      fireEvent.change(screen.getByTestId("macro-input-proteinG"), {
+        target: { value: "22" },
+      });
+      fireEvent.change(screen.getByTestId("macro-input-carbsG"), {
+        target: { value: "48" },
+      });
+      fireEvent.change(screen.getByTestId("macro-input-fatG"), {
+        target: { value: "0" }, // Explicit 0 is valid!
+      });
+
+      const submitButton = screen.getByRole("button", { name: /Add Custom Food/i });
+      fireEvent.click(submitButton);
+
+      expect(onAddEntry).toHaveBeenCalledTimes(1);
+      const added = onAddEntry.mock.calls[0][0];
+      expect(added.provenance).toBe("manual_entry");
+      expect(added.isConfirmed).toBe(true);
+      expect(added.caloriesKcal).toBe(320);
+      expect(added.fatG).toBe(0);
+    });
+
+    it("CandidateReviewForm: untouched AI candidate keeps ai_estimated; edited becomes user_corrected", () => {
+      const initialCandidate: CandidateFoodItem = {
+        id: "cand-1",
+        catalog_id: "paneer-bhurji",
+        food_name: "Paneer Bhurji",
+        matched_catalog_name: "Paneer Bhurji",
+        estimated_serving: "1 cup 150g",
+        serving_label: "1 cup 150g",
+        quantity: 1.0,
+        calories_kcal: 260.0,
+        protein_g: 18.0,
+        carbs_g: 6.0,
+        fat_g: 18.0,
+        confidence: "high",
+        provenance: "ai_estimated",
+        is_confirmed: false,
+      };
+
+      // 1. Confirm untouched candidate
+      const onConfirmUntouched = vi.fn();
+      const { unmount } = render(
+        <CandidateReviewForm
+          candidates={[initialCandidate]}
+          previewUrl={null}
+          selectedDate="2026-10-20"
+          selectedSlot="dinner"
+          onConfirm={onConfirmUntouched}
+          onCancel={vi.fn()}
+        />
+      );
+
+      const confirmBtn1 = screen.getByRole("button", { name: /Confirm & Log/i });
+      fireEvent.click(confirmBtn1);
+
+      expect(onConfirmUntouched).toHaveBeenCalledTimes(1);
+      const untouchedResult = onConfirmUntouched.mock.calls[0][0][0];
+      expect(untouchedResult.provenance).toBe("ai_estimated");
+      expect(untouchedResult.isConfirmed).toBe(true);
+
+      unmount();
+
+      // 2. Edit candidate portion, then confirm -> provenance must change to user_corrected
+      const onConfirmEdited = vi.fn();
+      render(
+        <CandidateReviewForm
+          candidates={[initialCandidate]}
+          previewUrl={null}
+          selectedDate="2026-10-20"
+          selectedSlot="dinner"
+          onConfirm={onConfirmEdited}
+          onCancel={vi.fn()}
+        />
+      );
+
+      // Scale portion to 2x
+      const scale2xBtn = screen.getByRole("button", { name: "2x" });
+      fireEvent.click(scale2xBtn);
+
+      const confirmBtn2 = screen.getByRole("button", { name: /Confirm & Log/i });
+      fireEvent.click(confirmBtn2);
+
+      expect(onConfirmEdited).toHaveBeenCalledTimes(1);
+      const editedResult = onConfirmEdited.mock.calls[0][0][0];
+      expect(editedResult.provenance).toBe("user_corrected");
+      expect(editedResult.isConfirmed).toBe(true);
+      expect(editedResult.quantity).toBe(2);
+      expect(editedResult.caloriesKcal).toBe(520);
+    });
+
+    it("NutritionEditEntryModal: saves user_corrected when edited, retains original provenance when unchanged", () => {
+      const originalEntry: FoodEntry = {
+        id: "entry-ai-1",
+        loggedDate: "2026-10-20",
+        mealSlot: "dinner",
+        foodName: "AI Scanned Paneer",
+        quantity: 1,
+        servingLabel: "150g",
+        caloriesKcal: 260,
+        proteinG: 18,
+        carbsG: 6,
+        fatG: 18,
+        provenance: "ai_estimated",
+        isConfirmed: false,
+      };
+
+      // 1. Save without changing values
+      const onSaveUnchanged = vi.fn();
+      const { unmount } = render(
+        <MemoryRouter>
+          <UnsavedWorkProvider>
+            <NutritionEditEntryModal
+              entry={originalEntry}
+              isOpen={true}
+              onClose={vi.fn()}
+              onSave={onSaveUnchanged}
+            />
+          </UnsavedWorkProvider>
+        </MemoryRouter>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+      expect(onSaveUnchanged).toHaveBeenCalledTimes(1);
+      const unchangedUpdates = onSaveUnchanged.mock.calls[0][1];
+      expect(unchangedUpdates.provenance).toBe("ai_estimated");
+      expect(unchangedUpdates.isConfirmed).toBe(true);
+
+      unmount();
+
+      // 2. Change a macro value, then save
+      const onSaveChanged = vi.fn();
+      render(
+        <MemoryRouter>
+          <UnsavedWorkProvider>
+            <NutritionEditEntryModal
+              entry={originalEntry}
+              isOpen={true}
+              onClose={vi.fn()}
+              onSave={onSaveChanged}
+            />
+          </UnsavedWorkProvider>
+        </MemoryRouter>
+      );
+
+      fireEvent.change(screen.getByTestId("macro-input-proteinG"), {
+        target: { value: "24" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+      expect(onSaveChanged).toHaveBeenCalledTimes(1);
+      const changedUpdates = onSaveChanged.mock.calls[0][1];
+      expect(changedUpdates.provenance).toBe("user_corrected");
+      expect(changedUpdates.isConfirmed).toBe(true);
+      expect(changedUpdates.proteinG).toBe(24);
+    });
+  });
+
+  // =========================================================================
+  // 7. Macro input validation: blank is error; explicit 0 is valid
+  // =========================================================================
+  describe("7. Macro input validation", () => {
+    it("validateMacroInput returns 'Required' on empty or whitespace strings", () => {
+      expect(validateMacroInput("")).toBe("Required");
+      expect(validateMacroInput("   ")).toBe("Required");
+    });
+
+    it("validateMacroInput accepts explicit 0 and 0.0 without errors", () => {
+      expect(validateMacroInput("0")).toBeNull();
+      expect(validateMacroInput("0.0")).toBeNull();
+      expect(validateMacroInput("0.5")).toBeNull();
+      expect(validateMacroInput("100")).toBeNull();
+    });
+
+    it("validateMacroInput rejects negative numbers and non-numeric strings", () => {
+      expect(validateMacroInput("-5")).toBe("Must be ≥ 0");
+      expect(validateMacroInput("abc")).toBe("Must be a valid number");
+    });
+
+    it("parseMacroInput returns numeric 0 for '0' and null for blank", () => {
+      expect(parseMacroInput("0")).toBe(0);
+      expect(parseMacroInput("0.0")).toBe(0);
+      expect(parseMacroInput("25.5")).toBe(25.5);
+      expect(parseMacroInput("")).toBeNull();
+      expect(parseMacroInput("   ")).toBeNull();
+    });
+
+    it("validateAllMacros rejects when any macro is blank and parses cleanly when all valid", () => {
+      const incomplete = {
+        caloriesKcal: "250",
+        proteinG: "",
+        carbsG: "30",
+        fatG: "5",
+      };
+      const resIncomplete = validateAllMacros(incomplete);
+      expect(resIncomplete.isValid).toBe(false);
+      expect(resIncomplete.errors.proteinG).toBe("Required");
+      expect(resIncomplete.parsed).toBeNull();
+
+      const completeWithZero = {
+        caloriesKcal: "120",
+        proteinG: "28",
+        carbsG: "0", // Zero carbs (e.g. egg white or isolate)
+        fatG: "0.5",
+      };
+      const resComplete = validateAllMacros(completeWithZero);
+      expect(resComplete.isValid).toBe(true);
+      expect(resComplete.parsed).toEqual({
+        caloriesKcal: 120,
+        proteinG: 28,
+        carbsG: 0,
+        fatG: 0.5,
+      });
+    });
+
+    it("NutritionCustomFoodModal blocks submission and displays error when macro is blank", () => {
+      const onAddEntry = vi.fn();
+      render(
+        <MemoryRouter>
+          <UnsavedWorkProvider>
+            <NutritionCustomFoodModal
+              isOpen={true}
+              onClose={vi.fn()}
+              selectedDate="2026-10-20"
+              selectedSlot="lunch"
+              onAddEntry={onAddEntry}
+            />
+          </UnsavedWorkProvider>
+        </MemoryRouter>
+      );
+
+      fireEvent.change(screen.getByPlaceholderText("Food name *"), {
+        target: { value: "Black Coffee" },
+      });
+      // Leave calories, protein, carbs, fat blank
+
+      fireEvent.click(screen.getByRole("button", { name: /Add Custom Food/i }));
+
+      // Submission blocked
+      expect(onAddEntry).not.toHaveBeenCalled();
+
+      // Required errors displayed
+      expect(screen.getByTestId("macro-error-caloriesKcal")).toHaveTextContent("Required");
+      expect(screen.getByTestId("macro-error-proteinG")).toHaveTextContent("Required");
+      expect(screen.getByTestId("macro-error-carbsG")).toHaveTextContent("Required");
+      expect(screen.getByTestId("macro-error-fatG")).toHaveTextContent("Required");
+    });
+  });
+
+  // =========================================================================
+  // 8. Shared constants and modules
+  // =========================================================================
+  describe("8. Shared constants and modules", () => {
+    it("exports canonical MEAL_SLOTS and QUANTITY_OPTIONS from nutrition/constants", () => {
+      expect(MEAL_SLOTS).toHaveLength(4);
+      expect(MEAL_SLOTS.map((s) => s.id)).toEqual(["breakfast", "lunch", "dinner", "snack"]);
+      expect(QUANTITY_OPTIONS).toEqual([0.5, 1, 1.5, 2, 2.5, 3]);
+    });
+
+    it("MacroFields renders 4 inputs with min-h-[44px] and tabular-nums", () => {
+      const { container } = render(
+        <MacroFields
+          values={{ caloriesKcal: "100", proteinG: "10", carbsG: "15", fatG: "2" }}
+          onChange={vi.fn()}
+        />
+      );
+
+      const inputs = container.querySelectorAll("input");
+      expect(inputs).toHaveLength(4);
+      inputs.forEach((input) => {
+        expect(input.className).toContain("min-h-[44px]");
+        expect(input.className).toContain("tabular-nums");
+      });
+    });
+  });
+
+  // =========================================================================
+  // 9. Timezone Date function verification
+  // =========================================================================
+  describe("9. Timezone Date function verification", () => {
+    it("calls the real resolveDateInTimezone function from @/lib/weeklyConsistency", () => {
+      // Direct call to the real exported function confirms behavior and non-mock identity
+      const sampleUtc = new Date("2026-10-20T19:00:00.000Z"); // 00:30 next day in IST
+      const resolved = resolveDateInTimezone(sampleUtc, "Asia/Kolkata");
+      expect(resolved).toBe("2026-10-21");
+      expect(typeof resolveDateInTimezone).toBe("function");
     });
   });
 });

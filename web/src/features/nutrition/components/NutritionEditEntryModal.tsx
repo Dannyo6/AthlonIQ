@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { FoodEntry } from "@/types";
+import { useNutritionFormDirty } from "../hooks/useNutritionFormDirty";
+import { MacroFields, MacroValues, validateAllMacros } from "./MacroFields";
+import { FoodEntry, FoodProvenance } from "@/types";
 import { X, CheckCircle2 } from "lucide-react";
 
 interface NutritionEditEntryModalProps {
@@ -19,35 +21,92 @@ export const NutritionEditEntryModal: React.FC<NutritionEditEntryModalProps> = (
   const [foodName, setFoodName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [servingLabel, setServingLabel] = useState("");
-  const [caloriesKcal, setCaloriesKcal] = useState("");
-  const [proteinG, setProteinG] = useState("");
-  const [carbsG, setCarbsG] = useState("");
-  const [fatG, setFatG] = useState("");
+  const [macroValues, setMacroValues] = useState<MacroValues>({
+    caloriesKcal: "0",
+    proteinG: "0",
+    carbsG: "0",
+    fatG: "0",
+  });
+  const [showErrors, setShowErrors] = useState(false);
+  const [quantityError, setQuantityError] = useState<string | null>(null);
 
   useEffect(() => {
     if (entry) {
       setFoodName(entry.foodName || "");
       setQuantity(String(entry.quantity ?? 1));
       setServingLabel(entry.servingLabel || "");
-      setCaloriesKcal(String(entry.caloriesKcal ?? 0));
-      setProteinG(String(entry.proteinG ?? 0));
-      setCarbsG(String(entry.carbsG ?? 0));
-      setFatG(String(entry.fatG ?? 0));
+      setMacroValues({
+        caloriesKcal: String(entry.caloriesKcal ?? 0),
+        proteinG: String(entry.proteinG ?? 0),
+        carbsG: String(entry.carbsG ?? 0),
+        fatG: String(entry.fatG ?? 0),
+      });
+      setShowErrors(false);
+      setQuantityError(null);
     }
   }, [entry]);
 
+  const isDirty = Boolean(
+    entry &&
+      (foodName !== (entry.foodName || "") ||
+        quantity !== String(entry.quantity ?? 1) ||
+        servingLabel !== (entry.servingLabel || "") ||
+        macroValues.caloriesKcal !== String(entry.caloriesKcal ?? 0) ||
+        macroValues.proteinG !== String(entry.proteinG ?? 0) ||
+        macroValues.carbsG !== String(entry.carbsG ?? 0) ||
+        macroValues.fatG !== String(entry.fatG ?? 0))
+  );
+
+  useNutritionFormDirty("edit-food-modal", isOpen && isDirty, "Edit Food Entry");
+
   if (!isOpen || !entry) return null;
 
+  const handleMacroChange = (field: keyof MacroValues, value: string) => {
+    setMacroValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const nameError = showErrors && !foodName.trim() ? "Food name is required" : null;
+  const { isValid, errors, parsed } = validateAllMacros(macroValues);
+
   const handleSave = () => {
+    setShowErrors(true);
+
+    const parsedQty = parseFloat(quantity.trim());
+    if (quantity.trim() === "" || isNaN(parsedQty) || parsedQty <= 0) {
+      setQuantityError("Quantity must be > 0");
+      return;
+    } else {
+      setQuantityError(null);
+    }
+
+    if (!foodName.trim() || !isValid || !parsed) {
+      return;
+    }
+
+    // Determine if values were edited by the athlete
+    const isValuesModified =
+      entry.foodName !== foodName.trim() ||
+      entry.servingLabel !== (servingLabel.trim() || entry.servingLabel) ||
+      Math.abs(entry.quantity - parsedQty) > 0.001 ||
+      Math.abs(entry.caloriesKcal - parsed.caloriesKcal) > 0.001 ||
+      Math.abs(entry.proteinG - parsed.proteinG) > 0.001 ||
+      Math.abs(entry.carbsG - parsed.carbsG) > 0.001 ||
+      Math.abs(entry.fatG - parsed.fatG) > 0.001;
+
+    // Confirming sets is_confirmed true, and keeps ai_estimated unless the user edited the values (then user_corrected)
+    const finalProvenance: FoodProvenance = isValuesModified
+      ? "user_corrected"
+      : entry.provenance;
+
     onSave(entry.id, {
-      foodName,
-      quantity: parseFloat(quantity) || 1,
-      servingLabel,
-      caloriesKcal: parseFloat(caloriesKcal) || 0,
-      proteinG: parseFloat(proteinG) || 0,
-      carbsG: parseFloat(carbsG) || 0,
-      fatG: parseFloat(fatG) || 0,
-      provenance: "user_corrected",
+      foodName: foodName.trim(),
+      quantity: parsedQty,
+      servingLabel: servingLabel.trim() || entry.servingLabel,
+      caloriesKcal: parsed.caloriesKcal,
+      proteinG: parsed.proteinG,
+      carbsG: parsed.carbsG,
+      fatG: parsed.fatG,
+      provenance: finalProvenance,
       isConfirmed: true,
       is_confirmed: true,
     });
@@ -70,79 +129,64 @@ export const NutritionEditEntryModal: React.FC<NutritionEditEntryModalProps> = (
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label className="text-[11px] text-slate-400 font-medium">Food Name</label>
+          <div className="space-y-1">
+            <label className="text-[11px] text-slate-400 font-medium block">Food Name</label>
             <input
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
-              className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+              className={`w-full min-h-[44px] bg-athloniq-surface border rounded-xl px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                nameError
+                  ? "border-rose-500/80 focus:border-rose-400 bg-rose-950/20"
+                  : "border-athloniq-border focus:border-athloniq-lime"
+              }`}
             />
+            {nameError && (
+              <p role="alert" className="text-[10px] text-rose-400 font-medium">
+                {nameError}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Quantity</label>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-400 font-medium block">Quantity</label>
               <input
                 type="number"
                 step="0.25"
                 min="0.1"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                onChange={(e) => {
+                  setQuantity(e.target.value);
+                  setQuantityError(null);
+                }}
+                className={`w-full min-h-[44px] bg-athloniq-surface border rounded-xl px-3 py-2 text-sm text-white font-mono focus:outline-none tabular-nums transition-colors ${
+                  quantityError
+                    ? "border-rose-500/80 focus:border-rose-400 bg-rose-950/20"
+                    : "border-athloniq-border focus:border-athloniq-lime"
+                }`}
               />
+              {quantityError && (
+                <p role="alert" className="text-[10px] text-rose-400 font-medium">
+                  {quantityError}
+                </p>
+              )}
             </div>
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Serving Label</label>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-400 font-medium block">Serving Label</label>
               <input
                 value={servingLabel}
                 onChange={(e) => setServingLabel(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
+                className="w-full min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white focus:border-athloniq-lime focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Calories (kcal)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={caloriesKcal}
-                onChange={(e) => setCaloriesKcal(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Protein (g)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={proteinG}
-                onChange={(e) => setProteinG(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Carbs (g)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={carbsG}
-                onChange={(e) => setCarbsG(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-slate-400 font-medium">Fat (g)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={fatG}
-                onChange={(e) => setFatG(e.target.value)}
-                className="w-full min-h-[44px] mt-1 bg-athloniq-surface border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-              />
-            </div>
-          </div>
+          <MacroFields
+            values={macroValues}
+            onChange={handleMacroChange}
+            errors={errors}
+            showErrors={showErrors}
+          />
         </div>
 
         <div className="flex gap-2 pt-1">
