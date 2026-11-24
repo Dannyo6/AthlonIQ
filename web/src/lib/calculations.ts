@@ -882,3 +882,63 @@ export function evaluateMultisportFatigue(
     disclaimer: "AthlonIQ fatigue advisory is a workload and neuromuscular training strain calculation only. It is not a clinical medical diagnosis or physiological injury risk assessment.",
   };
 }
+
+// =============================================================================
+// Exercise Personal Records Engine (Deterministic)
+// =============================================================================
+
+export interface ExercisePersonalRecord {
+  exerciseName: string;
+  maxLoadKg: number;
+  repsAtMaxLoad: number;
+  loggedDate: string;
+  totalPrSetsCount: number;
+  estimated1RmKg: number;
+}
+
+/**
+ * Deterministically extracts all-time personal records across completed workout sessions.
+ * Never guesses or fabricates baseline loads. Only completed sets with load > 0 and reps > 0 are considered.
+ */
+export function extractPersonalRecords(
+  sessions: {
+    loggedDate: string;
+    sets: {
+      exerciseName: string;
+      loadKg: number;
+      reps: number;
+      isCompleted: boolean;
+      isBodyweight?: boolean;
+      isPr?: boolean;
+    }[];
+  }[]
+): ExercisePersonalRecord[] {
+  const prMap = new Map<string, ExercisePersonalRecord>();
+
+  for (const session of sessions) {
+    for (const set of session.sets) {
+      if (!set.isCompleted || set.isBodyweight || set.loadKg <= 0 || set.reps <= 0) {
+        continue;
+      }
+
+      const existing = prMap.get(set.exerciseName);
+      // Epley formula for deterministic estimated 1RM: load * (1 + reps / 30)
+      const estimated1Rm = Math.round(set.loadKg * (1 + set.reps / 30) * 10) / 10;
+
+      if (!existing || set.loadKg > existing.maxLoadKg) {
+        prMap.set(set.exerciseName, {
+          exerciseName: set.exerciseName,
+          maxLoadKg: set.loadKg,
+          repsAtMaxLoad: set.reps,
+          loggedDate: session.loggedDate,
+          totalPrSetsCount: (existing?.totalPrSetsCount ?? 0) + (set.isPr ? 1 : 0),
+          estimated1RmKg: estimated1Rm,
+        });
+      } else if (existing && set.isPr) {
+        existing.totalPrSetsCount += 1;
+      }
+    }
+  }
+
+  return Array.from(prMap.values()).sort((a, b) => b.maxLoadKg - a.maxLoadKg);
+}
