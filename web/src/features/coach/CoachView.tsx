@@ -187,6 +187,7 @@ export const CoachView: React.FC = () => {
         proposedAction: response.proposed_action
           ? {
               ...response.proposed_action,
+              payload: response.proposed_action.payload ?? {},
               status: "pending",
             }
           : null,

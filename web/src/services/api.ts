@@ -5,7 +5,14 @@
  */
 
 import { supabase } from "@/lib/supabase";
-import type { MealAnalysisResponse } from "@/types";
+import type {
+  CoachToolMetadata,
+  CoachTurnResponse,
+  FatigueAdvisoryResult,
+  LeanBulkCalibrationResult,
+  MealAnalysisResponse,
+  WeeklyReviewReport,
+} from "@/types";
 
 export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -129,7 +136,7 @@ export async function sendCoachChatTurn(
   message: string,
   context?: any,
   token?: string
-) {
+): Promise<CoachTurnResponse> {
   const authHeaders = await getAuthHeaders(token);
   // CRITICAL: The client must never send 'today' override to coaching endpoints.
   // Evaluation date is strictly computed server-side from user profile timezone.
@@ -160,7 +167,7 @@ export async function sendCoachChatTurn(
   return json.data;
 }
 
-export async function fetchWeeklyReview(context?: any, token?: string) {
+export async function fetchWeeklyReview(context?: any, token?: string): Promise<WeeklyReviewReport> {
   const authHeaders = await getAuthHeaders(token);
   // CRITICAL: The client must never send 'today' override to coaching endpoints.
   const payload: Record<string, any> = { context };
@@ -190,7 +197,7 @@ export async function fetchWeeklyReview(context?: any, token?: string) {
   return json.data;
 }
 
-export async function fetchCoachTools(token?: string) {
+export async function fetchCoachTools(token?: string): Promise<CoachToolMetadata[]> {
   const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/tools`, {
     method: "GET",
@@ -207,7 +214,7 @@ export async function fetchCoachTools(token?: string) {
   return json.data;
 }
 
-export async function calibrateLeanBulkApi(payload: any, token?: string) {
+export async function calibrateLeanBulkApi(payload: any, token?: string): Promise<LeanBulkCalibrationResult> {
   const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/calibrate-lean-bulk`, {
     method: "POST",
@@ -233,7 +240,7 @@ export async function calibrateLeanBulkApi(payload: any, token?: string) {
   return json.data;
 }
 
-export async function fetchFatigueAdvisoryApi(payload: any, token?: string) {
+export async function fetchFatigueAdvisoryApi(payload: any, token?: string): Promise<FatigueAdvisoryResult> {
   const authHeaders = await getAuthHeaders(token);
   const res = await fetch(`${getApiBaseUrl()}/coaching/fatigue-advisory`, {
     method: "POST",

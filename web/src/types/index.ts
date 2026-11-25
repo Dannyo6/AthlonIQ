@@ -3,6 +3,30 @@
  * Enforces auditable provenance, deterministic biometrics, and equipment verification.
  */
 
+import type {
+  VisionProvider as GeneratedVisionProvider,
+  VisionMode as GeneratedVisionMode,
+  VisionMeta as GeneratedVisionMeta,
+} from "./api.generated";
+
+export type {
+  HealthStatus,
+  CoachTurnResponse,
+  CoachToolMetadata,
+  ProposedAction,
+  ReadinessCheckInResponse,
+  TargetsPreviewResponse,
+  NutritionSummaryResponse,
+  MacroTotalsResponse,
+  RunningPaceResponse,
+  ProgressionSuggestionResponse,
+  WeightTrendResponse,
+  WeightTrendEntry,
+  VisionProvider,
+  VisionMode,
+  VisionMeta,
+} from "./api.generated";
+
 export type ValueProvenance =
   | "provisional_default"
   | "calculated_estimate"
@@ -303,25 +327,16 @@ export interface CandidateFoodItem {
   isConfirmed?: boolean;
 }
 
-export type VisionProvider = "gemini" | "mock" | string;
-export type VisionMode = "live" | "fallback" | "demo" | string;
-
-export interface VisionMeta {
-  provider: VisionProvider;
-  mode: VisionMode;
-  model_name?: string | null;
-}
-
 export interface MealAnalysisResponse {
   candidates: CandidateFoodItem[];
-  detected_item_count?: number;
-  provider?: VisionProvider;
-  mode?: VisionMode;
+  detected_item_count: number;
+  provider: GeneratedVisionProvider;
+  mode: GeneratedVisionMode;
   model_name?: string | null;
   provenance?: "ai_estimated" | string;
   notes?: string | null;
   message?: string | null;
-  vision_meta?: VisionMeta;
+  vision_meta: GeneratedVisionMeta;
 }
 
 export interface DailyMacroTotals {

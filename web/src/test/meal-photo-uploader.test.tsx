@@ -186,12 +186,12 @@ describe("Lane B4: MealPhotoUploader Provider & Mode Handling", () => {
     });
 
     it("displays 'Provider not reported' when API response omits provider and mode", async () => {
-      const mockResponse: MealAnalysisResponse = {
+      const mockResponse = {
         candidates: [mockCandidate],
         detected_item_count: 1,
         provenance: "ai_estimated",
-        // provider, mode, vision_meta are absent/undefined
-      };
+        // provider, mode, vision_meta are absent/undefined (malformed payload resilience)
+      } as unknown as MealAnalysisResponse;
 
       vi.spyOn(apiModule, "analyzeMealPhotoApi").mockResolvedValue(mockResponse);
 
