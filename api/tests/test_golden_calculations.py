@@ -10,6 +10,7 @@ import pytest
 
 from app.domain.performance import (
     calculate_bmi,
+    calculate_one_rep_max_epley,
     calculate_protein_reference,
 )
 from app.domain.tracking import (
@@ -113,3 +114,15 @@ def test_golden_nutrition_totals(case: dict) -> None:
     assert summary.unconfirmed_estimates.carbs_g == exp_unconf["carbs_g"]
     assert summary.unconfirmed_estimates.fat_g == exp_unconf["fat_g"]
     assert summary.unconfirmed_estimates.entry_count == exp_unconf["entry_count"]
+
+
+@pytest.mark.parametrize(
+    "case", GOLDEN["one_rep_max"], ids=lambda c: c["description"]
+)
+def test_golden_one_rep_max(case: dict) -> None:
+    """Verify Epley 1RM rules (1 rep returns load; 30+ reps returns None) against shared golden fixtures."""
+    result = calculate_one_rep_max_epley(
+        weight_kg=case["weight_kg"],
+        reps=case["reps"],
+    )
+    assert result == case["expected_estimated_1rm_kg"]

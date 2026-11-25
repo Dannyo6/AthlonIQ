@@ -7,6 +7,8 @@
  * - Zero hallucinated math or hidden fallbacks
  */
 
+import type { Weekday } from "@/types";
+
 export interface WeekDayPill {
   date: string; // ISO "YYYY-MM-DD"
   dayLetter: string; // "M" | "T" | "W" | "T" | "F" | "S" | "S"
@@ -38,7 +40,22 @@ export interface WeeklyConsistencyOptions {
 
 const DEFAULT_TIMEZONE = "Asia/Kolkata";
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
-const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_NAMES: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/**
+ * Returns the localized weekday ("Mon".."Sun") for a given date/clock in the specified timezone.
+ */
+export function getWeekdayInTimezone(
+  dateOrIso?: string | Date | null,
+  timezone?: string | null
+): Weekday {
+  const calendarDateStr = resolveDateInTimezone(dateOrIso, timezone);
+  const [year, month, day] = calendarDateStr.split("-").map(Number);
+  const refUtc = new Date(Date.UTC(year, month - 1, day));
+  const dayOfWeek = refUtc.getUTCDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+  const mondayIndexed = (dayOfWeek + 6) % 7; // Mon: 0 ... Sun: 6
+  return DAY_NAMES[mondayIndexed];
+}
 
 /**
  * Validates whether an IANA timezone string is supported by the runtime.

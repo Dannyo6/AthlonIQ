@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from app.core.config import settings
 
 from app.domain.performance import (
+    calculate_one_rep_max_epley,
     calculate_protein_reference,
     calculate_rules_readiness,
 )
@@ -183,7 +184,7 @@ class ExerciseProgressResult(BaseModel):
     total_sets_found: int
     top_load_kg: float
     top_reps: int
-    estimated_1rm_kg: float
+    estimated_1rm_kg: Optional[float] = None
     is_pr_present: bool
     equipment_cap_kg: float
     equipment_confirmed: bool
@@ -665,10 +666,11 @@ def get_exercise_progress(
         target_reps_max=8,
     )
 
-    est_1rm = round(top_load * (1.0 + top_reps / 30.0), 1) if top_reps > 0 else top_load
+    est_1rm = calculate_one_rep_max_epley(top_load, top_reps) if top_reps > 0 else top_load
+    est_1rm_label = f"{est_1rm} kg" if est_1rm is not None else "unavailable (30+ reps)"
 
     summary = (
-        f"Top set for '{target_ex}': {top_load} kg x {top_reps} reps (Est 1RM: {est_1rm} kg). "
+        f"Top set for '{target_ex}': {top_load} kg x {top_reps} reps (Est 1RM: {est_1rm_label}). "
         f"Progression verdict: {progression.action} — {progression.explanation}"
     )
 

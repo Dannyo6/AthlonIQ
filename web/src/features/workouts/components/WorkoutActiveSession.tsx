@@ -301,10 +301,11 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-500 uppercase px-1">
                 <div className="col-span-1">Set</div>
-                <div className="col-span-3">Load (kg)</div>
+                <div className="col-span-2">Load (kg)</div>
                 <div className="col-span-2">Reps</div>
                 <div className="col-span-2">RPE</div>
-                <div className="col-span-2 text-center">Done</div>
+                <div className="col-span-2">RIR</div>
+                <div className="col-span-1 text-center">Done</div>
                 <div className="col-span-1 text-center">PR</div>
                 <div className="col-span-1"></div>
               </div>
@@ -313,14 +314,25 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
                   <div className="col-span-1 text-xs font-mono text-slate-400 tabular-nums">
                     {idx + 1}
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2 flex items-center gap-1">
                     {set.isBodyweight ? (
-                      <span className="text-xs text-slate-400 font-mono">BW</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdateSet(ex.id, idx, { isBodyweight: false })
+                        }
+                        aria-label="Bodyweight set toggle"
+                        title="Switch to weighted load"
+                        className="text-xs text-slate-300 hover:text-athloniq-lime font-mono px-1.5 py-1 rounded bg-athloniq-surface border border-athloniq-border"
+                      >
+                        BW
+                      </button>
                     ) : (
                       <input
                         type="number"
                         step="0.5"
                         min="0"
+                        aria-label="Load (kg)"
                         value={set.loadKg === 0 ? "" : set.loadKg}
                         placeholder="0"
                         onChange={(e) => {
@@ -337,6 +349,7 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
                     <input
                       type="number"
                       min="0"
+                      aria-label="Reps"
                       value={set.reps === 0 ? "" : set.reps}
                       placeholder="0"
                       onChange={(e) => {
@@ -354,6 +367,7 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
                       min="1"
                       max="10"
                       step="0.5"
+                      aria-label="RPE"
                       value={set.rpe ?? ""}
                       placeholder="–"
                       onChange={(e) => {
@@ -370,9 +384,33 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
                       className="w-full bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
                     />
                   </div>
-                  <div className="col-span-2 flex justify-center">
+                  <div className="col-span-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="1"
+                      aria-label="RIR"
+                      value={set.rir ?? ""}
+                      placeholder="–"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          onUpdateSet(ex.id, idx, { rir: null });
+                        } else {
+                          const n = parseInt(val, 10);
+                          onUpdateSet(ex.id, idx, {
+                            rir: isNaN(n) ? null : Math.min(10, Math.max(0, n)),
+                          });
+                        }
+                      }}
+                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-center">
                     <input
                       type="checkbox"
+                      aria-label="Set completed"
                       checked={set.isCompleted}
                       onChange={(e) =>
                         onUpdateSet(ex.id, idx, { isCompleted: e.target.checked })

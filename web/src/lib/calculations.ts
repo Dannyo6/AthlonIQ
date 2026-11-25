@@ -893,7 +893,27 @@ export interface ExercisePersonalRecord {
   repsAtMaxLoad: number;
   loggedDate: string;
   totalPrSetsCount: number;
-  estimated1RmKg: number;
+  estimated1RmKg: number | null;
+}
+
+/**
+ * Calculate estimated 1RM using the Epley formula, matching the Python domain rule:
+ * - reps <= 0 or weightKg <= 0 -> 0
+ * - reps === 1 -> returns exact load rounded to 1 decimal place
+ * - reps >= 30 -> returns null (unreliable at 30+ reps)
+ * - 2 <= reps < 30 -> Math.round(weightKg * (1 + reps / 30) * 10) / 10
+ */
+export function calculateOneRepMaxEpley(weightKg: number, reps: number): number | null {
+  if (reps <= 0 || weightKg <= 0) {
+    return 0;
+  }
+  if (reps === 1) {
+    return Math.round(weightKg * 10) / 10;
+  }
+  if (reps >= 30) {
+    return null;
+  }
+  return Math.round(weightKg * (1 + reps / 30) * 10) / 10;
 }
 
 /**
@@ -922,8 +942,7 @@ export function extractPersonalRecords(
       }
 
       const existing = prMap.get(set.exerciseName);
-      // Epley formula for deterministic estimated 1RM: load * (1 + reps / 30)
-      const estimated1Rm = Math.round(set.loadKg * (1 + set.reps / 30) * 10) / 10;
+      const estimated1Rm = calculateOneRepMaxEpley(set.loadKg, set.reps);
 
       if (!existing || set.loadKg > existing.maxLoadKg) {
         prMap.set(set.exerciseName, {

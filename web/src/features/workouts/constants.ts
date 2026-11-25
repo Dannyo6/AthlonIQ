@@ -1,10 +1,20 @@
-import { WorkoutTemplate, ExerciseSet, TemplateExercise } from "@/types";
+import { WorkoutTemplate, ExerciseSet, TemplateExercise, Weekday } from "@/types";
 
 export interface SessionExercise extends TemplateExercise {
   sets: ExerciseSet[];
 }
 
 export const REST_PRESETS = [60, 90, 120] as const;
+
+export const WEEKDAYS: readonly Weekday[] = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+] as const;
 
 export function createBlankSet(
   exerciseName: string,
@@ -25,12 +35,14 @@ export function createBlankSet(
   };
 }
 
-export const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
+export const STARTER_TEMPLATES: WorkoutTemplate[] = [
   {
     id: "tmpl-upper-a",
     name: "Upper A: Horizontal Push/Pull",
     focus: "Chest, Lats, Side Delts",
     estimatedDurationMin: 65,
+    isStarter: true,
+    scheduledWeekdays: [],
     exercises: [
       {
         id: "e1",
@@ -105,6 +117,8 @@ export const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
     name: "Lower A: Squat & Hinge",
     focus: "Quads, Hamstrings, Glutes",
     estimatedDurationMin: 75,
+    isStarter: true,
+    scheduledWeekdays: [],
     exercises: [
       {
         id: "e7",
@@ -168,6 +182,8 @@ export const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
     name: "Upper B: Vertical Push/Pull & Dips",
     focus: "Shoulders, Triceps, Biceps, Dips",
     estimatedDurationMin: 60,
+    isStarter: true,
+    scheduledWeekdays: [],
     exercises: [
       {
         id: "e12",
@@ -231,6 +247,8 @@ export const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
     name: "Full Body & Calisthenics Hybrid",
     focus: "Full Body, Skill Work",
     estimatedDurationMin: 70,
+    isStarter: true,
+    scheduledWeekdays: [],
     exercises: [
       {
         id: "e17",
@@ -290,3 +308,5 @@ export const HOME_GYM_TEMPLATES: WorkoutTemplate[] = [
     ],
   },
 ];
+
+export const HOME_GYM_TEMPLATES = STARTER_TEMPLATES;

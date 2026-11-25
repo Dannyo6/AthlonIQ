@@ -9,7 +9,7 @@ export type ValueProvenance =
   | "user_confirmed"
   | "ai_estimated"
   | "awaiting_onboarding"
-  | "unconfirmed_equipment"
+  | "unconfirmed_equipment" // UI display badge text only (never persisted to DB or sent to API)
   | "verified_reference"
   | "manual_entry"
   | "user_corrected"
@@ -368,13 +368,17 @@ export interface WorkoutSession {
   notes?: string;
 }
 
-/** A pre-defined workout template with exercise prescriptions */
+export type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
+
+/** A pre-defined or athlete-edited workout template with exercise prescriptions */
 export interface WorkoutTemplate {
   id: string;
   name: string;
   focus: string;
   estimatedDurationMin?: number;
   exercises: TemplateExercise[];
+  isStarter?: boolean;
+  scheduledWeekdays?: Weekday[];
 }
 
 export interface TemplateExercise {

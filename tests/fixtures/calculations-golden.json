@@ -244,5 +244,49 @@
         "entry_count": 1
       }
     }
+  ],
+  "one_rep_max": [
+    {
+      "description": "1 rep returns the exact load (140.0 kg x 1 -> 140.0 kg)",
+      "weight_kg": 140.0,
+      "reps": 1,
+      "expected_estimated_1rm_kg": 140.0
+    },
+    {
+      "description": "Standard strength set (75.0 kg x 6 -> 90.0 kg)",
+      "weight_kg": 75.0,
+      "reps": 6,
+      "expected_estimated_1rm_kg": 90.0
+    },
+    {
+      "description": "Moderate hypertrophy set (100.0 kg x 10 -> 133.3 kg)",
+      "weight_kg": 100.0,
+      "reps": 10,
+      "expected_estimated_1rm_kg": 133.3
+    },
+    {
+      "description": "Upper valid boundary at 29 reps (50.0 kg x 29 -> 98.3 kg)",
+      "weight_kg": 50.0,
+      "reps": 29,
+      "expected_estimated_1rm_kg": 98.3
+    },
+    {
+      "description": "30 reps returns no value (null)",
+      "weight_kg": 60.0,
+      "reps": 30,
+      "expected_estimated_1rm_kg": null
+    },
+    {
+      "description": "35 reps (>= 30) returns no value (null)",
+      "weight_kg": 40.0,
+      "reps": 35,
+      "expected_estimated_1rm_kg": null
+    },
+    {
+      "description": "0 reps returns 0.0",
+      "weight_kg": 100.0,
+      "reps": 0,
+      "expected_estimated_1rm_kg": 0.0
+    }
   ]
 }

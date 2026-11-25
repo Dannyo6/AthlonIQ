@@ -3,12 +3,13 @@ import { Dumbbell, Plus, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
 import { WorkoutTemplate, ExerciseSet } from "@/types";
-import {
-  HOME_GYM_TEMPLATES,
-  createBlankSet,
-  SessionExercise,
-} from "./constants";
+import { createBlankSet, SessionExercise } from "./constants";
 import { useWorkoutFormDirty } from "./hooks/useWorkoutFormDirty";
+import { useWorkoutTemplates } from "./hooks/useWorkoutTemplates";
+import {
+  getWeekdayInTimezone,
+  resolveDateInTimezone,
+} from "@/lib/weeklyConsistency";
 import { WorkoutEquipmentBanner } from "./components/WorkoutEquipmentBanner";
 import { WorkoutPlannedSession } from "./components/WorkoutPlannedSession";
 import { WorkoutTemplatePicker } from "./components/WorkoutTemplatePicker";
@@ -16,15 +17,28 @@ import { WorkoutActiveSession } from "./components/WorkoutActiveSession";
 import { WorkoutHistoryList } from "./components/WorkoutHistoryList";
 import { WorkoutPersonalRecords } from "./components/WorkoutPersonalRecords";
 
-export const WorkoutsView: React.FC = () => {
+export interface WorkoutsViewProps {
+  /** Optional injectable clock for deterministic weekday/date testing */
+  now?: string | Date;
+}
+
+export const WorkoutsView: React.FC<WorkoutsViewProps> = ({ now }) => {
   const {
     equipment,
     profile,
+    preferences,
     readiness,
     addWorkoutSession,
     deleteWorkoutSession,
     workoutSessions,
   } = useAthloniqState();
+
+  const {
+    templates,
+    updateTemplate,
+    toggleWeekday,
+    getTemplateForWeekday,
+  } = useWorkoutTemplates(profile?.id);
 
   const [activeTab, setActiveTab] = useState<"templates" | "active" | "history">(
     "templates"
@@ -51,7 +65,8 @@ export const WorkoutsView: React.FC = () => {
         s.isCompleted ||
         s.reps > 0 ||
         s.loadKg > 0 ||
-        (s.rpe != null && s.rpe > 0)
+        (s.rpe != null && s.rpe > 0) ||
+        s.rir != null
     )
   );
   const hasTypedSessionNotes = Boolean(sessionNotes.trim());
@@ -168,8 +183,9 @@ export const WorkoutsView: React.FC = () => {
       : null;
 
     const allSets: ExerciseSet[] = sessionExercises.flatMap((ex) => ex.sets);
+    const loggedDate = resolveDateInTimezone(now, preferences?.timezone);
     addWorkoutSession({
-      loggedDate: new Date().toISOString().split("T")[0],
+      loggedDate,
       title: sessionTitle || selectedTemplate?.name || "Custom Session",
       templateId: selectedTemplate?.id ?? null,
       durationMinutes,
@@ -188,10 +204,12 @@ export const WorkoutsView: React.FC = () => {
     setActiveTab("history");
   };
 
-  // Determine today's sessions and scheduled template
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Determine today's date, weekday, and athlete-assigned template in profile timezone
+  const timezone = preferences?.timezone;
+  const todayStr = resolveDateInTimezone(now, timezone);
+  const todayWeekday = getWeekdayInTimezone(now, timezone);
   const todaySessions = workoutSessions.filter((s) => s.loggedDate === todayStr);
-  const defaultTemplate = HOME_GYM_TEMPLATES[0];
+  const plannedTemplate = getTemplateForWeekday(todayWeekday);
 
   return (
     <div className="space-y-6">
@@ -251,18 +269,21 @@ export const WorkoutsView: React.FC = () => {
         ))}
       </div>
 
-      {/* 2 & 3: Templates Tab (Today's planned session + Template picker) */}
+      {/* 2 & 3: Templates Tab (Today's planned session + Starter templates) */}
       {activeTab === "templates" && (
         <div className="space-y-6">
           <WorkoutPlannedSession
             todaySessions={todaySessions}
             readiness={readiness}
-            defaultTemplate={defaultTemplate}
+            plannedTemplate={plannedTemplate}
+            todayWeekday={todayWeekday}
             onStartTemplate={startSession}
           />
           <WorkoutTemplatePicker
-            templates={HOME_GYM_TEMPLATES}
+            templates={templates}
             onStartTemplate={startSession}
+            onUpdateTemplate={updateTemplate}
+            onToggleWeekday={toggleWeekday}
           />
         </div>
       )}

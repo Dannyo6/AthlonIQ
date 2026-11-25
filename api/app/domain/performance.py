@@ -7,12 +7,21 @@ Zero fabricated or hardcoded wearable biometric telemetry.
 from typing import Any, Dict, List, Optional
 
 
-def calculate_one_rep_max_epley(weight_kg: float, reps: int) -> float:
-    """Calculate estimated 1RM using the Epley formula: 1RM = weight * (1 + reps/30)."""
+def calculate_one_rep_max_epley(weight_kg: float, reps: int) -> Optional[float]:
+    """Calculate estimated 1RM using the Epley formula: 1RM = weight * (1 + reps/30).
+
+    Rules:
+    - reps <= 0 or weight_kg <= 0: returns 0.0
+    - reps == 1: returns the load directly (no extrapolation)
+    - reps >= 30: returns None (Epley equation is unreliable at 30+ reps)
+    - 2 <= reps < 30: returns round(weight_kg * (1.0 + reps / 30.0), 1)
+    """
     if reps <= 0 or weight_kg <= 0:
         return 0.0
     if reps == 1:
         return round(weight_kg, 1)
+    if reps >= 30:
+        return None
     return round(weight_kg * (1.0 + reps / 30.0), 1)
 
 

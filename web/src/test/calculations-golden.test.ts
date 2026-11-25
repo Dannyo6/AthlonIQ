@@ -1,23 +1,14 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import {
   calculateBmi,
+  calculateOneRepMaxEpley,
   calculateProteinReference,
   calculateRunningPace,
   calculateWeightTrend,
   calculateDailyNutritionTotals,
-  FoodEntry,
 } from "@/lib/calculations";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const fixturesPath = path.resolve(
-  __dirname,
-  "../../../tests/fixtures/calculations-golden.json"
-);
-const goldenFixtures = JSON.parse(fs.readFileSync(fixturesPath, "utf-8"));
+import type { FoodEntry } from "@/types";
+import goldenFixtures from "../../../tests/fixtures/calculations-golden.json";
 
 describe("Shared Golden Fixtures Validation (Vitest ↔ Pytest)", () => {
   // =========================================================================
@@ -87,7 +78,8 @@ describe("Shared Golden Fixtures Validation (Vitest ↔ Pytest)", () => {
       const entries: FoodEntry[] = caseItem.entries.map((e, idx) => ({
         id: `food-${idx}`,
         mealSlot: "lunch",
-        name: e.name,
+        foodName: e.name,
+        servingLabel: "1 serving",
         caloriesKcal: e.calories_kcal,
         proteinG: e.protein_g,
         carbsG: e.carbs_g,
@@ -96,8 +88,7 @@ describe("Shared Golden Fixtures Validation (Vitest ↔ Pytest)", () => {
         is_confirmed: e.is_confirmed,
         isConfirmed: e.is_confirmed,
         loggedDate: "2026-11-24",
-        createdAt: "2026-11-24T12:00:00Z",
-        provenance: e.is_confirmed ? "user_confirmed" : "ai_estimated",
+        provenance: e.is_confirmed ? "manual_entry" : "ai_estimated",
       }));
 
       const summary = calculateDailyNutritionTotals(entries);
@@ -115,6 +106,16 @@ describe("Shared Golden Fixtures Validation (Vitest ↔ Pytest)", () => {
       expect(summary.unconfirmedEstimates.carbsG).toBe(expUnconf.carbs_g);
       expect(summary.unconfirmedEstimates.fatG).toBe(expUnconf.fat_g);
       expect(summary.unconfirmedEstimates.entryCount).toBe(expUnconf.entry_count);
+    });
+  });
+
+  // =========================================================================
+  // 6. Personal-Record 1RM (Epley)
+  // =========================================================================
+  describe("6. Personal-Record 1RM (Epley)", () => {
+    it.each(goldenFixtures.one_rep_max)("$description", (caseItem) => {
+      const result = calculateOneRepMaxEpley(caseItem.weight_kg, caseItem.reps);
+      expect(result).toBe(caseItem.expected_estimated_1rm_kg);
     });
   });
 });
