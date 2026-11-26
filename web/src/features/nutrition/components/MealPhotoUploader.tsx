@@ -281,63 +281,73 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-athloniq-card border border-athloniq-border rounded-3xl shadow-2xl overflow-hidden my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vision-modal-title"
+        className="relative w-full max-w-2xl bg-athloniq-card border border-athloniq-border rounded-3xl shadow-2xl overflow-hidden my-auto"
+      >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-athloniq-border bg-athloniq-card">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">
-              <Camera className="h-5 w-5" />
+        <div className="flex items-start sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-athloniq-border bg-athloniq-card">
+          <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+            <div className="p-2 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 text-athloniq-lime shrink-0">
+              <Camera className="h-5 w-5" aria-hidden="true" />
             </div>
-            <div>
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                AthlonIQ Vision AI
+            <div className="min-w-0 flex-1">
+              <h3
+                id="vision-modal-title"
+                className="text-base font-black text-white flex flex-wrap items-center gap-2"
+              >
+                <span className="shrink-0">AthlonIQ Vision AI</span>
                 <span
                   data-testid="vision-provider-badge"
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  className={`whitespace-nowrap shrink-0 text-[10px] font-mono px-2.5 py-0.5 rounded-full border tabular-nums ${
                     visionProvider.toLowerCase().includes("live")
                       ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                       : visionProvider.toLowerCase().includes("fallback")
                       ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
                       : visionProvider.toLowerCase().includes("demo")
-                      ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                      ? "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/30"
                       : visionProvider === "Provider not reported"
-                      ? "bg-slate-500/20 text-slate-300 border-slate-500/30"
-                      : "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                      ? "bg-athloniq-surface text-slate-300 border-athloniq-border-alt"
+                      : "bg-athloniq-surface text-athloniq-lime border-athloniq-lime/30"
                   }`}
                 >
                   {visionProvider}
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Snap or upload your meal for instant Indian catalog & macro mapping
               </p>
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Close meal photo analyzer"
             onClick={handleClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-athloniq-surface transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0 rounded-xl text-slate-400 hover:text-white hover:bg-athloniq-surface transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* STATE 1: Analyzing Loading Skeleton */}
           {isAnalyzing ? (
             <div className="py-12 px-4 flex flex-col items-center justify-center text-center space-y-6">
               {/* Pulsing Visual Scanner */}
               <div className="relative flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping opacity-75 h-24 w-24" />
-                <div className="relative h-20 w-20 rounded-2xl bg-athloniq-surface border-2 border-purple-500/60 shadow-glow-violet flex items-center justify-center">
-                  <Scan className="h-10 w-10 text-purple-300 animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-athloniq-lime/20 animate-ping opacity-75 h-24 w-24" />
+                <div className="relative h-20 w-20 rounded-2xl bg-athloniq-surface border-2 border-athloniq-lime/60 shadow-glow-lime flex items-center justify-center">
+                  <Scan className="h-10 w-10 text-athloniq-lime animate-pulse" aria-hidden="true" />
                 </div>
               </div>
 
               <div className="space-y-2 max-w-md">
                 <h4 className="text-lg font-bold text-white tracking-tight flex items-center justify-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-400 animate-spin" />
+                  <Sparkles className="h-5 w-5 text-athloniq-lime animate-spin shrink-0" aria-hidden="true" />
                   ATHLONIQ Vision is analyzing your meal...
                 </h4>
                 <p className="text-xs text-slate-400 font-mono">
@@ -352,14 +362,14 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                     <div className="h-3.5 w-32 bg-slate-700 rounded" />
                     <div className="h-2.5 w-20 bg-slate-800 rounded" />
                   </div>
-                  <div className="h-4 w-16 bg-purple-500/30 rounded" />
+                  <div className="h-4 w-16 bg-athloniq-lime/20 rounded" />
                 </div>
                 <div className="h-14 rounded-xl bg-athloniq-surface/80 border border-athloniq-border p-3 flex items-center justify-between animate-pulse delay-75">
                   <div className="space-y-1.5">
                     <div className="h-3.5 w-28 bg-slate-700 rounded" />
                     <div className="h-2.5 w-24 bg-slate-800 rounded" />
                   </div>
-                  <div className="h-4 w-16 bg-purple-500/30 rounded" />
+                  <div className="h-4 w-16 bg-athloniq-lime/20 rounded" />
                 </div>
               </div>
             </div>
@@ -367,15 +377,25 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
             /* STATE 2A: Empty Candidates / Fallback Mode */
             <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-5" data-testid="vision-empty-state">
               <div className="h-16 w-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <AlertCircle className="h-8 w-8" />
+                <AlertCircle className="h-8 w-8" aria-hidden="true" />
               </div>
 
               <div className="space-y-2 max-w-md">
-                <h4 className="text-base font-bold text-white tracking-tight">
-                  {isFallbackMode ? "Vision unavailable — log manually" : "No Food Items Identified"}
+                <h4
+                  className="text-base font-bold text-white tracking-tight"
+                  data-testid={isFallbackMode ? "vision-empty-message" : undefined}
+                >
+                  {isFallbackMode
+                    ? emptyMessage || "Vision unavailable — log manually"
+                    : "No Food Items Identified"}
                 </h4>
-                <p className="text-sm text-slate-400" data-testid="vision-empty-message">
-                  {emptyMessage || (isFallbackMode ? "Vision unavailable — log manually" : "No recognizable food items could be identified in the image.")}
+                <p
+                  className="text-sm text-slate-400"
+                  data-testid={isFallbackMode ? "vision-empty-helper" : "vision-empty-message"}
+                >
+                  {isFallbackMode
+                    ? "You can log items manually or try another photo."
+                    : emptyMessage || "No recognizable food items could be identified in the image."}
                 </p>
               </div>
 
@@ -387,9 +407,9 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                     handleClose();
                     onOpenManualEntry?.();
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-purple-600/30 transition-all flex items-center gap-2"
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-athloniq-lime hover:bg-athloniq-lime-hover text-slate-950 font-bold text-xs tracking-wide shadow-glow-lime transition-all inline-flex items-center gap-2"
                 >
-                  <UtensilsCrossed className="h-4 w-4" />
+                  <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
                   Log Manually
                 </button>
 
@@ -425,7 +445,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] border border-white/[0.08]"
+                  className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] border border-white/[0.08]"
                 >
                   Close
                 </button>
@@ -435,8 +455,11 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
             /* STATE 3B: Initial Dropzone & Upload */
             <div className="space-y-5">
               {analysisError && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                <div
+                  role="alert"
+                  className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" aria-hidden="true" />
                   <span>{analysisError}</span>
                 </div>
               )}
@@ -447,10 +470,10 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
-                className={`group relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
+                className={`group relative border-2 border-dashed rounded-3xl p-6 sm:p-12 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 ${
                   dragOver
-                    ? "border-purple-400 bg-purple-500/10 scale-[1.01]"
-                    : "border-athloniq-border hover:border-purple-500/60 bg-athloniq-card/60 hover:bg-athloniq-card"
+                    ? "border-athloniq-lime bg-athloniq-lime/10 scale-[1.01]"
+                    : "border-athloniq-border hover:border-athloniq-lime/60 bg-athloniq-card/60 hover:bg-athloniq-card"
                 }`}
               >
                 <input
@@ -461,8 +484,8 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                   className="hidden"
                 />
 
-                <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
-                  <Camera className="h-8 w-8 text-purple-400" />
+                <div className="p-4 rounded-2xl bg-athloniq-lime/10 border border-athloniq-lime/25 text-athloniq-lime group-hover:scale-110 transition-transform">
+                  <Camera className="h-8 w-8 text-athloniq-lime" aria-hidden="true" />
                 </div>
 
                 <div className="space-y-1">
@@ -474,8 +497,8 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-athloniq-surface border border-athloniq-border text-[11px] font-mono text-purple-300 mt-2">
-                  <Sparkles className="h-3 w-3 text-purple-400" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-athloniq-surface border border-athloniq-border text-[11px] font-mono text-emerald-300 mt-2">
+                  <Sparkles className="h-3 w-3 text-emerald-400 shrink-0" aria-hidden="true" />
                   Automatic Indian Culinary Detection
                 </div>
               </div>
@@ -483,7 +506,7 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
               {/* Demo Quick Test Presets */}
               <div className="space-y-2 pt-1">
                 <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <UtensilsCrossed className="h-3.5 w-3.5 text-athloniq-lime" />
+                  <UtensilsCrossed className="h-3.5 w-3.5 text-athloniq-lime" aria-hidden="true" />
                   Or Try Quick Preset Analysis
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -492,12 +515,12 @@ export const MealPhotoUploader: React.FC<MealPhotoUploaderProps> = ({
                       key={i}
                       type="button"
                       onClick={() => handleSelectPreset(preset)}
-                      className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border hover:border-purple-500/40 text-left transition-all hover:bg-athloniq-surface flex items-center justify-between group"
+                      className="min-h-[44px] p-3 rounded-xl bg-athloniq-card border border-athloniq-border hover:border-athloniq-lime/40 text-left transition-all hover:bg-athloniq-surface flex items-center justify-between gap-2 group"
                     >
-                      <div className="text-xs font-semibold text-slate-200 group-hover:text-purple-300">
+                      <div className="text-xs font-semibold text-slate-200 group-hover:text-athloniq-lime">
                         {preset.label}
                       </div>
-                      <Sparkles className="h-3.5 w-3.5 text-purple-400 opacity-60 group-hover:opacity-100" />
+                      <Sparkles className="h-3.5 w-3.5 text-athloniq-lime opacity-70 group-hover:opacity-100 shrink-0" aria-hidden="true" />
                     </button>
                   ))}
                 </div>

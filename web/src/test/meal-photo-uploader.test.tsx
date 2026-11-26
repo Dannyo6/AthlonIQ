@@ -268,14 +268,25 @@ describe("Lane B4: MealPhotoUploader Provider & Mode Handling", () => {
         expect(badge).toHaveTextContent("mock (fallback)");
       });
 
-      // Verify the fallback message is rendered
+      // Verify fallback message appears once (no duplicate copy) with helpful guidance
       const emptyMessage = await screen.findByTestId("vision-empty-message");
       expect(emptyMessage).toHaveTextContent("Vision unavailable — log manually");
+      expect(screen.getAllByText("Vision unavailable — log manually")).toHaveLength(1);
+      expect(screen.getByTestId("vision-empty-helper")).toHaveTextContent(
+        "You can log items manually or try another photo."
+      );
 
-      // Verify manual entry button is present
+      // Verify badge prevents wrapping on 390px screens
+      expect(badge.className).toContain("whitespace-nowrap");
+      expect(badge.className).toContain("shrink-0");
+
+      // Verify manual entry button is present with canonical lime token and 44px touch target
       const manualEntryBtn = screen.getByTestId("manual-entry-button");
       expect(manualEntryBtn).toBeInTheDocument();
       expect(manualEntryBtn).toHaveTextContent("Log Manually");
+      expect(manualEntryBtn.className).toContain("bg-athloniq-lime");
+      expect(manualEntryBtn.className).toContain("min-h-[44px]");
+      expect(manualEntryBtn.className).not.toMatch(/purple|violet|cyan/);
 
       // Clicking manual entry button invokes callbacks and closes modal
       fireEvent.click(manualEntryBtn);
@@ -310,13 +321,20 @@ describe("Lane B4: MealPhotoUploader Provider & Mode Handling", () => {
         expect(badge).toHaveTextContent("mock (fallback)");
       });
 
-      // Verify fallback message is rendered on error
+      // Verify fallback message appears once on error with distinct helper text and lime CTA
       const emptyMessage = await screen.findByTestId("vision-empty-message");
       expect(emptyMessage).toHaveTextContent("Vision unavailable — log manually");
+      expect(screen.getAllByText("Vision unavailable — log manually")).toHaveLength(1);
+      expect(screen.getByTestId("vision-empty-helper")).toHaveTextContent(
+        "You can log items manually or try another photo."
+      );
 
       // Verify manual entry button is present
       const manualEntryBtn = screen.getByTestId("manual-entry-button");
       expect(manualEntryBtn).toBeInTheDocument();
+      expect(manualEntryBtn.className).toContain("bg-athloniq-lime");
+      expect(manualEntryBtn.className).toContain("min-h-[44px]");
+      expect(container.innerHTML).not.toMatch(/purple-|violet-|cyan-|sky-/);
 
       // Verify NO food was prefilled from mock presets
       expect(screen.queryByText("Detected Foods")).not.toBeInTheDocument();

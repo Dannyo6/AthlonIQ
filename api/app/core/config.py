@@ -32,7 +32,8 @@ class Settings(BaseSettings):
 
     # AI Configuration
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
+    VISION_PROVIDER: str = "gemini"
 
     # Rate Limiting & Trusted Proxy Configuration
     TRUSTED_PROXIES: Union[List[str], str] = [

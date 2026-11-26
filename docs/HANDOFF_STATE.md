@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-26 20:32 IST  
+**Timestamp**: 2026-11-26 22:05 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -22,61 +22,26 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 
 ### Current Working Tree (`git status -s`)
 ```text
+ M api/app/core/config.py
+ M api/app/services/vision_adapter.py
+ M api/tests/test_phase3_vision.py
  M docs/HANDOFF_STATE.md
- M web/src/features/activities/ActivitiesView.tsx
- M web/src/features/coach/CoachView.tsx
- M web/src/features/progress/ProgressView.tsx
- M web/src/features/recovery/RecoveryView.tsx
- M web/src/test/coach-weekly-review-offline.test.tsx
- M web/src/test/mobile-ergonomics-ui5.test.tsx
-?? web/src/features/activities/components/ActivityHistoryList.tsx
-?? web/src/features/activities/components/ActivityLogForm.tsx
-?? web/src/features/activities/components/ActivitySportSelector.tsx
-?? web/src/features/activities/components/ActivityWeeklySummary.tsx
-?? web/src/features/activities/constants.ts
-?? web/src/features/activities/hooks/useActivityFormDirty.ts
-?? web/src/features/coach/components/CoachChatPanel.tsx
-?? web/src/features/coach/components/CoachComposer.tsx
-?? web/src/features/coach/components/CoachContextSummary.tsx
-?? web/src/features/coach/components/CoachMessageList.tsx
-?? web/src/features/coach/components/CoachQuickPrompts.tsx
-?? web/src/features/coach/components/CoachSubTabs.tsx
-?? web/src/features/coach/components/CoachWeeklyReviewPanel.tsx
-?? web/src/features/coach/constants.ts
-?? web/src/features/coach/hooks/useCoachFormDirty.ts
-?? web/src/features/progress/components/LeanBulkCalibrationCard.tsx
-?? web/src/features/progress/components/MultiSportFatigueCard.tsx
-?? web/src/features/progress/components/ProgressBodyMetricsList.tsx
-?? web/src/features/progress/components/ProgressHeaderActions.tsx
-?? web/src/features/progress/components/ProgressKeyStatsGrid.tsx
-?? web/src/features/progress/components/ProgressPhotosSection.tsx
-?? web/src/features/progress/components/ProgressWeighInDrawer.tsx
-?? web/src/features/progress/components/TrainingVolumeSection.tsx
-?? web/src/features/progress/components/WeightTrendSection.tsx
-?? web/src/features/progress/hooks/useProgressFormDirty.ts
-?? web/src/features/recovery/components/RecoveryAuditPanel.tsx
-?? web/src/features/recovery/components/RecoveryCheckInForm.tsx
-?? web/src/features/recovery/components/RecoveryHistoryList.tsx
-?? web/src/features/recovery/components/RecoveryReadinessSummary.tsx
-?? web/src/features/recovery/hooks/useRecoveryFormDirty.ts
-?? web/src/test/activities-components.test.tsx
-?? web/src/test/coach-components.test.tsx
-?? web/src/test/progress-components.test.tsx
-?? web/src/test/recovery-components.test.tsx
+ M web/src/features/nutrition/components/MealPhotoUploader.tsx
+ M web/src/test/meal-photo-uploader.test.tsx
 ```
-*(Zero unapproved agent commits; `api/` untouched).*
+*(Zero unapproved agent commits; zero new npm or pip dependencies).*
 
 ---
 
 ## 2. Test Execution Matrix (Backed by Raw Terminal Output)
 
-| Test Suite | Command | Scope | Raw Result | Duration |
+| Test Suite | Command | Scope | Verified Baseline / Latest Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision fallback & demo modes, coach tools, acceptance contracts | **181 passed**, 2 warnings | 467.51s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 28 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView`), UI-8C (`ProgressView`), UI-8D (`CoachView` WAI-ARIA tabs, `aria-live="polite"` chat log, dirty draft guard, zero fabricated chat/review defaults), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **236 passed** (28 files) | 19.06s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CFQ-alJt.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 4.32s |
+| **Pytest Vision & Coach** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests/test_phase3_vision.py api/tests/test_phase4_coach.py` | Vision live/fallback model cascade (`3.8-flash` -> `3.5-flash-lite`), `VISION_PROVIDER=mock`, catalog mapping, safety & coach tools (post-vision fix) | **45 passed**, 2 warnings (pre-fix full suite: **181 passed**) | 151.16s |
+| **Vitest Vision & Tokens** (`web/`) | `npm --prefix web test -- src/test/meal-photo-uploader.test.tsx src/test/lane-b3.test.tsx src/test/tailwind-tokens.test.ts` | `MealPhotoUploader` `whitespace-nowrap` badge, non-duplicated fallback copy, lime/emerald tokens & `min-h-[44px]`, CSS/TSX token guards (post-polish; UI-8D full suite: **236 passed**, 28 files) | **29 passed** (3 files) | 11.59s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (UI-8D baseline: `dist/assets/index-CFQ-alJt.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 3.68s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 200 tracked files | <3s |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 224 tracked files | <3s |
 
 ---
 
@@ -506,15 +471,28 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **`features/coach/` Split**: Extracted `CoachSubTabs.tsx`, `CoachContextSummary.tsx`, `CoachMessageList.tsx`, `CoachQuickPrompts.tsx`, `CoachComposer.tsx`, `CoachChatPanel.tsx`, `CoachWeeklyReviewPanel.tsx`, `constants.ts`, and `useCoachFormDirty.ts` (`UnsavedWorkContext`).
 - **Accessibility & Truth-in-UI Hardening**: Added WAI-ARIA `role="tablist"` / `role="tab"` / `aria-selected` / `role="tabpanel"` + ArrowLeft/ArrowRight/Home/End keyboard switching; `role="log"` + `aria-live="polite"` + `aria-busy` on chat messages; `<label htmlFor>` / `aria-label` on chat input, send button, and quiet-hours inputs; removed hardcoded fake offline chat replies (`54.5 g`, `82% (Prime)`) in favor of `role="alert"` error + Retry Send; replaced `null–null` protein bands and `sky-*` / structural emoji with clean `"Target not set"` / `"Not set"` states and lime/emerald tokens; `min-h-[44px]` across tabs, chips, controls, and Regenerate/Retry buttons; `tabular-nums` across weekly metrics. Added `web/src/test/coach-components.test.tsx` (4 tests).
 
+### 11. Live Gemini Vision Fix, `MealPhotoUploader` Polish & Mobile Browser Smoke Check (2026-11-26)
+- **Live Gemini Vision Root Cause & Fix (`api/`)**:
+  - **Root cause**: `api/app/core/config.py` defaulted `GEMINI_MODEL` to `"gemini-2.5-flash"` (`api/.env` had `GEMINI_API_KEY` set, no `GEMINI_MODEL` override, `VISION_PROVIDER` unset). Live requests failed with `google.genai.errors.ClientError: 404 NOT_FOUND` (`models/gemini-2.5-flash` no longer available to new users, recommending `models/gemini-3.8-flash`). In addition, `gemini-3.8-flash` / `gemini-3.5-flash` intermittently returned `503 UNAVAILABLE` during live capacity spikes while `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, and `gemini-3-flash-preview` responded `200 OK`.
+  - **Fix**: Added `VISION_PROVIDER: str = "gemini"` and updated default `GEMINI_MODEL: str = "gemini-3.8-flash"` in `api/app/core/config.py`; updated `api/app/services/vision_adapter.py` to honor `VISION_PROVIDER=mock` and cascade retriable Gemini `APIError` statuses (`404`/`429`/`500`/`502`/`503`/`504`) across `("gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3-flash-preview")` before falling back cleanly to `mock/fallback` (`candidates: []`). Added 3 unit tests in `api/tests/test_phase3_vision.py`.
+  - **Live `TestClient` Smoke Check (`VISION_PROVIDER=gemini`, overhead thali JPEG)**: `HTTP 200` in `8.69s` (`provider: "gemini"`, `mode: "live"`, `model_name: "gemini-3.5-flash-lite"` after `gemini-3.8-flash` 503 failover), returning `detected_item_count: 2` (`"Dal Tadka"` -> `"Toor / Moong Dal Tadka"`, `"Roti"` -> `"Whole Wheat Roti"`), both `provenance: "ai_estimated"` and `is_confirmed: false`.
+- **`MealPhotoUploader.tsx` Polish (`web/`)**:
+  - Fixed badge wrapping with `flex-wrap` on heading + `whitespace-nowrap shrink-0 tabular-nums` on `vision-provider-badge`.
+  - Removed duplicate fallback text so `"Vision unavailable — log manually"` appears once (`vision-empty-message`) above `"You can log items manually or try another photo."` (`vision-empty-helper`).
+  - Replaced all off-brand `purple-*` / `violet-*` classes with canonical `athloniq-lime` / `emerald-*` / `athloniq-surface` tokens and enforced `min-h-[44px]` across `"Log Manually"`, close, preset, and offline close buttons. Added regression assertions in `web/src/test/meal-photo-uploader.test.tsx`.
+- **Automated Mobile Browser Smoke Check (`http://localhost:5174/`, signed-in Chrome)**:
+  - **Viewport & MCP Tool Limits**: `resize_page(390, 844)` achieved `window.innerWidth = 752`, `window.innerHeight = 830` (`documentElement.clientWidth = 746`) due to Windows desktop Chrome minimum width and `emulate` / `evaluate_script` / `navigate_page` disabled on `chrome_devtools`. Local port `5173`/`8000` were already occupied on host, so Vite ran on `5174` (and caused expected CORS blocks polling `http://localhost:8000/health` from `5174`).
+  - **Routes & Overflow**: All 8 authenticated routes (`/today`, `/nutrition`, `/workouts`, `/recovery`, `/activities`, `/progress`, `/coach`, `/profile`) rendered with zero uncaught JS/React runtime errors and `scrollWidth (746) <= innerWidth (752)`. Observed minor auth UX detail: navigating to `/signin` while signed in renders 404 instead of redirecting.
+  - **Unsaved-Work Guard**: Verified blocking modal `"Unsaved Work in Progress"` on `/recovery` -> `Cardio` and `/coach` -> `Profile` (`"Stay & Keep Editing"` retains edits, `"Discard & Leave"` navigates); noted `/profile` immediately flags `"Profile Setup Form"` dirty on load; browser `history.back()` (`popstate` listener in `UnsavedWorkContext.tsx`) could not be invoked via disabled `navigate_page`/`evaluate_script` MCP tools.
+  - **Truth-in-UI & `MealPhotoUploader` Modal**: `/recovery` stress starts `"Not set"`, `/progress` sparse state renders `"0/3 WEIGH-INS"` / `"Insufficient Data"`, `"Automatic Indian Culinary Detection"` (`height: 26.5px`) and `"mock (demo)"` (`height: 30px`) pills render single-line with `44px` action buttons. Browser `upload_file` hit MCP workspace-root access denial, so live vision upload path was verified via FastAPI `TestClient` + Vitest. `prefers-reduced-motion: reduce` media emulation was unavailable in `chrome_devtools` (`globals.css` rules + Vitest `motion-ui8a.test.tsx` cover reduced motion).
+
 ---
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
-1. **Physical Browser Back-Button Guard Check**:
-   - Component-level navigation guards and code-splitting fallbacks pass automated Vitest checks. Physical device verification of hardware back-button gestures and browser history navigation remains open.
-2. **Live Gemini Vision Multimodal Inference**:
-   - `GEMINI_API_KEY` is confirmed configured (`True`) in `api/.env`.
-   - Live authenticated `TestClient` smoke check executed against `POST /api/v1/vision/analyze-meal` with a valid 1x1 PNG payload: safely executes deterministic fallback (`status=200`, `provider="mock"`, `mode="fallback"`, `message="Vision unavailable — log manually"`, `candidates=[]`).
-   - Full live inference against upstream Gemini API (`provider="gemini"`, `mode="live"`) will activate once the backend model parameter is aligned with the new Google AI Studio project availability (`gemini-3.8-flash`).
-3. **Owner Review of Staged Changes**:
-   - Working tree changes remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).
+1. **True `390×844` Browser Width & `prefers-reduced-motion` Emulation / `history.back()`**:
+   - Covered by automated JSDOM suites (`mobile-ergonomics-ui5.test.tsx`, `motion-ui8a.test.tsx`, `routes-navigation.test.tsx`) and `chrome_devtools` down to Windows minimum (`752×830`); true `390×844` CDP device emulation, `popstate` back-button click, and live Chrome `prefers-reduced-motion: reduce` toggle require CDP `emulate`/`navigate_page` enabled or mobile device testing.
+2. **Authenticated `/signin` Redirect & `/profile` Initial Dirty State**:
+   - Observed during browser smoke check (outside UI-8D/vision scope): visiting `/signin` while signed in hits 404, and `/profile` immediately triggers the `"Profile Setup Form"` dirty guard on navigation away without manual edits.
+3. **Owner Review of Working Tree Changes**:
+   - Working tree changes (`api/` vision fix + `web/` `MealPhotoUploader` polish + `docs/HANDOFF_STATE.md`) remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).

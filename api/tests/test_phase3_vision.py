@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from google.genai import errors as genai_errors
 
 from app.api.v1.vision import estimate_quantity_multiplier, match_food_to_catalog
 from app.core.config import settings
@@ -156,6 +157,59 @@ class TestVisionAdapter:
             analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", force_mode="demo")
         assert exc_info.value.status_code == 400
         assert "rejected in production" in exc_info.value.detail
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_image_falls_back_from_deprecated_404_model(self, mock_get_client, monkeypatch):
+        """When primary model raises 404 NOT_FOUND, adapter switches to next live Gemini Flash model."""
+        monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
+        mock_response = MagicMock()
+        mock_response.text = json.dumps([
+            {"food_name": "Dal Tadka", "estimated_serving": "1 katori", "confidence": "high"},
+        ])
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = [
+            genai_errors.ClientError(404, {"error": {"code": 404, "status": "NOT_FOUND"}}),
+            mock_response,
+        ]
+        mock_get_client.return_value = mock_client
+
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", allow_fallback=True)
+        assert result.provider == "gemini"
+        assert result.mode == "live"
+        assert result.model_name == "gemini-3.8-flash"
+        assert len(result.candidates) == 1
+        assert result.candidates[0]["food_name"] == "Dal Tadka"
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_image_falls_back_from_503_to_flash_lite(self, mock_get_client, monkeypatch):
+        """When gemini-3.8-flash returns 503 UNAVAILABLE, adapter falls back to gemini-3.5-flash-lite live."""
+        monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
+        mock_response = MagicMock()
+        mock_response.text = json.dumps([
+            {"food_name": "Roti", "estimated_serving": "2 rotis", "confidence": "high"},
+        ])
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = [
+            genai_errors.ServerError(503, {"error": {"code": 503, "status": "UNAVAILABLE"}}),
+            mock_response,
+        ]
+        mock_get_client.return_value = mock_client
+
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", allow_fallback=True)
+        assert result.provider == "gemini"
+        assert result.mode == "live"
+        assert result.model_name == "gemini-3.5-flash-lite"
+        assert len(result.candidates) == 1
+
+    @patch("app.services.vision_adapter.get_gemini_client")
+    def test_analyze_meal_image_respects_vision_provider_mock(self, mock_get_client, monkeypatch):
+        """When VISION_PROVIDER == 'mock', deterministic fallback is returned without calling Gemini."""
+        monkeypatch.setattr(settings, "VISION_PROVIDER", "mock")
+        result = analyze_meal_image(SAMPLE_JPEG_BYTES, "image/jpeg", allow_fallback=True)
+        assert result.provider == "mock"
+        assert result.mode == "fallback"
+        assert result.candidates == []
+        mock_get_client.assert_not_called()
 
 
 # =============================================================================

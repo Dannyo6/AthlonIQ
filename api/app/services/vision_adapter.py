@@ -1,7 +1,8 @@
 """AthlonIQ Phase 3 — Vision AI Adapter for Meal Analysis.
 
-Integrates with Google GenAI SDK (gemini-2.5-flash) to perform multimodal
-image analysis on meal photos, extracting candidate food items with portion
+Integrates with Google GenAI SDK (gemini-3.8-flash with automatic transient
+fallback across supported Gemini Flash multimodal models) to perform image
+analysis on meal photos, extracting candidate food items with portion
 estimations and confidence ratings.
 
 Returns a VisionAnalysisRaw dataclass carrying both the parsed candidates
@@ -18,11 +19,21 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_GEMINI_VISION_MODEL = "gemini-3.8-flash"
+FALLBACK_GEMINI_VISION_MODELS: tuple[str, ...] = (
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3-flash-preview",
+)
+_RETRIABLE_API_ERROR_CODES = {404, 429, 500, 502, 503, 504}
 
 SYSTEM_INSTRUCTION = (
     "You are a specialized sports nutrition AI. Analyze the food in the image. "
@@ -74,6 +85,25 @@ def _clean_json_text(raw_text: str) -> str:
     return text
 
 
+def _build_candidate_models(configured_model: Optional[str]) -> List[str]:
+    """Return ordered, deduplicated Gemini vision models starting with the configured primary."""
+    primary = (configured_model or "").strip() or DEFAULT_GEMINI_VISION_MODEL
+    candidates: List[str] = []
+    for candidate in (primary, *FALLBACK_GEMINI_VISION_MODELS):
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+    return candidates
+
+
+def _is_retriable_model_error(exc: genai_errors.APIError) -> bool:
+    """True when API error reflects a deprecated/missing model or transient capacity spike."""
+    code = getattr(exc, "code", None)
+    if code in _RETRIABLE_API_ERROR_CODES:
+        return True
+    status_name = str(getattr(exc, "status", "") or "").upper()
+    return status_name in {"NOT_FOUND", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "INTERNAL"}
+
+
 def analyze_meal_image(
     image_bytes: bytes,
     mime_type: str = "image/jpeg",
@@ -81,7 +111,7 @@ def analyze_meal_image(
     force_mode: Optional[str] = None,
     allow_fallback: bool = False,
 ) -> VisionAnalysisRaw:
-    """Analyze a meal image using Gemini 2.5 Flash and return detected candidate foods.
+    """Analyze a meal image using Gemini Flash and return detected candidate foods.
 
     Parameters:
       image_bytes: Raw binary bytes of uploaded image
@@ -127,23 +157,20 @@ def analyze_meal_image(
             model_name=None,
         )
 
-    # Branch: Live Gemini Call
-    model_name = settings.GEMINI_MODEL or "gemini-2.5-flash"
+    configured_provider = (getattr(settings, "VISION_PROVIDER", "gemini") or "gemini").strip().lower()
+    if configured_provider == "mock" and force_mode != "live":
+        return VisionAnalysisRaw(
+            candidates=[],
+            provider="mock",
+            mode="fallback",
+            model_name=None,
+        )
+
+    # Branch: Live Gemini Call (primary configured model -> healthy Flash fallback)
+    candidate_models = _build_candidate_models(settings.GEMINI_MODEL)
 
     try:
         client = get_gemini_client()
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                "Analyze the food items in this meal and return the structured JSON array.",
-            ],
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
-                response_mime_type="application/json",
-                temperature=0.2,
-            ),
-        )
     except HTTPException:
         if allow_fallback:
             return VisionAnalysisRaw(
@@ -153,7 +180,73 @@ def analyze_meal_image(
                 model_name=None,
             )
         raise
-    except Exception as exc:
+
+    response = None
+    model_name = candidate_models[0]
+    last_exc: Optional[Exception] = None
+
+    for idx, candidate_model in enumerate(candidate_models):
+        try:
+            response = client.models.generate_content(
+                model=candidate_model,
+                contents=[
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                    "Analyze the food items in this meal and return the structured JSON array.",
+                ],
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                ),
+            )
+            model_name = candidate_model
+            break
+        except HTTPException:
+            if allow_fallback:
+                return VisionAnalysisRaw(
+                    candidates=[],
+                    provider="mock",
+                    mode="fallback",
+                    model_name=None,
+                )
+            raise
+        except genai_errors.APIError as exc:
+            last_exc = exc
+            has_next = idx + 1 < len(candidate_models)
+            if has_next and _is_retriable_model_error(exc):
+                logger.warning(
+                    "Gemini model %s unavailable (%s); trying next supported Flash model.",
+                    candidate_model,
+                    getattr(exc, "code", None),
+                )
+                continue
+            if allow_fallback:
+                return VisionAnalysisRaw(
+                    candidates=[],
+                    provider="mock",
+                    mode="fallback",
+                    model_name=None,
+                )
+            logger.error("Gemini Vision API generation error: %s", exc, exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Gemini Vision API call failed: {str(exc)}",
+            )
+        except Exception as exc:
+            if allow_fallback:
+                return VisionAnalysisRaw(
+                    candidates=[],
+                    provider="mock",
+                    mode="fallback",
+                    model_name=None,
+                )
+            logger.error("Gemini Vision API generation error: %s", exc, exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Gemini Vision API call failed: {str(exc)}",
+            )
+
+    if response is None:
         if allow_fallback:
             return VisionAnalysisRaw(
                 candidates=[],
@@ -161,10 +254,9 @@ def analyze_meal_image(
                 mode="fallback",
                 model_name=None,
             )
-        logger.error(f"Gemini Vision API generation error: {exc}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini Vision API call failed: {str(exc)}",
+            detail=f"Gemini Vision API call failed: {str(last_exc)}",
         )
 
     raw_text = getattr(response, "text", "") or ""
