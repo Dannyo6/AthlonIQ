@@ -65,3 +65,6 @@ coverage/
 *~
 .DS_Store
 Thumbs.db
+
+# Local AI agent skills (installed via ui-ux-pro-max-cli)
+.agents/
