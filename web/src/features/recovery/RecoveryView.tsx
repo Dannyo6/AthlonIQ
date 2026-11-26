@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import { Card } from "@/components/ui/Card";
+import React, { useEffect, useRef, useState } from "react";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { StatCard } from "@/components/ui/StatCard";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
-import { Moon, Bed, Activity, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Moon } from "lucide-react";
+import { useRecoveryFormDirty } from "./hooks/useRecoveryFormDirty";
+import { RecoveryReadinessSummary } from "./components/RecoveryReadinessSummary";
+import { RecoveryCheckInForm } from "./components/RecoveryCheckInForm";
+import { RecoveryAuditPanel } from "./components/RecoveryAuditPanel";
+import { RecoveryHistoryList } from "./components/RecoveryHistoryList";
 
 export const RecoveryView: React.FC = () => {
   const { todayCheckIn, hasTodayCheckIn, readiness, submitCheckIn } = useAthloniqState();
@@ -17,16 +19,45 @@ export const RecoveryView: React.FC = () => {
   const [stressTouched, setStressTouched] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  const [savedSnapshot, setSavedSnapshot] = useState(() => ({
+    sleepHours: todayCheckIn?.sleepHours ?? 7.5,
+    sleepQuality: todayCheckIn?.sleepQuality ?? 4,
+    soreness: todayCheckIn?.soreness ?? 2,
+    fatigue: todayCheckIn?.fatigue ?? 2,
+    stress: null as number | null,
+  }));
+
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const effectiveStress = stressTouched && stress !== null ? Number(stress) : null;
+  const isDirty =
+    Number(sleepHours) !== savedSnapshot.sleepHours ||
+    Number(sleepQuality) !== savedSnapshot.sleepQuality ||
+    Number(soreness) !== savedSnapshot.soreness ||
+    Number(fatigue) !== savedSnapshot.fatigue ||
+    effectiveStress !== savedSnapshot.stress;
+
+  useRecoveryFormDirty(isDirty);
+
   const handleSave = () => {
-    submitCheckIn({
+    const payload = {
       sleepHours: Number(sleepHours),
       sleepQuality: Number(sleepQuality),
       soreness: Number(soreness),
       fatigue: Number(fatigue),
-      stress: stressTouched && stress !== null ? Number(stress) : null,
-    });
+      stress: effectiveStress,
+    };
+    submitCheckIn(payload);
+    setSavedSnapshot(payload);
     setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -35,20 +66,21 @@ export const RecoveryView: React.FC = () => {
     return "rose";
   };
 
+  const historyEntries = hasTodayCheckIn && todayCheckIn ? [todayCheckIn] : [];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
             <Moon className="h-6 w-6 text-athloniq-lime" />
-            Subjective Recovery & Rules-Based Readiness Engine
+            Subjective Recovery &amp; Rules-Based Readiness Engine
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">
             Deterministic recovery assessment powered by self-reported check-in metrics. Zero fabricated wearable telemetry.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {hasTodayCheckIn && readiness ? (
             <Badge variant={getStatusBadgeVariant(readiness.status)}>
               READINESS: {readiness.status.toUpperCase()} ({readiness.readinessScore}%)
@@ -56,241 +88,46 @@ export const RecoveryView: React.FC = () => {
           ) : (
             <Badge variant="neutral">NO CHECK-IN YET</Badge>
           )}
-          <ProvenanceBadge provenance={hasTodayCheckIn && readiness ? "calculated_estimate" : "provisional_default"} />
+          <ProvenanceBadge
+            provenance={hasTodayCheckIn && readiness ? "calculated_estimate" : "provisional_default"}
+          />
         </div>
       </div>
 
-      {/* Hero Stat Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard
-          title="Daily Readiness Score"
-          value={hasTodayCheckIn && readiness ? readiness.readinessScore : "Not set"}
-          unit={hasTodayCheckIn && readiness ? "/ 100" : ""}
-          subtitle={hasTodayCheckIn && readiness ? `Status: ${readiness.status}` : "No check-in yet"}
-          icon={<Activity className="h-6 w-6 text-athloniq-lime" />}
-          glow={hasTodayCheckIn && readiness ? "lime" : undefined}
-        />
-        <StatCard
-          title="Sleep Duration"
-          value={hasTodayCheckIn ? todayCheckIn.sleepHours.toFixed(1) : "Not set"}
-          unit={hasTodayCheckIn ? "hrs" : ""}
-          subtitle={hasTodayCheckIn ? "Self-reported duration" : "No check-in yet"}
-          icon={<Moon className="h-6 w-6 text-purple-400" />}
-          glow={hasTodayCheckIn ? "violet" : undefined}
-        />
-        <StatCard
-          title="Sleep Quality"
-          value={hasTodayCheckIn ? `${todayCheckIn.sleepQuality} / 5` : "Not set"}
-          subtitle={hasTodayCheckIn ? "Subjective depth score" : "No check-in yet"}
-          icon={<Bed className="h-6 w-6 text-emerald-400" />}
-          glow={hasTodayCheckIn ? "emerald" : undefined}
-        />
-        <StatCard
-          title="Fatigue & Soreness"
-          value={hasTodayCheckIn ? `${todayCheckIn.fatigue} / ${todayCheckIn.soreness}` : "Not set"}
-          unit={hasTodayCheckIn ? "(1-5)" : ""}
-          subtitle={hasTodayCheckIn ? "Fatigue vs DOMS index" : "No check-in yet"}
-          icon={<ShieldCheck className="h-6 w-6 text-amber-400" />}
-        />
-      </div>
+      <RecoveryReadinessSummary
+        hasTodayCheckIn={hasTodayCheckIn}
+        readiness={readiness}
+        todayCheckIn={todayCheckIn}
+      />
 
-      {/* Main Check-in Form & Live Rules Audit */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
-            <div>
-              <h3 className="font-bold text-white text-lg">Daily Subjective Check-in</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Update your physical recovery metrics to immediately re-calculate your training readiness score.
-              </p>
-            </div>
-            {savedSuccess && (
-              <Badge variant="emerald">
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> SAVED & RE-SCORED
-              </Badge>
-            )}
-          </div>
+        <RecoveryCheckInForm
+          sleepHours={sleepHours}
+          sleepQuality={sleepQuality}
+          soreness={soreness}
+          fatigue={fatigue}
+          stress={stress}
+          stressTouched={stressTouched}
+          savedSuccess={savedSuccess}
+          onSleepHoursChange={setSleepHours}
+          onSleepQualityChange={setSleepQuality}
+          onSorenessChange={setSoreness}
+          onFatigueChange={setFatigue}
+          onStressChange={(val) => {
+            setStress(val);
+            setStressTouched(true);
+          }}
+          onClearStress={() => {
+            setStress(null);
+            setStressTouched(false);
+          }}
+          onSubmit={handleSave}
+        />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Sleep Duration (Hours)
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="18"
-                value={sleepHours}
-                onChange={(e) => setSleepHours(Number(e.target.value))}
-                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
-              />
-              <span className="text-[11px] text-slate-500">
-                Rule: &gt;=8.0h (+15 pts), 7.0-7.9h (+5 pts), &lt;6.0h (-25 pts).
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Subjective Sleep Quality (1-5)
-              </label>
-              <select
-                value={sleepQuality}
-                onChange={(e) => setSleepQuality(Number(e.target.value))}
-                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-              >
-                <option value={5}>5 - Restorative & Deep (+10 pts)</option>
-                <option value={4}>4 - Good Rest (+5 pts)</option>
-                <option value={3}>3 - Average (0 pts)</option>
-                <option value={2}>2 - Disturbed / Light (-10 pts)</option>
-                <option value={1}>1 - Severely Disrupted (-20 pts)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Muscle Soreness (1-5, where 1=Fresh, 5=Crippling)
-              </label>
-              <select
-                value={soreness}
-                onChange={(e) => setSoreness(Number(e.target.value))}
-                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-              >
-                <option value={1}>1 - Zero Soreness (+5 pts)</option>
-                <option value={2}>2 - Minimal Soreness (0 pts)</option>
-                <option value={3}>3 - Moderate Soreness (-5 pts)</option>
-                <option value={4}>4 - High Soreness (-15 pts)</option>
-                <option value={5}>5 - Severe Muscle Strain (-25 pts)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Systemic Fatigue (1-5, where 1=Energized, 5=Exhausted)
-              </label>
-              <select
-                value={fatigue}
-                onChange={(e) => setFatigue(Number(e.target.value))}
-                className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-              >
-                <option value={1}>1 - Fully Energized (+5 pts)</option>
-                <option value={2}>2 - Normal Baseline (0 pts)</option>
-                <option value={3}>3 - Mild Fatigue (-5 pts)</option>
-                <option value={4}>4 - Elevated Fatigue (-15 pts)</option>
-                <option value={5}>5 - Systemic Exhaustion (-25 pts)</option>
-              </select>
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="recovery-stress-slider" className="text-xs font-semibold text-slate-300">
-                  External Life / Mental Stress (1-5)
-                </label>
-                <div className="flex items-center gap-2">
-                  {stress === null || !stressTouched ? (
-                    <span className="text-xs font-medium text-slate-400 bg-athloniq-surface px-2 py-0.5 rounded border border-athloniq-border">
-                      Not set
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-athloniq-lime bg-athloniq-surface px-2 py-0.5 rounded border border-athloniq-border">
-                      Level {stress} / 5
-                    </span>
-                  )}
-                  {(stressTouched || stress !== null) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStress(null);
-                        setStressTouched(false);
-                      }}
-                      className="min-h-[44px] inline-flex items-center text-xs text-rose-400 hover:text-rose-300 underline underline-offset-2 ml-1"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-              <input
-                id="recovery-stress-slider"
-                type="range"
-                min="1"
-                max="5"
-                step="1"
-                value={stress ?? 3}
-                onChange={(e) => {
-                  setStress(Number(e.target.value));
-                  setStressTouched(true);
-                }}
-                className="w-full accent-athloniq-lime cursor-pointer bg-athloniq-surface h-2 rounded-lg appearance-none"
-              />
-              <div className="flex justify-between text-[11px] text-slate-500 font-mono">
-                <span>1 (Low)</span>
-                <span>2 (Baseline)</span>
-                <span>3 (Moderate)</span>
-                <span>4 (High)</span>
-                <span>5 (Severe)</span>
-              </div>
-              {stress !== null && stressTouched && (
-                <div className="text-xs text-slate-400">
-                  {stress === 1 && "1 - Low / Calm (+5 pts)"}
-                  {stress === 2 && "2 - Normal Baseline (0 pts)"}
-                  {stress === 3 && "3 - Moderate Stress (-5 pts)"}
-                  {stress === 4 && "4 - High Work/Life Stress (-10 pts)"}
-                  {stress === 5 && "5 - Severe Acute Stress (-15 pts)"}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-3">
-            <Button variant="primary" size="lg" onClick={handleSave}>
-              <CheckCircle2 className="h-5 w-5" /> Submit Today's Check-in
-            </Button>
-          </div>
-        </Card>
-
-        {/* Transparent Rules Audit Panel */}
-        <Card className="space-y-4">
-          <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
-            <div>
-              <h4 className="font-bold text-white text-base">Mathematical Audit</h4>
-              <p className="text-[11px] text-slate-400">Auditable Rule Breakdown</p>
-            </div>
-            <ProvenanceBadge provenance="calculated_estimate" />
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
-            <div className="text-xs text-slate-400 font-medium">Readiness Guidance:</div>
-            <div className="text-xs text-slate-200 leading-relaxed font-medium">
-              {hasTodayCheckIn && readiness
-                ? readiness.guidance
-                : "Complete your daily subjective check-in to calculate your readiness score and personalized training guidance."}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-slate-300">Active Deterministic Triggers:</div>
-            <div className="space-y-1.5 max-h-60 overflow-y-auto">
-              {hasTodayCheckIn && readiness ? (
-                readiness.triggers.map((trigger, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2.5 rounded-lg bg-athloniq-surface border border-athloniq-border text-xs font-mono tabular-nums text-slate-300 flex items-center justify-between"
-                  >
-                    <span>{trigger}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-500 italic p-2.5">No triggers evaluated yet.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-2 text-[11px] text-slate-500 leading-relaxed border-t border-athloniq-border">
-            Notice: AthlonIQ does not fabricate nocturnal HRV, heart rate dips, or deep sleep stages without real hardware sensor telemetry.
-          </div>
-        </Card>
+        <RecoveryAuditPanel hasTodayCheckIn={hasTodayCheckIn} readiness={readiness} />
       </div>
+
+      <RecoveryHistoryList entries={historyEntries} />
     </div>
   );
 };

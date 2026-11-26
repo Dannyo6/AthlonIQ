@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-26 14:50 IST  
+**Timestamp**: 2026-11-26 15:53 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -23,8 +23,23 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
+ M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/recovery/RecoveryView.tsx
+?? web/src/features/activities/components/ActivityHistoryList.tsx
+?? web/src/features/activities/components/ActivityLogForm.tsx
+?? web/src/features/activities/components/ActivitySportSelector.tsx
+?? web/src/features/activities/components/ActivityWeeklySummary.tsx
+?? web/src/features/activities/constants.ts
+?? web/src/features/activities/hooks/useActivityFormDirty.ts
+?? web/src/features/recovery/components/RecoveryAuditPanel.tsx
+?? web/src/features/recovery/components/RecoveryCheckInForm.tsx
+?? web/src/features/recovery/components/RecoveryHistoryList.tsx
+?? web/src/features/recovery/components/RecoveryReadinessSummary.tsx
+?? web/src/features/recovery/hooks/useRecoveryFormDirty.ts
+?? web/src/test/activities-components.test.tsx
+?? web/src/test/recovery-components.test.tsx
 ```
-*(Zero unapproved agent commits. Only `docs/HANDOFF_STATE.md` modified in working tree).*
+*(Zero unapproved agent commits; `api/` untouched).*
 
 ---
 
@@ -33,10 +48,10 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
 | **Pytest** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision fallback & demo modes, coach tools, acceptance contracts | **181 passed**, 2 warnings | 467.51s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 24 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **218 passed** (24 files) | 15.35s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-5GvRQLm5.js` at `214.30 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 34 entries) | 3.40s |
+| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 26 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView` split components & dirty guards), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **227 passed** (26 files) | 44.38s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-BfSUMFHB.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 5.18s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 194 tracked files | <3s |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 200 tracked files | <3s |
 
 ---
 
@@ -450,6 +465,11 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **Hosted Migration Parity (`ghxotyoiquyyowydxshb`)**: `supabase_migrations.schema_migrations` does not exist on hosted (`list_migrations` returned `[]`), **however** `information_schema.columns` and `pg_constraint` confirm both `20261117000004` (`food_entries.provenance`, `food_entries.is_confirmed`) and `20261117000005` (`exercise_sets.is_completed`) are **already applied in schema**: all three columns are `NOT NULL` with `column_default = null`, `food_entries_provenance_check` enforces the 7 allowed provenance values, and `pg_tables` shows **18/18** public tables with `rowsecurity = true`.
 - **Vision Provider Config (`api/.env`)**: `VISION_PROVIDER='unset'`, `GEMINI_API_KEY_CONFIGURED=True`.
 - **Backend Pytest**: `181 passed, 2 warnings` via `.\api\.venv\Scripts\pytest.exe api/tests`.
+
+### 8. UI-8B — Functional Screen Modularization & Hardening (`RecoveryView` & `ActivitiesView`)
+- **26/26 Vitest Suites (`227` tests passing)**, `0` new deps in `web/package.json`, lazy-loaded route chunks preserved (`dist/assets/index-BfSUMFHB.js` at `214.35 kB`, `<= 210 KiB` gate).
+- **`features/recovery/` Split**: Extracted `RecoveryCheckInForm.tsx`, `RecoveryReadinessSummary.tsx`, `RecoveryAuditPanel.tsx`, `RecoveryHistoryList.tsx`, and `useRecoveryFormDirty.ts` (`UnsavedWorkContext`). Preserved native `<input type="range">` stress slider (`null` / `"Not set"` until touched + Clear action), `min-h-[44px]` / `min-h-[48px]` touch targets, `tabular-nums`, and `Card spotlight` on primary check-in/audit cards only. Added `web/src/test/recovery-components.test.tsx` (5 tests).
+- **`features/activities/` Split**: Extracted `ActivitySportSelector.tsx`, `ActivityWeeklySummary.tsx`, `ActivityLogForm.tsx`, `ActivityHistoryList.tsx`, `constants.ts`, and `useActivityFormDirty.ts` (`UnsavedWorkContext`). Enforced deterministic pace calculation via `calculateRunningPace`, explicit `"Not set"` / empty states, `min-h-[44px]` across selectors/inputs/delete controls, `390px` responsive wrapping, and `Card spotlight` on the log form card. Added `web/src/test/activities-components.test.tsx` (4 tests).
 
 ---
 
