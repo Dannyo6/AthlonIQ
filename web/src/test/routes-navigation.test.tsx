@@ -78,6 +78,20 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     }, { timeout: 4000 });
   });
 
+  it("redirects '/signin' to '/today' when authenticated", async () => {
+    render(
+      <MemoryRouter initialEntries={["/signin"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Today Dashboard/i)).toBeInTheDocument();
+      expect(document.title).toContain("Today Dashboard");
+    }, { timeout: 4000 });
+    expect(screen.queryByText(/404 Out of Bounds/i)).not.toBeInTheDocument();
+  });
+
   it("renders /nutrition view directly", async () => {
     render(
       <MemoryRouter initialEntries={["/nutrition"]}>

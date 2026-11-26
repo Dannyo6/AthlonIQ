@@ -663,6 +663,7 @@ const AppShell: React.FC = () => {
         <Suspense fallback={<RouteLoadingSkeleton />}>
           <Routes>
             <Route path="/" element={<Navigate to="/today" replace />} />
+            <Route path="/signin" element={<Navigate to="/today" replace />} />
             <Route
               path="/today"
               element={

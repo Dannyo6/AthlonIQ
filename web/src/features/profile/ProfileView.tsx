@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Card } from "@/components/ui/Card";
-import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
+import { User, RotateCcw, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAthloniqState } from "@/hooks/useAthloniqState";
-import { useUnsavedWork } from "@/features/navigation/UnsavedWorkContext";
 import { PwaInstallCard } from "@/features/pwa/PwaComponents";
 import { usePwa } from "@/features/pwa/usePwa";
 import {
@@ -15,89 +13,61 @@ import {
   calculateProteinReference,
   calculateEnergyEstimate,
 } from "@/lib/calculations";
+import type { EquipmentItem } from "@/types";
 import {
-  User,
-  Dumbbell,
-  CheckCircle2,
-  ChevronRight,
-  ChevronLeft,
-  Sparkles,
-  Shield,
-  Utensils,
-  Flame,
-  RotateCcw,
-  Activity,
-  FileSpreadsheet,
-  FileJson,
-  Trash2,
-  AlertTriangle,
-  Globe,
-} from "lucide-react";
+  areProfileSnapshotsEqual,
+  buildProfileBaseline,
+  detectDeviceTimezone,
+  normalizeProfileSnapshot,
+  onboardingSchema,
+  STEP_QUERY_MAP,
+  type OnboardingFormData,
+} from "./constants";
+import { useProfileFormDirty } from "./hooks/useProfileFormDirty";
+import { ProfileStepNav } from "./components/ProfileStepNav";
+import { ProfileIdentityStep } from "./components/ProfileIdentityStep";
+import { ProfileGoalsStep } from "./components/ProfileGoalsStep";
+import { ProfileEquipmentStep } from "./components/ProfileEquipmentStep";
+import {
+  ProfileReviewStep,
+  ProfileTrainingStep,
+} from "./components/ProfilePreferencesSection";
+import { ProfileSummarySection } from "./components/ProfileSummarySection";
+import { ProfileDataPortabilitySection } from "./components/ProfileDataPortabilitySection";
 
-// Zod Schema for Onboarding Wizard
-const onboardingSchema = z.object({
-  // Step 1: Biometrics
-  age: z.coerce.number().min(12).max(120),
-  heightCm: z.coerce.number().min(100).max(250),
-  weightKg: z.coerce.number().min(30).max(300),
-  timezone: z.string().min(1).default("Asia/Kolkata"),
-  sex: z.enum(["male", "female", "other", "unknown"]).optional().nullable(),
-  waistCm: z.coerce.number().min(40).max(200).optional().nullable(),
-
-  // Step 2: Goals & Diet
-  primaryGoal: z.enum([
-    "lean_bulk",
-    "hypertrophy",
-    "strength",
-    "fat_loss",
-    "recomposition",
-    "endurance",
-    "maintenance",
-  ]),
-  dietaryPattern: z.enum([
-    "nonvegetarian",
-    "vegetarian",
-    "vegan",
-    "pescatarian",
-    "eggetarian",
-    "keto",
-    "other",
-  ]),
-  customProteinG: z.coerce.number().min(50).max(350).optional().nullable(),
-  dietaryRestrictions: z.string().optional().nullable(),
-
-  // Step 4: Training & Sleep
-  trainingDaysPerWeek: z.coerce.number().min(1).max(7),
-  experienceLevel: z.enum(["beginner", "intermediate", "advanced", "elite"]),
-  currentSplit: z.enum([
-    "ppl",
-    "upper_lower",
-    "full_body",
-    "bro_split",
-    "custom",
-    "need_recommendation",
-  ]),
-  weeklyBadmintonSessions: z.coerce.number().min(0).max(14),
-  weeklyRunningSessions: z.coerce.number().min(0).max(14),
-  sleepBaselineHours: z.coerce.number().min(4).max(14),
-  exerciseLimitations: z.string().optional().nullable(),
-});
-
-type OnboardingFormData = z.infer<typeof onboardingSchema>;
+const FIELD_STEP_MAP: Record<keyof OnboardingFormData, { step: number; label: string }> = {
+  age: { step: 1, label: "Age" },
+  heightCm: { step: 1, label: "Height" },
+  weightKg: { step: 1, label: "Weight" },
+  sex: { step: 1, label: "Biological Sex" },
+  waistCm: { step: 1, label: "Waist Circumference" },
+  primaryGoal: { step: 2, label: "Primary Goal" },
+  dietaryPattern: { step: 2, label: "Dietary Pattern" },
+  customProteinG: { step: 2, label: "Protein Target" },
+  dietaryRestrictions: { step: 2, label: "Dietary Restrictions" },
+  trainingDaysPerWeek: { step: 4, label: "Weekly Training Days" },
+  experienceLevel: { step: 4, label: "Experience Level" },
+  currentSplit: { step: 4, label: "Current Split" },
+  weeklyBadmintonSessions: { step: 4, label: "Badminton Sessions" },
+  weeklyRunningSessions: { step: 4, label: "Running Sessions" },
+  sleepBaselineHours: { step: 4, label: "Sleep Baseline" },
+  exerciseLimitations: { step: 4, label: "Exercise Limitations" },
+  timezone: { step: 5, label: "Timezone" },
+};
 
 export const ProfileView: React.FC = () => {
   const {
     profile,
-    equipment,
+    equipment = [],
     goals,
     preferences,
     todayCheckIn,
-    foodEntries,
-    workoutSessions,
-    activitySessions,
-    bodyMetrics,
-    coachMessages,
-    progressPhotos,
+    foodEntries = [],
+    workoutSessions = [],
+    activitySessions = [],
+    bodyMetrics = [],
+    coachMessages = [],
+    progressPhotos = [],
     updateProfile,
     updateEquipmentItem,
     confirmEquipment,
@@ -107,36 +77,17 @@ export const ProfileView: React.FC = () => {
     resetToDefaults,
   } = useAthloniqState();
 
-  const detectedTimezone = useMemo(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
-    } catch {
-      return "Asia/Kolkata";
-    }
-  }, []);
-
+  const detectedTimezone = useMemo(() => detectDeviceTimezone(), []);
   const [searchParams] = useSearchParams();
   const stepParam = searchParams.get("step");
 
-  const stepMapping: Record<string, number> = useMemo(
-    () => ({
-      biometrics: 1,
-      goals: 2,
-      equipment: 3,
-      preferences: 4,
-      training: 4,
-      review: 5,
-    }),
-    []
-  );
-
   const initialStep = useMemo(() => {
     if (stepParam) {
-      const mapped = stepMapping[stepParam.toLowerCase()];
+      const mapped = STEP_QUERY_MAP[stepParam.toLowerCase()];
       if (mapped) return mapped;
     }
     return profile.onboardingStep || 1;
-  }, [stepParam, stepMapping, profile.onboardingStep]);
+  }, [stepParam, profile.onboardingStep]);
 
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [isEditingAfterCompletion, setIsEditingAfterCompletion] = useState<boolean>(
@@ -145,16 +96,21 @@ export const ProfileView: React.FC = () => {
 
   useEffect(() => {
     if (stepParam) {
-      const target = stepMapping[stepParam.toLowerCase()];
+      const target = STEP_QUERY_MAP[stepParam.toLowerCase()];
       if (target) {
         setCurrentStep(target);
         setIsEditingAfterCompletion(true);
       }
     }
-  }, [stepParam, stepMapping]);
+  }, [stepParam]);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [submitFailedErrors, setSubmitFailedErrors] = useState<
+    Array<{ key: keyof OnboardingFormData; message: string; step: number; label: string }>
+  >([]);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
 
   // Equipment inline limit editor state
   const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
@@ -162,6 +118,106 @@ export const ProfileView: React.FC = () => {
   const [editMinIncrement, setEditMinIncrement] = useState<string>("");
 
   const { canInstall, isInstalled, isIos, installApp } = usePwa();
+
+  const baselineValues = useMemo(
+    () => buildProfileBaseline(profile || {}, goals || {}, preferences || {}, detectedTimezone),
+    [profile, goals, preferences, detectedTimezone]
+  );
+  const normalizedBaseline = useMemo(
+    () => normalizeProfileSnapshot(baselineValues),
+    [baselineValues]
+  );
+  const baselineKey = useMemo(() => JSON.stringify(normalizedBaseline), [normalizedBaseline]);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<OnboardingFormData>({
+    resolver: zodResolver(onboardingSchema),
+    mode: "onBlur",
+    defaultValues: baselineValues,
+  });
+
+  const watchedValues = watch();
+  const normalizedCurrent = normalizeProfileSnapshot(watchedValues);
+
+  // Sync form automatically with cloud hydration only when user has not diverged from prior baseline
+  const lastBaselineRef = useRef<{ key: string; snapshot: ReturnType<typeof normalizeProfileSnapshot> }>({
+    key: baselineKey,
+    snapshot: normalizedBaseline,
+  });
+
+  useEffect(() => {
+    if (lastBaselineRef.current.key !== baselineKey) {
+      const hadUnsavedEdits = !areProfileSnapshotsEqual(
+        lastBaselineRef.current.snapshot,
+        normalizedCurrent
+      );
+      lastBaselineRef.current = { key: baselineKey, snapshot: normalizedBaseline };
+      if (!hadUnsavedEdits) {
+        reset(baselineValues);
+      }
+    }
+  }, [baselineKey, baselineValues, normalizedBaseline, normalizedCurrent, reset]);
+
+  const isEquipmentEditorDirty = useMemo(() => {
+    if (!editingEquipmentId) return false;
+    const targetItem = equipment.find((e) => e.id === editingEquipmentId);
+    if (!targetItem) return false;
+    const origMax = targetItem.maxLoadKg != null ? String(targetItem.maxLoadKg) : "";
+    const origInc = targetItem.minIncrementKg != null ? String(targetItem.minIncrementKg) : "";
+    return editMaxLoad.trim() !== origMax || editMinIncrement.trim() !== origInc;
+  }, [editingEquipmentId, equipment, editMaxLoad, editMinIncrement]);
+
+  const isFormDirty =
+    !areProfileSnapshotsEqual(normalizedBaseline, normalizedCurrent) || isEquipmentEditorDirty;
+
+  useProfileFormDirty(isFormDirty);
+
+  const rawWeight = watchedValues.weightKg;
+  const rawHeight = watchedValues.heightCm;
+  const numWeight = typeof rawWeight === "number" ? rawWeight : parseFloat(String(rawWeight));
+  const numHeight = typeof rawHeight === "number" ? rawHeight : parseFloat(String(rawHeight));
+  const hasValidBiometrics =
+    (rawWeight as unknown) !== "" &&
+    (rawHeight as unknown) !== "" &&
+    rawWeight != null &&
+    rawHeight != null &&
+    !isNaN(numWeight) &&
+    numWeight > 0 &&
+    !isNaN(numHeight) &&
+    numHeight > 0;
+
+  const watchedWeight = hasValidBiometrics ? numWeight : null;
+  const watchedHeight = hasValidBiometrics ? numHeight : null;
+  const watchedAge = Number(watchedValues.age) || 20;
+  const watchedSex = watchedValues.sex;
+  const watchedGoal = watchedValues.primaryGoal;
+  const watchedProtein = watchedValues.customProteinG;
+  const watchedSleep = Number(watchedValues.sleepBaselineHours) || 7.5;
+  const watchedExp = watchedValues.experienceLevel;
+  const watchedTrainingDays = Number(watchedValues.trainingDaysPerWeek) || 5;
+  const watchedBadminton = Number(watchedValues.weeklyBadmintonSessions) || 0;
+  const watchedRunning = Number(watchedValues.weeklyRunningSessions) || 0;
+  const watchedTimezone = watchedValues.timezone || "";
+
+  const liveBmi = hasValidBiometrics ? calculateBmi(numWeight, numHeight) : null;
+  const liveProteinRef = calculateProteinReference(numWeight || 55.0, watchedProtein);
+  const liveEnergy = calculateEnergyEstimate({
+    weightKg: numWeight || 55.0,
+    heightCm: numHeight || 173.0,
+    age: watchedAge,
+    sex: watchedSex === "unknown" ? null : watchedSex,
+    primaryGoal: watchedGoal,
+    onboardingCompleted: true,
+    sleepBaselineHours: watchedSleep,
+    experienceLevel: watchedExp,
+    weeklyBadmintonSessions: watchedBadminton,
+    weeklyRunningSessions: watchedRunning,
+  });
 
   const handleExportJSON = () => {
     const archiveData = {
@@ -270,85 +326,8 @@ export const ProfileView: React.FC = () => {
     }
   };
 
-  const { setFormDirty } = useUnsavedWork();
-
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isDirty },
-  } = useForm<OnboardingFormData>({
-    resolver: zodResolver(onboardingSchema),
-    defaultValues: {
-      age: profile.age || 20,
-      heightCm: profile.onboardingCompleted ? profile.heightCm : (profile.heightCm && profile.heightCm !== 173.0 ? profile.heightCm : undefined),
-      weightKg: profile.onboardingCompleted ? profile.weightKg : (profile.weightKg && profile.weightKg !== 55.0 ? profile.weightKg : undefined),
-      sex: profile.sex || "unknown",
-      waistCm: profile.waistCm || null,
-      primaryGoal: (profile.primaryGoal as any) || "lean_bulk",
-      dietaryPattern: (profile.dietaryPattern as any) || "nonvegetarian",
-      customProteinG: goals.proteinTargetG || 110,
-      dietaryRestrictions: "",
-      trainingDaysPerWeek: profile.trainingDaysPerWeek || 5,
-      experienceLevel: (profile.experienceLevel as any) || "beginner",
-      currentSplit: (profile.currentSplit as any) || "need_recommendation",
-      weeklyBadmintonSessions: profile.weeklyBadmintonSessions ?? 2,
-      weeklyRunningSessions: profile.weeklyRunningSessions ?? 1,
-      sleepBaselineHours: profile.sleepBaselineHours ?? 7.5,
-      exerciseLimitations: profile.exerciseLimitations || "",
-      timezone: preferences.timezone || detectedTimezone || "Asia/Kolkata",
-    },
-  });
-
-  const rawWeight = watch("weightKg");
-  const rawHeight = watch("heightCm");
-  const numWeight = typeof rawWeight === "number" ? rawWeight : parseFloat(String(rawWeight));
-  const numHeight = typeof rawHeight === "number" ? rawHeight : parseFloat(String(rawHeight));
-  const hasValidBiometrics =
-    (rawWeight as unknown) !== "" &&
-    (rawHeight as unknown) !== "" &&
-    rawWeight != null &&
-    rawHeight != null &&
-    !isNaN(numWeight) &&
-    numWeight > 0 &&
-    !isNaN(numHeight) &&
-    numHeight > 0;
-
-  const watchedWeight = hasValidBiometrics ? numWeight : null;
-  const watchedHeight = hasValidBiometrics ? numHeight : null;
-  const watchedAge = watch("age") || 20;
-  const watchedSex = watch("sex");
-  const watchedGoal = watch("primaryGoal");
-  const watchedProtein = watch("customProteinG");
-  const watchedSleep = watch("sleepBaselineHours");
-  const watchedExp = watch("experienceLevel");
-  const watchedBadminton = watch("weeklyBadmintonSessions");
-  const watchedRunning = watch("weeklyRunningSessions");
-
-  useEffect(() => {
-    setFormDirty("profile-form", isDirty, "Profile Setup Form");
-    return () => {
-      setFormDirty("profile-form", false);
-    };
-  }, [isDirty, setFormDirty]);
-
-  // Live client calculations for preview in wizard
-  const liveBmi = hasValidBiometrics ? calculateBmi(numWeight, numHeight) : null;
-  const liveProteinRef = calculateProteinReference(numWeight || 55.0, watchedProtein);
-  const liveEnergy = calculateEnergyEstimate({
-    weightKg: numWeight || 55.0,
-    heightCm: numHeight || 173.0,
-    age: watchedAge,
-    sex: watchedSex === "unknown" ? null : watchedSex,
-    primaryGoal: watchedGoal,
-    onboardingCompleted: true, // Preview as if completed
-    sleepBaselineHours: watchedSleep,
-    experienceLevel: watchedExp,
-    weeklyBadmintonSessions: watchedBadminton,
-    weeklyRunningSessions: watchedRunning,
-  });
-
   const handleStepNext = (step: number) => {
+    setSubmitFailedErrors([]);
     if (step === 1) {
       const currentValues = watch();
       updateProfile({
@@ -365,11 +344,28 @@ export const ProfileView: React.FC = () => {
     setCurrentStep(step + 1);
   };
 
-  const handleStepBack = (step: number) => {
-    setCurrentStep(step - 1);
+  const handleSaveEquipmentEdit = (itemId: string) => {
+    const parsedMax = editMaxLoad.trim() === "" ? null : parseFloat(editMaxLoad);
+    const maxLoadKg = parsedMax != null && !isNaN(parsedMax) && parsedMax >= 0 ? parsedMax : null;
+    const parsedInc = editMinIncrement.trim() === "" ? null : parseFloat(editMinIncrement);
+    const minIncrementKg = parsedInc != null && !isNaN(parsedInc) && parsedInc >= 0 ? parsedInc : null;
+
+    updateEquipmentItem(itemId, {
+      maxLoadKg,
+      minIncrementKg,
+      isConfirmed: true,
+    });
+    setEditingEquipmentId(null);
+  };
+
+  const handleConfirmAllEquipment = () => {
+    const all: EquipmentItem[] = equipment.map((i) => ({ ...i, isConfirmed: true }));
+    confirmEquipment(all);
+    handleStepNext(3);
   };
 
   const onFinalSubmit = (data: OnboardingFormData) => {
+    setSubmitFailedErrors([]);
     const finalProfile = {
       age: data.age,
       heightCm: data.heightCm,
@@ -389,11 +385,8 @@ export const ProfileView: React.FC = () => {
 
     completeOnboarding(finalProfile);
 
-    // Save confirmed timezone to user_preferences repo
     if (data.timezone) {
-      updatePreferences({
-        timezone: data.timezone,
-      });
+      updatePreferences({ timezone: data.timezone });
     }
 
     if (data.customProteinG) {
@@ -403,7 +396,26 @@ export const ProfileView: React.FC = () => {
       });
     }
 
+    reset(data);
     setIsEditingAfterCompletion(false);
+  };
+
+  const onFinalInvalid = (fieldErrors: FieldErrors<OnboardingFormData>) => {
+    const items = (Object.keys(fieldErrors) as Array<keyof OnboardingFormData>)
+      .map((key) => {
+        const meta = FIELD_STEP_MAP[key];
+        const msg = fieldErrors[key]?.message;
+        return {
+          key,
+          message: typeof msg === "string" ? msg : "Please check this field",
+          step: meta?.step ?? 1,
+          label: meta?.label ?? key,
+        };
+      });
+    setSubmitFailedErrors(items);
+    if (items.length > 0) {
+      setTimeout(() => errorSummaryRef.current?.focus(), 0);
+    }
   };
 
   return (
@@ -412,7 +424,7 @@ export const ProfileView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2 tracking-tight">
-            <User className="h-6 w-6 text-athloniq-lime" />
+            <User className="h-6 w-6 text-athloniq-lime shrink-0" aria-hidden="true" />
             Athlete Identity & Onboarding Calibration
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">
@@ -420,13 +432,14 @@ export const ProfileView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {profile.onboardingCompleted ? (
             <>
               <Badge variant="emerald">ONBOARDING COMPLETED</Badge>
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-[44px]"
                 onClick={() => {
                   setIsEditingAfterCompletion(!isEditingAfterCompletion);
                   setCurrentStep(1);
@@ -442,8 +455,14 @@ export const ProfileView: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
+            className="min-h-[44px] min-w-[44px]"
+            aria-label="Reset profile to defaults"
             onClick={() => {
-              if (confirm("Reset profile to pristine initial defaults (55kg / 173cm, unconfirmed equipment)?")) {
+              if (
+                confirm(
+                  "Reset profile to pristine initial defaults (55kg / 173cm, unconfirmed equipment)?"
+                )
+              ) {
                 resetToDefaults();
                 setCurrentStep(1);
                 setIsEditingAfterCompletion(true);
@@ -451,948 +470,131 @@ export const ProfileView: React.FC = () => {
             }}
             title="Reset to pristine Phase 1 defaults"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
 
-      {/* Main Wizard Form or Summary View */}
       {isEditingAfterCompletion || !profile.onboardingCompleted ? (
         <div className="space-y-6">
-          {/* Step Indicator Progress Bar */}
-          <div className="grid grid-cols-5 gap-2">
-            {[
-              { num: 1, label: "Biometrics & Units" },
-              { num: 2, label: "Goals & Diet" },
-              { num: 3, label: "Home Equipment" },
-              { num: 4, label: "Training & Sleep" },
-              { num: 5, label: "Review & Activation" },
-            ].map((s) => {
-              const isPast = currentStep > s.num;
-              const isCurrent = currentStep === s.num;
-              return (
-                <button
-                  key={s.num}
-                  type="button"
-                  onClick={() => setCurrentStep(s.num)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
-                    isCurrent
-                      ? "bg-athloniq-lime/10 border-athloniq-lime text-white"
-                      : isPast
-                      ? "bg-athloniq-card border-emerald-500/40 text-emerald-300"
-                      : "bg-athloniq-card border-athloniq-border text-slate-500"
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-xs font-mono font-bold">
-                    <span>STEP 0{s.num}</span>
-                    {isPast && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
-                  </div>
-                  <div className="text-xs font-semibold mt-1 truncate">{s.label}</div>
-                </button>
-              );
-            })}
-          </div>
+          <ProfileStepNav currentStep={currentStep} onSelectStep={setCurrentStep} />
 
-          <form onSubmit={handleSubmit(onFinalSubmit)} className="space-y-6">
-            {/* STEP 1: Biometrics & Anthropometry */}
+          {submitFailedErrors.length > 0 && (
+            <div
+              ref={errorSummaryRef}
+              role="alert"
+              tabIndex={-1}
+              className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-200 space-y-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
+            >
+              <div className="flex items-center gap-2 font-bold text-sm text-rose-300">
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Please review {submitFailedErrors.length} invalid profile field(s):</span>
+              </div>
+              <ul className="list-disc pl-5 text-xs space-y-1">
+                {submitFailedErrors.map((err) => (
+                  <li key={err.key}>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(err.step)}
+                      className="underline hover:text-white text-left min-h-[44px] sm:min-h-0 py-1"
+                    >
+                      Step {err.step} ({err.label}): {err.message}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onFinalSubmit, onFinalInvalid)} className="space-y-6">
             {currentStep === 1 && (
-              <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
-                  <div>
-                    <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
-                      Step 1 of 5
-                    </span>
-                    <h3 className="text-xl font-bold text-white mt-0.5">
-                      Biometrics & Anthropometry
-                    </h3>
-                  </div>
-                  <ProvenanceBadge provenance="calculated_estimate" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="profile-age" className="text-xs font-semibold text-slate-300">
-                      Age (Years) <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <input
-                      id="profile-age"
-                      type="number"
-                      {...register("age")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                    {errors.age && (
-                      <p className="text-xs text-rose-400">{errors.age.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="profile-height" className="text-xs font-semibold text-slate-300">
-                      Height (cm) <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <input
-                      id="profile-height"
-                      type="number"
-                      step="0.5"
-                      {...register("heightCm")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                    {errors.heightCm && (
-                      <p className="text-xs text-rose-400">{errors.heightCm.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="profile-weight" className="text-xs font-semibold text-slate-300">
-                      Weight (kg) <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <input
-                      id="profile-weight"
-                      type="number"
-                      step="0.1"
-                      {...register("weightKg")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                    {errors.weightKg && (
-                      <p className="text-xs text-rose-400">{errors.weightKg.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-slate-300">
-                        Biological Sex (Optional)
-                      </label>
-                      <span className="text-[10px] text-slate-500 font-mono">Known Unknown</span>
-                    </div>
-                    <select
-                      {...register("sex")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                    >
-                      <option value="unknown">Skip / Unknown</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <p className="text-[11px] text-slate-500">
-                      If omitted, metabolic equations apply conservative male reference defaults with transparent note.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-slate-300">
-                        Waist Circumference (Optional cm)
-                      </label>
-                      <span className="text-[10px] text-slate-500 font-mono">Known Unknown</span>
-                    </div>
-                    <input
-                      type="number"
-                      placeholder="e.g. 74 cm (or leave empty)"
-                      {...register("waistCm")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                    <p className="text-[11px] text-slate-500">
-                      Used for Navy body-fat estimates when available. Optional.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Live Biometrics & Caloric Target Previews */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Instant BMI Screening Preview */}
-                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col justify-between gap-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-300">BMI SCREENING</span>
-                      {liveBmi ? (
-                        <ProvenanceBadge provenance="calculated_estimate" />
-                      ) : (
-                        <Badge variant="neutral">NOT SET</Badge>
-                      )}
-                    </div>
-                    {liveBmi ? (
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-mono font-bold text-sm">
-                          {liveBmi.bmi}
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white flex items-center gap-2">
-                            <span className="font-mono tabular-nums">Calculated BMI: {liveBmi.bmi} kg/m²</span>
-                            <Badge variant="amber">{liveBmi.category.toUpperCase()}</Badge>
-                          </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {liveBmi.disclaimer}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs font-semibold text-slate-300">
-                        Enter height and weight
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Live Mifflin-St Jeor Caloric Target Preview */}
-                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border flex flex-col justify-between gap-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-300">ESTIMATED CALORIC TARGET</span>
-                      {liveEnergy.estimatedKcal ? (
-                        <ProvenanceBadge provenance="calculated_estimate" />
-                      ) : (
-                        <ProvenanceBadge provenance="awaiting_onboarding" />
-                      )}
-                    </div>
-                    {liveEnergy.estimatedKcal ? (
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-2xl font-black text-athloniq-lime font-mono tabular-nums">
-                            {liveEnergy.estimatedKcal}
-                          </span>
-                          <span className="text-xs text-slate-400 font-mono">kcal/day</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          Deterministic Mifflin-St Jeor calculation with goal surplus.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-500">
-                        Complete biometrics to unlock deterministic caloric target.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => handleStepNext(1)}
-                  >
-                    Proceed to Goals & Diet <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
+              <ProfileIdentityStep
+                register={register}
+                errors={errors}
+                liveBmi={liveBmi}
+                liveEnergy={liveEnergy}
+                onNext={() => handleStepNext(1)}
+              />
             )}
 
-            {/* STEP 2: Goals & Dietary Profile */}
             {currentStep === 2 && (
-              <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
-                  <div>
-                    <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
-                      Step 2 of 5
-                    </span>
-                    <h3 className="text-xl font-bold text-white mt-0.5">
-                      Goals & Dietary Profile
-                    </h3>
-                  </div>
-                  <ProvenanceBadge provenance="provisional_default" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Primary Physique & Performance Goal
-                    </label>
-                    <select
-                      {...register("primaryGoal")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                    >
-                      <option value="lean_bulk">Lean Bulk (+250 kcal surplus)</option>
-                      <option value="hypertrophy">Hypertrophy (Targeted Muscle Growth)</option>
-                      <option value="strength">Strength Focus (Neural & Max Overload)</option>
-                      <option value="fat_loss">Fat Loss (-400 kcal deficit)</option>
-                      <option value="recomposition">Body Recomposition</option>
-                      <option value="maintenance">Maintenance</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Dietary Pattern
-                    </label>
-                    <select
-                      {...register("dietaryPattern")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                    >
-                      <option value="nonvegetarian">Nonvegetarian (Omnivore)</option>
-                      <option value="vegetarian">Vegetarian (Lacto-Ovo)</option>
-                      <option value="eggetarian">Eggetarian</option>
-                      <option value="vegan">Vegan / Plant-Based</option>
-                      <option value="pescatarian">Pescatarian</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Protein Target Calibration */}
-                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                        <Utensils className="h-4 w-4 text-athloniq-lime" />
-                        Daily Protein Reference Target
-                      </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Scientific Range for {watchedWeight ? `${watchedWeight} kg` : "athlete"}: {liveProteinRef.proteinMinG}–{liveProteinRef.proteinMaxG} g/day (1.6–2.2 g/kg)
-                      </p>
-                    </div>
-                    <ProvenanceBadge provenance={liveProteinRef.provenance} />
-                  </div>
-
-                  <div className="flex items-center gap-4 pt-1">
-                    <div className="w-48">
-                      <input
-                        type="number"
-                        {...register("customProteinG")}
-                        className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-2 text-sm text-white font-mono font-bold focus:border-athloniq-lime focus:outline-none"
-                      />
-                    </div>
-                    <span className="text-xs text-slate-400">
-                      Default is 110 g (2.0 g/kg). You can customize within evidence range.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => handleStepBack(2)}
-                  >
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => handleStepNext(2)}
-                  >
-                    Verify Equipment <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
+              <ProfileGoalsStep
+                register={register}
+                errors={errors}
+                watchedWeight={watchedWeight}
+                liveProteinRef={liveProteinRef}
+                onBack={() => setCurrentStep(1)}
+                onNext={() => handleStepNext(2)}
+              />
             )}
 
-            {/* STEP 3: Home Equipment Verification */}
             {currentStep === 3 && (
-              <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
-                  <div>
-                    <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
-                      Step 3 of 5
-                    </span>
-                    <h3 className="text-xl font-bold text-white mt-0.5">
-                      Home Gym Equipment Verification
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Historical home gym items must be confirmed to unlock tailored resistance training progressions.
-                    </p>
-                  </div>
-                  <Badge variant={equipment.every((i) => i.isConfirmed) ? "emerald" : "amber"}>
-                    {equipment.filter((i) => i.isConfirmed).length}/{equipment.length} CONFIRMED
-                  </Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {equipment.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                        item.isConfirmed
-                          ? "bg-athloniq-surface border-emerald-500/40"
-                          : "bg-athloniq-surface/60 border-amber-500/40"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`p-2.5 rounded-xl border mt-0.5 ${
-                            item.isConfirmed
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          }`}
-                        >
-                          <Dumbbell className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-white text-sm">
-                              {item.itemName}
-                            </span>
-                            <Badge variant={item.isConfirmed ? "lime" : "amber"}>
-                              {item.isConfirmed ? "CONFIRMED" : "UNCONFIRMED"}
-                            </Badge>
-                            <ProvenanceBadge
-                              provenance={
-                                item.isConfirmed
-                                  ? "user_confirmed"
-                                  : "unconfirmed_equipment"
-                              }
-                            />
-                          </div>
-                          <div className="text-xs text-slate-400 font-mono mt-1 tabular-nums">
-                            Max Load: {item.maxLoadKg != null ? `${item.maxLoadKg} kg` : "Not set"} • Min Increment: {item.minIncrementKg != null ? `${item.minIncrementKg} kg` : "Not set"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {editingEquipmentId !== item.id && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="min-h-[44px]"
-                            onClick={() => {
-                              setEditingEquipmentId(item.id);
-                              setEditMaxLoad(item.maxLoadKg != null ? String(item.maxLoadKg) : "");
-                              setEditMinIncrement(item.minIncrementKg != null ? String(item.minIncrementKg) : "");
-                            }}
-                          >
-                            Set Limits
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant={item.isConfirmed ? "outline" : "primary"}
-                          size="sm"
-                          className="min-h-[44px]"
-                          onClick={() => {
-                            updateEquipmentItem(item.id, {
-                              isConfirmed: !item.isConfirmed,
-                            });
-                          }}
-                        >
-                          {item.isConfirmed ? "Mark Unconfirmed" : "Confirm Available"}
-                        </Button>
-                      </div>
-
-                      {editingEquipmentId === item.id && (
-                        <div className="mt-3 pt-3 border-t border-athloniq-border w-full flex flex-col sm:flex-row items-end gap-3 animate-fade-in">
-                          <div className="space-y-1 flex-1 w-full sm:w-auto">
-                            <label className="text-[10px] text-slate-400 font-medium">Max Load (kg)</label>
-                            <input
-                              type="number"
-                              step="0.5"
-                              min="0"
-                              placeholder="e.g. 70 (or leave blank)"
-                              value={editMaxLoad}
-                              onChange={(e) => setEditMaxLoad(e.target.value)}
-                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-                            />
-                          </div>
-                          <div className="space-y-1 flex-1 w-full sm:w-auto">
-                            <label className="text-[10px] text-slate-400 font-medium">Min Increment (kg)</label>
-                            <input
-                              type="number"
-                              step="0.25"
-                              min="0"
-                              placeholder="e.g. 2.5 (or leave blank)"
-                              value={editMinIncrement}
-                              onChange={(e) => setEditMinIncrement(e.target.value)}
-                              className="w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none tabular-nums"
-                            />
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="min-h-[44px]"
-                              onClick={() => setEditingEquipmentId(null)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="primary"
-                              size="sm"
-                              className="min-h-[44px]"
-                              onClick={() => {
-                                const parsedMax = editMaxLoad.trim() === "" ? null : parseFloat(editMaxLoad);
-                                const maxLoadKg =
-                                  parsedMax != null && !isNaN(parsedMax) && parsedMax >= 0 ? parsedMax : null;
-                                const parsedInc =
-                                  editMinIncrement.trim() === "" ? null : parseFloat(editMinIncrement);
-                                const minIncrementKg =
-                                  parsedInc != null && !isNaN(parsedInc) && parsedInc >= 0 ? parsedInc : null;
-
-                                updateEquipmentItem(item.id, {
-                                  maxLoadKg,
-                                  minIncrementKg,
-                                  isConfirmed: true,
-                                });
-                                setEditingEquipmentId(null);
-                              }}
-                            >
-                              Save & Confirm
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-athloniq-border">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="min-h-[44px] w-full sm:w-auto"
-                    onClick={() => handleStepBack(3)}
-                  >
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    className="min-h-[44px] w-full sm:w-auto"
-                    onClick={() => {
-                      // Confirm all equipment if user clicks proceed
-                      const all = equipment.map((i) => ({ ...i, isConfirmed: true }));
-                      confirmEquipment(all);
-                      handleStepNext(3);
-                    }}
-                  >
-                    Confirm All Home Gym Equipment <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
+              <ProfileEquipmentStep
+                equipment={equipment}
+                editingEquipmentId={editingEquipmentId}
+                editMaxLoad={editMaxLoad}
+                editMinIncrement={editMinIncrement}
+                onStartEdit={(item) => {
+                  setEditingEquipmentId(item.id);
+                  setEditMaxLoad(item.maxLoadKg != null ? String(item.maxLoadKg) : "");
+                  setEditMinIncrement(item.minIncrementKg != null ? String(item.minIncrementKg) : "");
+                }}
+                onChangeMaxLoad={setEditMaxLoad}
+                onChangeMinIncrement={setEditMinIncrement}
+                onCancelEdit={() => setEditingEquipmentId(null)}
+                onSaveEdit={handleSaveEquipmentEdit}
+                onToggleConfirm={(item) =>
+                  updateEquipmentItem(item.id, { isConfirmed: !item.isConfirmed })
+                }
+                onBack={() => setCurrentStep(2)}
+                onConfirmAllAndNext={handleConfirmAllEquipment}
+              />
             )}
 
-            {/* STEP 4: Training Split, Sport & Sleep Baseline */}
             {currentStep === 4 && (
-              <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
-                  <div>
-                    <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
-                      Step 4 of 5
-                    </span>
-                    <h3 className="text-xl font-bold text-white mt-0.5">
-                      Training Split, Badminton/Running & Sleep Baseline
-                    </h3>
-                  </div>
-                  <ProvenanceBadge provenance="user_confirmed" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Weekly Training Days <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="7"
-                      {...register("trainingDaysPerWeek")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Experience Level <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <select
-                      {...register("experienceLevel")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                    >
-                      <option value="beginner">Beginner (&lt; 1 Year)</option>
-                      <option value="intermediate">Intermediate (1-3 Years)</option>
-                      <option value="advanced">Advanced (3-5 Years)</option>
-                      <option value="elite">Elite (5+ Years Competitive)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Current Routine Split
-                    </label>
-                    <select
-                      {...register("currentSplit")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                    >
-                      <option value="need_recommendation">Need Recommendation</option>
-                      <option value="upper_lower">Upper / Lower (4-5 Days)</option>
-                      <option value="ppl">Push / Pull / Legs (5-6 Days)</option>
-                      <option value="full_body">Full Body (3-4 Days)</option>
-                      <option value="bro_split">Body Part Split</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Weekly Badminton Sessions
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      {...register("weeklyBadmintonSessions")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Weekly Running Sessions
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      {...register("weeklyRunningSessions")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Typical Sleep Baseline (Hours) <span className="text-athloniq-lime">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="4"
-                      max="12"
-                      {...register("sleepBaselineHours")}
-                      className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 pt-2">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Exercise Limitations or Joint Sensitivities (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. slight right shoulder impingement on flat bench, or none"
-                    {...register("exerciseLimitations")}
-                    className="w-full bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => handleStepBack(4)}
-                  >
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => handleStepNext(4)}
-                  >
-                    Review & Activate Plan <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
+              <ProfileTrainingStep
+                register={register}
+                errors={errors}
+                onBack={() => setCurrentStep(3)}
+                onNext={() => handleStepNext(4)}
+              />
             )}
 
-            {/* STEP 5: Review & Plan Activation */}
             {currentStep === 5 && (
-              <Card className="space-y-6">
-                <div className="flex items-center justify-between border-b border-athloniq-border pb-4">
-                  <div>
-                    <span className="text-xs font-mono text-athloniq-lime uppercase font-semibold">
-                      Step 5 of 5
-                    </span>
-                    <h3 className="text-xl font-bold text-white mt-0.5">
-                      Profile Review & Plan Activation
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Verify deterministic anchors and activate your personalized AthlonIQ cybernetic engine.
-                    </p>
-                  </div>
-                  <ProvenanceBadge provenance="calculated_estimate" />
-                </div>
-
-                {/* Energy & Macro Targets Preview Card */}
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-athloniq-surface to-athloniq-card border border-athloniq-lime/30 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Flame className="h-5 w-5 text-athloniq-lime" />
-                      <span className="font-bold text-white text-base">
-                        Calibrated Daily Energy Balance
-                      </span>
-                    </div>
-                    <Badge variant="lime">LEAN BULK (+250 KCAL)</Badge>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
-                      <div className="text-[11px] text-slate-400 font-medium">Daily Target</div>
-                      <div className="text-2xl font-black text-athloniq-lime font-mono mt-1 tabular-nums">
-                        {liveEnergy.estimatedKcal ?? <span className="text-sm text-slate-500">not set</span>}
-                        {liveEnergy.estimatedKcal && <span className="text-xs text-slate-400 ml-1">kcal</span>}
-                      </div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
-                      <div className="text-[11px] text-slate-400 font-medium">Protein (1.6-2.2 g/kg)</div>
-                      <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                        {liveProteinRef.proteinTargetG}
-                        <span className="text-xs text-slate-400 ml-1">g</span>
-                      </div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
-                      <div className="text-[11px] text-slate-400 font-medium">Carbohydrates</div>
-                      <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                        {liveEnergy.macros?.carbsG ?? <span className="text-sm text-slate-500">not set</span>}
-                        {liveEnergy.macros?.carbsG !== undefined && liveEnergy.macros?.carbsG !== null && <span className="text-xs text-slate-400 ml-1">g</span>}
-                      </div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-athloniq-card border border-athloniq-border">
-                      <div className="text-[11px] text-slate-400 font-medium">Dietary Fats</div>
-                      <div className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
-                        {liveEnergy.macros?.fatG ?? <span className="text-sm text-slate-500">not set</span>}
-                        {liveEnergy.macros?.fatG !== undefined && liveEnergy.macros?.fatG !== null && <span className="text-xs text-slate-400 ml-1">g</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {liveEnergy.notes}
-                  </p>
-                </div>
-
-                {/* Audit Grid of Entered Baseline Anchors */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
-                    <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
-                      <span>BIOMETRICS</span>
-                      <ProvenanceBadge provenance="calculated_estimate" />
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Weight & Height</span>
-                      <span className="font-mono text-white font-semibold">
-                        {watchedWeight ? `${watchedWeight} kg` : "Not set"} / {watchedHeight ? `${watchedHeight} cm` : "Not set"} (BMI {liveBmi ? liveBmi.bmi : "Not set"})
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Age & Biological Sex</span>
-                      <span className="font-mono text-white font-semibold">
-                        {watchedAge} yrs • {watchedSex || "Unknown / Screening Default"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Sleep Baseline</span>
-                      <span className="font-mono text-white font-semibold">
-                        {watchedSleep} hours / night
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
-                    <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
-                      <span>EQUIPMENT & SCOPE</span>
-                      <ProvenanceBadge provenance="user_confirmed" />
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Home Gym Equipment</span>
-                      <span className="font-mono text-emerald-400 font-semibold">
-                        {equipment.filter((i) => i.isConfirmed).length}/{equipment.length} Items Confirmed
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Weekly Lifting & Sports</span>
-                      <span className="font-mono text-white font-semibold">
-                        5 Days Lift • {watchedBadminton} Badminton • {watchedRunning} Run
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-slate-400">Training Scope</span>
-                      <span className="font-mono text-white font-semibold">
-                        Gym • Calisthenics • Badminton • Running
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Timezone Confirmation Card */}
-                <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
-                  <div className="flex justify-between items-center border-b border-athloniq-border pb-1.5 font-bold text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <Globe className="h-4 w-4 text-athloniq-lime" />
-                      TIMEZONE CONFIRMATION
-                    </span>
-                    <Badge variant="lime">CAPTURED FROM DEVICE</Badge>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                    <div>
-                      <div className="text-xs text-slate-400">Detected IANA Timezone:</div>
-                      <div className="text-xs font-mono text-white font-bold mt-0.5" data-testid="detected-timezone-display">
-                        {watch("timezone") || detectedTimezone}
-                      </div>
-                    </div>
-                    <div className="w-full sm:w-64">
-                      <input
-                        type="text"
-                        {...register("timezone")}
-                        data-testid="onboarding-timezone-input"
-                        className="w-full bg-athloniq-card border border-athloniq-border rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:border-athloniq-lime focus:outline-none"
-                        placeholder="e.g. Asia/Kolkata, America/New_York"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-400">
-                    AthlonIQ computes evaluation dates and daily boundaries server-side from your confirmed timezone.
-                  </p>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => handleStepBack(5)}
-                  >
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
-
-                  <Button type="submit" variant="primary" size="lg">
-                    <Sparkles className="h-5 w-5" /> Activate Personalized Athlete Plan
-                  </Button>
-                </div>
-              </Card>
+              <ProfileReviewStep
+                register={register}
+                errors={errors}
+                equipment={equipment}
+                liveBmi={liveBmi}
+                liveProteinRef={liveProteinRef}
+                liveEnergy={liveEnergy}
+                watchedWeight={watchedWeight}
+                watchedHeight={watchedHeight}
+                watchedAge={watchedAge}
+                watchedSex={watchedSex}
+                watchedSleep={watchedSleep}
+                watchedGoal={watchedGoal}
+                watchedTrainingDays={watchedTrainingDays}
+                watchedBadminton={watchedBadminton}
+                watchedRunning={watchedRunning}
+                watchedTimezone={watchedTimezone}
+                detectedTimezone={detectedTimezone}
+                onBack={() => setCurrentStep(4)}
+              />
             )}
           </form>
         </div>
       ) : (
-        /* Summary Matrix View when Onboarding is completed */
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-athloniq-lime/15 border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-black text-lg">
-                AQ
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-base">{profile.fullName}</h3>
-                <p className="text-xs text-slate-400">{profile.email}</p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5 pt-2 border-t border-athloniq-border text-xs">
-              <div className="flex justify-between py-1 border-b border-athloniq-border">
-                <span className="text-slate-400">Age & Weight</span>
-                <span className="font-mono text-white font-medium">
-                  {profile.age} yrs • {profile.weightKg} kg
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-athloniq-border">
-                <span className="text-slate-400">Height & BMI</span>
-                <span className="font-mono text-white font-medium">
-                  {profile.heightCm} cm • BMI 18.4
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-athloniq-border">
-                <span className="text-slate-400">Training Frequency</span>
-                <span className="text-athloniq-lime font-semibold font-mono">
-                  {profile.trainingDaysPerWeek} Days / Week
-                </span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-400">Home Equipment</span>
-                <span className="text-emerald-400 font-semibold">
-                  {profile.equipmentConfirmed ? "Confirmed Home Gym" : "Pending Confirmation"}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setIsEditingAfterCompletion(true);
-                  setCurrentStep(1);
-                }}
-              >
-                Edit Athlete Baselines
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Flame className="h-5 w-5 text-athloniq-lime" />
-                <h3 className="font-bold text-white">Active Nutritional Target</h3>
-              </div>
-              <ProvenanceBadge provenance={goals.calorieProvenance} />
-            </div>
-
-            <div className="p-4 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2">
-              <div className="text-xs font-semibold text-athloniq-lime uppercase">
-                Lean Bulk Strategy (+250 kcal)
-              </div>
-              <div className="text-2xl font-black text-white font-mono tabular-nums">
-                {goals.calorieTargetKcal || "Awaiting Onboarding"}
-                {goals.calorieTargetKcal && <span className="text-xs text-slate-400 ml-1">kcal/day</span>}
-              </div>
-              <div className="text-xs text-slate-400">
-                Protein Target: {goals.proteinTargetG} g/day (1.6-2.2 g/kg range)
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Carbohydrate Target</span>
-                <span className="font-mono text-white font-semibold">
-                  {goals.carbsTargetG ? `${goals.carbsTargetG} g` : "Calibrated"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Dietary Fats</span>
-                <span className="font-mono text-white font-semibold">
-                  {goals.fatTargetG ? `${goals.fatTargetG} g` : "25% of energy"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Hydration Baseline</span>
-                <span className="font-mono text-white font-semibold">3,500 ml / day</span>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-400" />
-              <h3 className="font-bold text-white">Privacy & RLS Verification</h3>
-            </div>
-            <div className="space-y-3 text-xs text-slate-300">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <Activity className="h-4 w-4" />
-                <span>Row-Level Security Active (auth.uid() = user_id)</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-400">
-                <Activity className="h-4 w-4" />
-                <span>Deterministic Rules Engine (Zero Fabricated HRV)</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-400">
-                <Activity className="h-4 w-4" />
-                <span>Auditable Provenance on Every Metric</span>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-athloniq-border">
-              <div className="text-[11px] text-slate-400">
-                All biometrics, equipment items, and check-in scores are deterministically verified and synchronized with PostgreSQL Row-Level Security (RLS) policies in Supabase.
-              </div>
-            </div>
-          </Card>
-        </div>
+        <ProfileSummarySection
+          profile={profile}
+          goals={goals}
+          onEditBaselines={() => {
+            setIsEditingAfterCompletion(true);
+            setCurrentStep(1);
+          }}
+        />
       )}
 
-      {/* Export / Reset Notice Alert */}
-      {exportNotice && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span>{exportNotice}</span>
-        </div>
-      )}
-
-      {/* Progressive Web App (PWA) Offline & Install Card */}
       <PwaInstallCard
         canInstall={canInstall}
         isInstalled={isInstalled}
@@ -1400,105 +602,20 @@ export const ProfileView: React.FC = () => {
         onInstall={installApp}
       />
 
-      {/* Data Portability, Export & Account Controls */}
-      <Card className="space-y-4 border-athloniq-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-athloniq-lime" />
-            <div>
-              <h3 className="font-bold text-white text-base">Data Portability, Export & Account Controls</h3>
-              <p className="text-xs text-slate-400">
-                Full athlete sovereignty. Export your logs as JSON or CSV spreadsheets, or securely wipe all personal data.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center justify-center gap-2"
-            onClick={handleExportJSON}
-          >
-            <FileJson className="h-4 w-4 text-athloniq-lime" />
-            <span>Export Complete JSON</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center justify-center gap-2"
-            onClick={handleExportCSV}
-          >
-            <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
-            <span>Export CSV Spreadsheets</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center justify-center gap-2 text-rose-400 hover:text-rose-300 border-rose-500/30 hover:bg-rose-500/10"
-            onClick={() => setShowDeleteModal(true)}
-          >
-            <Trash2 className="h-4 w-4 text-rose-400" />
-            <span>Reset / Delete All Data</span>
-          </Button>
-        </div>
-      </Card>
-
-      {/* Two-Step Deletion Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md space-y-4 border-rose-500/40 bg-athloniq-card shadow-2xl">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-lg">Reset & Delete All Personal Data</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  This action will permanently purge all nutrition entries, weigh-ins, progress photos, workout routines, and AI conversation history from this device and local storage.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/20 text-xs text-rose-300">
-              To confirm permanent deletion, please type <strong className="font-mono text-white">DELETE</strong> below:
-            </div>
-
-            <input
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE to confirm"
-              className="w-full px-3 py-2 text-sm rounded-lg bg-athloniq-surface border border-athloniq-border text-white focus:outline-none focus:border-rose-400 font-mono"
-            />
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={deleteConfirmText.trim() !== "DELETE"}
-                className="bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-40 disabled:cursor-not-allowed border-rose-600"
-                onClick={handleConfirmDelete}
-              >
-                Permanently Delete Data
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <ProfileDataPortabilitySection
+        exportNotice={exportNotice}
+        showDeleteModal={showDeleteModal}
+        deleteConfirmText={deleteConfirmText}
+        onExportJSON={handleExportJSON}
+        onExportCSV={handleExportCSV}
+        onOpenDeleteModal={() => setShowDeleteModal(true)}
+        onChangeDeleteConfirmText={setDeleteConfirmText}
+        onCancelDeleteModal={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmText("");
+        }}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </div>
   );
 };

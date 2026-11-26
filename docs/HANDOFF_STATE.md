@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-26 22:05 IST  
+**Timestamp**: 2026-11-27 00:05 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -22,14 +22,16 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 
 ### Current Working Tree (`git status -s`)
 ```text
- M api/app/core/config.py
- M api/app/services/vision_adapter.py
- M api/tests/test_phase3_vision.py
  M docs/HANDOFF_STATE.md
- M web/src/features/nutrition/components/MealPhotoUploader.tsx
- M web/src/test/meal-photo-uploader.test.tsx
+ M web/src/app/App.tsx
+ M web/src/features/profile/ProfileView.tsx
+ M web/src/test/routes-navigation.test.tsx
+?? web/src/features/profile/components/
+?? web/src/features/profile/constants.ts
+?? web/src/features/profile/hooks/
+?? web/src/test/profile-components.test.tsx
 ```
-*(Zero unapproved agent commits; zero new npm or pip dependencies).*
+*(Zero unapproved agent commits; `api/` untouched in UI-8E; zero new npm dependencies).*
 
 ---
 
@@ -37,11 +39,11 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 
 | Test Suite | Command | Scope | Verified Baseline / Latest Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest Vision & Coach** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests/test_phase3_vision.py api/tests/test_phase4_coach.py` | Vision live/fallback model cascade (`3.8-flash` -> `3.5-flash-lite`), `VISION_PROVIDER=mock`, catalog mapping, safety & coach tools (post-vision fix) | **45 passed**, 2 warnings (pre-fix full suite: **181 passed**) | 151.16s |
-| **Vitest Vision & Tokens** (`web/`) | `npm --prefix web test -- src/test/meal-photo-uploader.test.tsx src/test/lane-b3.test.tsx src/test/tailwind-tokens.test.ts` | `MealPhotoUploader` `whitespace-nowrap` badge, non-duplicated fallback copy, lime/emerald tokens & `min-h-[44px]`, CSS/TSX token guards (post-polish; UI-8D full suite: **236 passed**, 28 files) | **29 passed** (3 files) | 11.59s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (UI-8D baseline: `dist/assets/index-CFQ-alJt.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 3.68s |
+| **Pytest Full Suite** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision live/fallback model cascade, coach tools, acceptance contracts | **184 passed**, 2 warnings (`test_phase3_vision.py`: 29 passed) | 319.35s |
+| **Vitest Full Suite** (`web/`) | `npm --prefix web test` | Full client test suite across 29 files (all 7 modularized views: `Today`, `Nutrition`, `Workouts`, `Activities`, `Recovery`, `Progress`, `Coach`, `Profile` + `UI-8A..UI-8E`, routing, tokens, bundle gate) | **243 passed** (29 files) | 25.77s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CoFnPsJt.js` at `214.45 kB`, <= 210 KiB / `215,040` B gate) | **0 errors** (PWA precache 35 entries) | 4.19s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 224 tracked files | <3s |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 234 tracked files | <3s |
 
 ---
 
@@ -486,13 +488,18 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
   - **Unsaved-Work Guard**: Verified blocking modal `"Unsaved Work in Progress"` on `/recovery` -> `Cardio` and `/coach` -> `Profile` (`"Stay & Keep Editing"` retains edits, `"Discard & Leave"` navigates); noted `/profile` immediately flags `"Profile Setup Form"` dirty on load; browser `history.back()` (`popstate` listener in `UnsavedWorkContext.tsx`) could not be invoked via disabled `navigate_page`/`evaluate_script` MCP tools.
   - **Truth-in-UI & `MealPhotoUploader` Modal**: `/recovery` stress starts `"Not set"`, `/progress` sparse state renders `"0/3 WEIGH-INS"` / `"Insufficient Data"`, `"Automatic Indian Culinary Detection"` (`height: 26.5px`) and `"mock (demo)"` (`height: 30px`) pills render single-line with `44px` action buttons. Browser `upload_file` hit MCP workspace-root access denial, so live vision upload path was verified via FastAPI `TestClient` + Vitest. `prefers-reduced-motion: reduce` media emulation was unavailable in `chrome_devtools` (`globals.css` rules + Vitest `motion-ui8a.test.tsx` cover reduced motion).
 
+### 12. UI-8E — `ProfileView` Modularization, `ui-ux-pro-max` Polish & Browser-Smoke Fixes (2026-11-27)
+- **All 7 Core Views Modularized (`29/29` Vitest Suites, `243` tests passing)**: `0` new deps in `web/package.json`; entry chunk `dist/assets/index-CoFnPsJt.js` at `214.45 kB` (`<= 210 KiB` / `215,040` bytes budget); lazy `ProfileView` chunk at `90.38 kB`.
+- **`features/profile/` Split**: Extracted `ProfileStepNav.tsx`, `ProfileIdentityStep.tsx`, `ProfileGoalsStep.tsx`, `ProfileEquipmentStep.tsx`, `ProfilePreferencesSection.tsx` (`ProfileTrainingStep` & `ProfileReviewStep`), `ProfileSummarySection.tsx`, `ProfileDataPortabilitySection.tsx`, `constants.ts` (Zod `onboardingSchema` + snapshot normalizers), and `hooks/useProfileFormDirty.ts`.
+- **Browser-Smoke Bug #1 Fixed (Untouched `/profile` Dirty Guard False Positive)**: Normalized `null`/`undefined`/empty DOM fields identically in `normalizeProfileSnapshot` + `buildProfileBaseline`, comparing watched form values and inline equipment limit edits against hydrated baseline snapshots (and syncing clean async hydration via `reset`), so opening `/profile` and navigating away untouched never arms `"Profile Setup Form"` while actual edits do arm and revert/save disarms it.
+- **Browser-Smoke Bug #2 Fixed (Authenticated `/signin` Redirect)**: Added `<Route path="/signin" element={<Navigate to="/today" replace />} />` in `web/src/app/App.tsx` (tested in `web/src/test/routes-navigation.test.tsx`).
+- **Accessibility, UX & Truth-in-UI Polish**: Added `role="progressbar"` + `aria-current="step"` onboarding stepper; complete `<label htmlFor>` bindings across Steps 1–5, equipment editor, and delete dialog (`role="dialog"`); `mode: "onBlur"` validation + focusable `role="alert"` error summary with step links; removed hardcoded `"BMI 18.4"`, `"LEAN BULK"`, `"5 Days Lift"`, and `"text-purple-400"`; applied `min-h-[44px]`, `tabular-nums`, lime/emerald tokens only, and `Card spotlight` sparingly on top-level cards. Added `web/src/test/profile-components.test.tsx` (6 tests).
+
 ---
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
 1. **True `390×844` Browser Width & `prefers-reduced-motion` Emulation / `history.back()`**:
-   - Covered by automated JSDOM suites (`mobile-ergonomics-ui5.test.tsx`, `motion-ui8a.test.tsx`, `routes-navigation.test.tsx`) and `chrome_devtools` down to Windows minimum (`752×830`); true `390×844` CDP device emulation, `popstate` back-button click, and live Chrome `prefers-reduced-motion: reduce` toggle require CDP `emulate`/`navigate_page` enabled or mobile device testing.
-2. **Authenticated `/signin` Redirect & `/profile` Initial Dirty State**:
-   - Observed during browser smoke check (outside UI-8D/vision scope): visiting `/signin` while signed in hits 404, and `/profile` immediately triggers the `"Profile Setup Form"` dirty guard on navigation away without manual edits.
-3. **Owner Review of Working Tree Changes**:
-   - Working tree changes (`api/` vision fix + `web/` `MealPhotoUploader` polish + `docs/HANDOFF_STATE.md`) remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).
+   - Covered by automated JSDOM suites (`mobile-ergonomics-ui5.test.tsx`, `motion-ui8a.test.tsx`, `routes-navigation.test.tsx`, `profile-components.test.tsx`) and `chrome_devtools` down to Windows minimum (`752×830`); true `390×844` CDP device emulation, `popstate` back-button click, and live Chrome `prefers-reduced-motion: reduce` toggle require CDP `emulate`/`navigate_page` enabled or mobile device testing.
+2. **Owner Review of Working Tree Changes**:
+   - Working tree changes (`web/` UI-8E `ProfileView` split + `/signin` redirect + `docs/HANDOFF_STATE.md`) remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).
