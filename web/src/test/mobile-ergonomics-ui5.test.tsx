@@ -428,8 +428,8 @@ describe("UI-5: 390px Ergonomics & Truth in UI Regression Suite", () => {
       );
 
       // Sub-tab buttons
-      const chatTab = screen.getByRole("button", { name: /AI Coach Chat/i });
-      const reviewTab = screen.getByRole("button", { name: /Weekly Review & Priorities/i });
+      const chatTab = screen.getByRole("tab", { name: /AI Coach Chat/i });
+      const reviewTab = screen.getByRole("tab", { name: /Weekly Review & Priorities/i });
 
       expect(chatTab.className).toMatch(/min-h-\[44px\]/);
       expect(reviewTab.className).toMatch(/min-h-\[44px\]/);
@@ -447,7 +447,7 @@ describe("UI-5: 390px Ergonomics & Truth in UI Regression Suite", () => {
         </MemoryRouter>
       );
 
-      const reviewTab = screen.getByRole("button", { name: /Weekly Review & Priorities/i });
+      const reviewTab = screen.getByRole("tab", { name: /Weekly Review & Priorities/i });
       fireEvent.click(reviewTab);
 
       const regenButton = await screen.findByRole("button", { name: /Regenerate Review/i });

@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-26 20:08 IST  
+**Timestamp**: 2026-11-26 20:32 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -24,14 +24,26 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 ```text
  M docs/HANDOFF_STATE.md
  M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/coach/CoachView.tsx
  M web/src/features/progress/ProgressView.tsx
  M web/src/features/recovery/RecoveryView.tsx
+ M web/src/test/coach-weekly-review-offline.test.tsx
+ M web/src/test/mobile-ergonomics-ui5.test.tsx
 ?? web/src/features/activities/components/ActivityHistoryList.tsx
 ?? web/src/features/activities/components/ActivityLogForm.tsx
 ?? web/src/features/activities/components/ActivitySportSelector.tsx
 ?? web/src/features/activities/components/ActivityWeeklySummary.tsx
 ?? web/src/features/activities/constants.ts
 ?? web/src/features/activities/hooks/useActivityFormDirty.ts
+?? web/src/features/coach/components/CoachChatPanel.tsx
+?? web/src/features/coach/components/CoachComposer.tsx
+?? web/src/features/coach/components/CoachContextSummary.tsx
+?? web/src/features/coach/components/CoachMessageList.tsx
+?? web/src/features/coach/components/CoachQuickPrompts.tsx
+?? web/src/features/coach/components/CoachSubTabs.tsx
+?? web/src/features/coach/components/CoachWeeklyReviewPanel.tsx
+?? web/src/features/coach/constants.ts
+?? web/src/features/coach/hooks/useCoachFormDirty.ts
 ?? web/src/features/progress/components/LeanBulkCalibrationCard.tsx
 ?? web/src/features/progress/components/MultiSportFatigueCard.tsx
 ?? web/src/features/progress/components/ProgressBodyMetricsList.tsx
@@ -48,6 +60,7 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 ?? web/src/features/recovery/components/RecoveryReadinessSummary.tsx
 ?? web/src/features/recovery/hooks/useRecoveryFormDirty.ts
 ?? web/src/test/activities-components.test.tsx
+?? web/src/test/coach-components.test.tsx
 ?? web/src/test/progress-components.test.tsx
 ?? web/src/test/recovery-components.test.tsx
 ```
@@ -60,8 +73,8 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
 | **Pytest** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision fallback & demo modes, coach tools, acceptance contracts | **181 passed**, 2 warnings | 467.51s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 27 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView` split components & dirty guards), UI-8C (`ProgressView` modularization, inline form validation, focus management, dirty guards), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **232 passed** (27 files) | 19.06s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CgrzXsX0.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 4.87s |
+| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 28 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView`), UI-8C (`ProgressView`), UI-8D (`CoachView` WAI-ARIA tabs, `aria-live="polite"` chat log, dirty draft guard, zero fabricated chat/review defaults), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **236 passed** (28 files) | 19.06s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CFQ-alJt.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 4.32s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 200 tracked files | <3s |
 
@@ -487,6 +500,11 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **27/27 Vitest Suites (`232` tests passing)**, `0` new deps in `web/package.json`, lazy-loaded route chunk preserved (`dist/assets/index-CgrzXsX0.js` at `214.35 kB`, `<= 210 KiB` gate).
 - **`features/progress/` Split**: Extracted `ProgressHeaderActions.tsx`, `ProgressKeyStatsGrid.tsx`, `LeanBulkCalibrationCard.tsx`, `MultiSportFatigueCard.tsx`, `ProgressPhotosSection.tsx`, `ProgressWeighInDrawer.tsx`, `WeightTrendSection.tsx`, `ProgressBodyMetricsList.tsx`, `TrainingVolumeSection.tsx`, and `useProgressFormDirty.ts` (`UnsavedWorkContext`).
 - **Accessibility & Truth-in-UI Hardening**: Eliminated silent `?? 8` / `?? 2` fatigue defaults and `Target: null g/day` display; preserved `"0/3 WEIGH-INS"` / `"Insufficient Data"` and empty photo states; added visible `<label htmlFor>`, `role="alert"` + `aria-describedby` + `aria-invalid` on-blur/submit validation, drawer focus management, `aria-hidden="true"` on decorative icons, descriptive `alt` / `aria-label` tags, non-color delta indicators, `min-h-[44px]` touch targets, `tabular-nums`, and `Card spotlight` on top-level summary cards only. Added `web/src/test/progress-components.test.tsx` (5 tests).
+
+### 10. UI-8D — Functional Screen Modularization & Hardening (`CoachView`)
+- **28/28 Vitest Suites (`236` tests passing)**, `0` new deps in `web/package.json`, lazy-loaded route chunk preserved (`dist/assets/index-CFQ-alJt.js` at `214.35 kB`, `<= 210 KiB` gate; `CoachView` chunk at `35.10 kB`), zero WebGL.
+- **`features/coach/` Split**: Extracted `CoachSubTabs.tsx`, `CoachContextSummary.tsx`, `CoachMessageList.tsx`, `CoachQuickPrompts.tsx`, `CoachComposer.tsx`, `CoachChatPanel.tsx`, `CoachWeeklyReviewPanel.tsx`, `constants.ts`, and `useCoachFormDirty.ts` (`UnsavedWorkContext`).
+- **Accessibility & Truth-in-UI Hardening**: Added WAI-ARIA `role="tablist"` / `role="tab"` / `aria-selected` / `role="tabpanel"` + ArrowLeft/ArrowRight/Home/End keyboard switching; `role="log"` + `aria-live="polite"` + `aria-busy` on chat messages; `<label htmlFor>` / `aria-label` on chat input, send button, and quiet-hours inputs; removed hardcoded fake offline chat replies (`54.5 g`, `82% (Prime)`) in favor of `role="alert"` error + Retry Send; replaced `null–null` protein bands and `sky-*` / structural emoji with clean `"Target not set"` / `"Not set"` states and lime/emerald tokens; `min-h-[44px]` across tabs, chips, controls, and Regenerate/Retry buttons; `tabular-nums` across weekly metrics. Added `web/src/test/coach-components.test.tsx` (4 tests).
 
 ---
 

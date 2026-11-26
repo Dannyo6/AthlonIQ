@@ -48,7 +48,7 @@ describe("CoachView Weekly Review Offline Catch & Retry", () => {
     render(<CoachView />);
 
     // Switch to Weekly Review tab
-    const reviewTabButton = screen.getByRole("button", { name: /Weekly Review/i });
+    const reviewTabButton = screen.getByRole("tab", { name: /Weekly Review/i });
     fireEvent.click(reviewTabButton);
 
     // Verify error / offline notice appears
@@ -126,7 +126,7 @@ describe("CoachView Weekly Review Offline Catch & Retry", () => {
     render(<CoachView />);
 
     // Switch to review tab
-    const reviewTabButton = screen.getByRole("button", { name: /Weekly Review/i });
+    const reviewTabButton = screen.getByRole("tab", { name: /Weekly Review/i });
     fireEvent.click(reviewTabButton);
 
     await waitFor(() => {
