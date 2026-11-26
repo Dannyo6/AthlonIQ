@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-27 00:05 IST  
+**Timestamp**: 2026-11-27 00:42 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -13,25 +13,31 @@
 
 ### Recent Commits (`git log --oneline -n 5`)
 ```text
-94c2df1 feat(web): add reduced-motion baseline, CountUp, ClickSpark, Card spotlight, and budget gate (UI-8A)
-307ab4c web
-eb17a97 feat(api): Epley one-rep-max with 1-rep and 30-rep boundaries; add golden cases
-cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, optional RIR
-5a61ebe feat(tools): generate API types from OpenAPI with stale check; add golden-value parity fixtures
+b69d26a refactor(web): modularize ProfileView with ui-ux-pro-max polish and fix profile/signin smoke bugs (UI-8E)
+b4c1fe7 fix(vision,web): update Gemini Vision model cascade and polish MealPhotoUploader 390px UI
+506930f refactor(web): modularize CoachView with tab/chat accessibility, unsaved-work guards, and component tests (UI-8D)
+3f68eeb refactor(web): modularize ProgressView with chart accessibility, unsaved-work guards, and component tests (UI-8C)
+20be127 Update .gitignore
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
  M web/src/app/App.tsx
- M web/src/features/profile/ProfileView.tsx
- M web/src/test/routes-navigation.test.tsx
-?? web/src/features/profile/components/
-?? web/src/features/profile/constants.ts
-?? web/src/features/profile/hooks/
-?? web/src/test/profile-components.test.tsx
+ M web/src/components/ui/Card.tsx
+ M web/src/features/dashboard/DashboardView.tsx
+ M web/src/features/dashboard/components/DashboardHeader.tsx
+ M web/src/features/dashboard/components/MoreAccordion.tsx
+ M web/src/features/dashboard/components/NutritionCard.tsx
+ M web/src/features/dashboard/components/QuickActionsRow.tsx
+ M web/src/features/dashboard/components/ReadinessStrip.tsx
+ M web/src/features/dashboard/components/TodayTrainingCard.tsx
+ M web/src/features/dashboard/components/WeeklyConsistencyCard.tsx
+ M web/src/features/dashboard/components/WeightTrendCard.tsx
+ M web/src/styles/globals.css
+?? design-system/
 ```
-*(Zero unapproved agent commits; `api/` untouched in UI-8E; zero new npm dependencies).*
+*(Zero unapproved agent commits; `api/` untouched; zero new npm dependencies).*
 
 ---
 
@@ -40,8 +46,8 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 | Test Suite | Command | Scope | Verified Baseline / Latest Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
 | **Pytest Full Suite** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision live/fallback model cascade, coach tools, acceptance contracts | **184 passed**, 2 warnings (`test_phase3_vision.py`: 29 passed) | 319.35s |
-| **Vitest Full Suite** (`web/`) | `npm --prefix web test` | Full client test suite across 29 files (all 7 modularized views: `Today`, `Nutrition`, `Workouts`, `Activities`, `Recovery`, `Progress`, `Coach`, `Profile` + `UI-8A..UI-8E`, routing, tokens, bundle gate) | **243 passed** (29 files) | 25.77s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CoFnPsJt.js` at `214.45 kB`, <= 210 KiB / `215,040` B gate) | **0 errors** (PWA precache 35 entries) | 4.19s |
+| **Vitest Full Suite** (`web/`) | `npm --prefix web test` | Full client test suite across 29 files (all 7 modularized views + `UI-8A..UI-8E` + `UI-9A`, routing, CSS/TSX token guards, bundle gate) | **243 passed** (29 files) | 25.77s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-3gm5Tm-d.js` at `214.47 kB`, <= 210 KiB / `215,040` B gate; `DashboardView` at `43.11 kB`) | **0 errors** (PWA precache 35 entries) | 6.85s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 234 tracked files | <3s |
 
@@ -495,11 +501,16 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **Browser-Smoke Bug #2 Fixed (Authenticated `/signin` Redirect)**: Added `<Route path="/signin" element={<Navigate to="/today" replace />} />` in `web/src/app/App.tsx` (tested in `web/src/test/routes-navigation.test.tsx`).
 - **Accessibility, UX & Truth-in-UI Polish**: Added `role="progressbar"` + `aria-current="step"` onboarding stepper; complete `<label htmlFor>` bindings across Steps 1–5, equipment editor, and delete dialog (`role="dialog"`); `mode: "onBlur"` validation + focusable `role="alert"` error summary with step links; removed hardcoded `"BMI 18.4"`, `"LEAN BULK"`, `"5 Days Lift"`, and `"text-purple-400"`; applied `min-h-[44px]`, `tabular-nums`, lime/emerald tokens only, and `Card spotlight` sparingly on top-level cards. Added `web/src/test/profile-components.test.tsx` (6 tests).
 
+### 13. UI-9A — AthlonIQ Design System (`MASTER.md`), Surface Craft & `/today` Dashboard Visual Elevation (2026-11-27)
+- **Design System Artifacts (`design-system/athloniq/`)**: Persisted `MASTER.md`, `pages/today.md` (both appended with canonical AthlonIQ overrides locking Deep Obsidian surfaces, lime primary, emerald secondary, zero cyan/purple/orange, `Inter`/`JetBrains Mono`, `lucide-react` icons only, pure CSS motion with `prefers-reduced-motion: reduce`, zero WebGL/GSAP, and strict Truth-in-UI null states), plus static `preview.html`.
+- **4-Tier Dark Surface Elevation (`web/src/styles/globals.css` + `Card.tsx`)**: Added `:root` elevation tokens and CSS surface utilities (canvas ambient depth → `.surface-card` hairline + top inner sheen → `.surface-elevated` → `.surface-well` recessed telemetry wells, `.tactile-press`, `.safe-area-bottom` on bottom dock, and high-contrast `:focus-visible`), all respecting `@media (prefers-reduced-motion: reduce)` and CSS/TSX token guards (`tailwind-tokens.test.ts`), while keeping `Card-3VslN2Fh.js` (`2.08 kB`) and `dist/assets/index-3gm5Tm-d.js` (`214.47 kB`) strictly inside the `210 KiB` (`215,040 B`) entry budget.
+- **`/today` Visual Elevation (`web/src/features/dashboard/`)**: Upgraded `DashboardView` with a responsive asymmetric `12`-col telemetry bento grid (`7/5` splits on `lg+`, crisp `390px` vertical stack), polished `DashboardHeader` eyebrow indicator, elevated hero `ReadinessStrip` (`Card spotlight`, `.surface-well` triggers, `<label htmlFor>` + `min-h-[44px]` quick check-in drawer controls, `aria-expanded`), tactile `QuickActionsRow`, hero KPI typography and `.surface-well` panels across `NutritionCard`, `TodayTrainingCard`, `WeightTrendCard`, `WeeklyConsistencyCard`, and `MoreAccordion` (`aria-expanded` / `aria-controls`, `aria-hidden="true"` on decorative icons), preserving all Truth-in-UI null states and `min-h-[44px]` touch targets.
+
 ---
 
 ## 5. Explicit "Not Verified" & Open Action Items
 
 1. **True `390×844` Browser Width & `prefers-reduced-motion` Emulation / `history.back()`**:
-   - Covered by automated JSDOM suites (`mobile-ergonomics-ui5.test.tsx`, `motion-ui8a.test.tsx`, `routes-navigation.test.tsx`, `profile-components.test.tsx`) and `chrome_devtools` down to Windows minimum (`752×830`); true `390×844` CDP device emulation, `popstate` back-button click, and live Chrome `prefers-reduced-motion: reduce` toggle require CDP `emulate`/`navigate_page` enabled or mobile device testing.
+   - Covered by automated JSDOM suites (`mobile-ergonomics-ui5.test.tsx`, `motion-ui8a.test.tsx`, `routes-navigation.test.tsx`, `profile-components.test.tsx`, `today-dashboard-ui2.test.tsx`) and `chrome_devtools` down to Windows minimum (`752×830`); true `390×844` CDP device emulation, `popstate` back-button click, and live Chrome `prefers-reduced-motion: reduce` toggle require CDP `emulate`/`navigate_page` enabled or mobile device testing.
 2. **Owner Review of Working Tree Changes**:
-   - Working tree changes (`web/` UI-8E `ProfileView` split + `/signin` redirect + `docs/HANDOFF_STATE.md`) remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).
+   - Working tree changes (`design-system/athloniq/`, `web/` UI-9A surface craft & `/today` elevation, and `docs/HANDOFF_STATE.md`) remain uncommitted awaiting owner review and explicit commit approval (AGENTS.md Rule 9).

@@ -35,11 +35,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   }, [fullName]);
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div className="space-y-0.5">
-        <p className="text-xs font-mono font-medium text-slate-400 uppercase tracking-wider tabular-nums">
-          {formattedDate}
-        </p>
+    <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
+      <div className="space-y-1">
+        <div className="inline-flex items-center gap-2 text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-widest tabular-nums">
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0"
+            aria-hidden="true"
+          />
+          <span>{formattedDate}</span>
+          <span className="text-slate-600" aria-hidden="true">
+            •
+          </span>
+          <span className="text-emerald-400">Daily Telemetry</span>
+        </div>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
           {greeting}
         </h1>
@@ -55,16 +63,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ? "Reset back to personal state"
               : "Load 14-day populated demo data"
           }
-          className="min-h-[44px] text-xs"
+          className="min-h-[44px] text-xs tactile-press"
         >
           {isDemoFixtureActive ? (
             <>
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>Reset Demo</span>
             </>
           ) : (
             <>
-              <Database className="h-3.5 w-3.5 text-athloniq-lime" />
+              <Database className="h-3.5 w-3.5 text-athloniq-lime shrink-0" aria-hidden="true" />
               <span>14d Demo Fixture</span>
             </>
           )}
@@ -73,4 +81,3 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     </header>
   );
 };
-

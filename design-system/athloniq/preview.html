@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AthlonIQ Design System Preview — Canonical Obsidian, Lime & Emerald</title>
+  <style>
+    :root {
+      --color-bg: #090a0f;
+      --color-card: #12151e;
+      --color-surface: #181d2a;
+      --color-elevated: #1b2130;
+      --color-well: #0d1017;
+      --color-text: #f1f5f9;
+      --color-muted: #94a3b8;
+      --color-lime: #bef264;
+      --color-lime-hover: #a3e635;
+      --color-emerald: #10b981;
+      --color-amber: #f59e0b;
+      --color-border-hairline: rgba(255, 255, 255, 0.08);
+      --color-well-border: rgba(255, 255, 255, 0.05);
+      --color-lime-border: rgba(190, 242, 100, 0.32);
+      --color-emerald-border: rgba(16, 185, 129, 0.32);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--color-bg);
+      background-image:
+        radial-gradient(ellipse 80% 45% at 50% -10%, rgba(190, 242, 100, 0.05), transparent 65%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(16, 185, 129, 0.04), transparent 60%);
+      color: var(--color-text);
+      padding: 32px 20px 64px;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; font-variant-numeric: tabular-nums; }
+    h1 { font-size: 1.85rem; font-weight: 900; letter-spacing: -0.025em; }
+    h2 { font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 12px; }
+    .subtitle { color: var(--color-muted); font-size: 0.875rem; }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .col-7 { grid-column: span 7; }
+    .col-5 { grid-column: span 5; }
+    @media (max-width: 820px) {
+      .col-7, .col-5 { grid-column: span 12; }
+    }
+
+    .surface-card {
+      background: var(--color-card);
+      border: 1px solid var(--color-border-hairline);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+    }
+    .surface-elevated {
+      background: var(--color-elevated);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .surface-well {
+      background: var(--color-well);
+      border: 1px solid var(--color-well-border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+    }
+
+    .swatch { height: 48px; border-radius: 10px; border: 1px solid var(--color-border-hairline); margin-bottom: 10px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 9999px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .badge-lime { background: rgba(190, 242, 100, 0.14); color: var(--color-lime); border: 1px solid var(--color-lime-border); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.14); color: #34d399; border: 1px solid var(--color-emerald-border); }
+    .kpi { font-size: 2rem; font-weight: 900; letter-spacing: -0.03em; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 18px;
+      border-radius: 12px; font-size: 0.8rem; font-weight: 800; text-decoration: none; cursor: pointer;
+    }
+    .btn-primary { background: var(--color-lime); color: #090a0f; border: 1px solid transparent; }
+    .btn-secondary { background: var(--color-elevated); color: var(--color-text); border: 1px solid rgba(255,255,255,0.1); }
+    .track { height: 6px; background: var(--color-card); border-radius: 9999px; overflow: hidden; border: 1px solid var(--color-border-hairline); margin-top: 8px; }
+    .fill { height: 100%; background: var(--color-lime); width: 76%; border-radius: 9999px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div class="badge badge-emerald mono">AthlonIQ Design System • Canonical Preview</div>
+      <h1 style="margin-top: 10px;">4-Tier Obsidian Elevation &amp; Telemetry Surfaces</h1>
+      <p class="subtitle">Deep Obsidian canvas, layered Graphite surfaces, Electric Lime primary, Emerald verification, strict tabular-nums.</p>
+    </header>
+
+    <section class="grid-4" aria-label="Surface elevation tiers">
+      <div class="surface-card">
+        <div class="swatch" style="background: var(--color-bg);"></div>
+        <div class="mono" style="font-size: 12px; font-weight: 700;">Tier 1 — Canvas</div>
+        <div class="mono" style="font-size: 11px; color: var(--color-muted);">#090a0f (--color-bg)</div>
+      </div>
+      <div class="surface-card">
+        <div class="swatch" style="background: var(--color-card);"></div>
+        <div class="mono" style="font-size: 12px; font-weight: 700;">Tier 2 — Surface Card</div>
+        <div class="mono" style="font-size: 11px; color: var(--color-muted);">#12151e (--color-card)</div>
+      </div>
+      <div class="surface-card">
+        <div class="swatch" style="background: var(--color-elevated);"></div>
+        <div class="mono" style="font-size: 12px; font-weight: 700;">Tier 3 — Elevated</div>
+        <div class="mono" style="font-size: 11px; color: var(--color-muted);">#1b2130 (--color-elevated)</div>
+      </div>
+      <div class="surface-card">
+        <div class="swatch" style="background: var(--color-well);"></div>
+        <div class="mono" style="font-size: 12px; font-weight: 700;">Tier 4 — Recessed Well</div>
+        <div class="mono" style="font-size: 11px; color: var(--color-muted);">#0d1017 (--color-well)</div>
+      </div>
+    </section>
+
+    <section class="bento" aria-label="Today dashboard telemetry preview">
+      <article class="surface-card col-7">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h2>Energy &amp; Nutrition</h2>
+          <span class="badge badge-emerald mono">USER CONFIRMED</span>
+        </div>
+        <div class="surface-well">
+          <div class="mono" style="font-size:11px; color:var(--color-muted); text-transform:uppercase;">Daily Caloric Intake</div>
+          <div class="kpi mono" style="margin-top:4px;">1,920 <span style="font-size:0.85rem; color:var(--color-muted); font-weight:600;">/ 2,500 kcal</span></div>
+          <div class="track"><div class="fill"></div></div>
+        </div>
+      </article>
+
+      <article class="surface-card col-5" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2>Today's Training</h2>
+            <span class="badge badge-lime mono">READY</span>
+          </div>
+          <div class="surface-well">
+            <div style="font-weight:700; font-size:0.9rem;">Upper A — Push Priority</div>
+            <div class="mono" style="font-size:11px; color:var(--color-muted); margin-top:4px;">Target: 4 days/week • Confirmed 70 kg</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <span class="btn btn-primary" style="flex:1;">Start Session</span>
+          <span class="btn btn-secondary">Log Meal</span>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

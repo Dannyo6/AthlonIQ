@@ -4,59 +4,37 @@ import { Utensils, Dumbbell, Scale, Moon } from "lucide-react";
 
 export const QuickActionsRow: React.FC = () => {
   const actions = [
-    {
-      label: "Log meal",
-      to: "/nutrition",
-      icon: Utensils,
-      color: "text-athloniq-lime",
-      bgColor: "bg-athloniq-card hover:bg-athloniq-card-alt",
-      borderColor: "border-athloniq-border hover:border-athloniq-lime/40",
-    },
-    {
-      label: "Start workout",
-      to: "/workouts",
-      icon: Dumbbell,
-      color: "text-athloniq-lime",
-      bgColor: "bg-athloniq-card hover:bg-athloniq-card-alt",
-      borderColor: "border-athloniq-border hover:border-athloniq-lime/40",
-    },
-    {
-      label: "Log weight",
-      to: "/progress",
-      icon: Scale,
-      color: "text-athloniq-lime",
-      bgColor: "bg-athloniq-card hover:bg-athloniq-card-alt",
-      borderColor: "border-athloniq-border hover:border-athloniq-lime/40",
-    },
-    {
-      label: "Check-in",
-      to: "/recovery",
-      icon: Moon,
-      color: "text-athloniq-lime",
-      bgColor: "bg-athloniq-card hover:bg-athloniq-card-alt",
-      borderColor: "border-athloniq-border hover:border-athloniq-lime/40",
-    },
+    { label: "Log meal", to: "/nutrition", icon: Utensils, accent: "lime" as const },
+    { label: "Start workout", to: "/workouts", icon: Dumbbell, accent: "emerald" as const },
+    { label: "Log weight", to: "/progress", icon: Scale, accent: "lime" as const },
+    { label: "Check-in", to: "/recovery", icon: Moon, accent: "emerald" as const },
   ];
 
   return (
-    <nav
-      aria-label="Quick actions"
-      className="grid grid-cols-2 sm:grid-cols-4 gap-2.5"
-    >
+    <nav aria-label="Quick actions" className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
       {actions.map((act) => {
         const Icon = act.icon;
+        const iconBoxClass =
+          act.accent === "emerald"
+            ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+            : "bg-athloniq-lime/15 border-athloniq-lime/30 text-athloniq-lime";
+
         return (
           <Link
             key={act.label}
             to={act.to}
-            className={`min-h-[44px] px-3.5 py-2.5 rounded-xl ${act.bgColor} border ${act.borderColor} flex items-center justify-center gap-2 text-xs font-bold text-white transition-all shadow-sm active:scale-[0.98] select-none`}
+            className="surface-card surface-hover tactile-press min-h-[44px] px-3.5 py-2.5 rounded-xl flex items-center justify-center sm:justify-start gap-2.5 text-xs font-bold text-white select-none"
           >
-            <Icon className={`h-4 w-4 shrink-0 ${act.color}`} />
-            <span>{act.label}</span>
+            <span
+              className={`p-1.5 rounded-lg border shrink-0 ${iconBoxClass}`}
+              aria-hidden="true"
+            >
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
+            <span className="truncate">{act.label}</span>
           </Link>
         );
       })}
     </nav>
   );
 };
-

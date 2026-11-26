@@ -165,16 +165,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="space-y-4 pb-24 sm:pb-16 max-w-xl lg:max-w-none mx-auto">
+    <div className="space-y-3.5 sm:space-y-5 pb-24 sm:pb-16 max-w-xl lg:max-w-6xl mx-auto">
       {/* Onboarding & Equipment Action Notice (if incomplete) */}
       {(!profile.onboardingCompleted || !profile.equipmentConfirmed) && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-athloniq-lime/20 via-athloniq-surface to-athloniq-card border border-athloniq-lime/50 p-4 shadow-glow-lime animate-in fade-in">
+        <div className="surface-elevated relative overflow-hidden rounded-2xl border-athloniq-lime/45 p-4 shadow-glow-lime animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-athloniq-lime text-slate-950 shrink-0 mt-0.5">
-                <AlertCircle className="h-5 w-5" />
+                <AlertCircle className="h-5 w-5" aria-hidden="true" />
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
                   {!profile.onboardingCompleted ? (
                     <Badge variant="amber">
@@ -197,7 +197,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <Button
               variant="primary"
               size="sm"
-              className="shrink-0 min-h-[44px] text-xs"
+              className="shrink-0 min-h-[44px] text-xs tactile-press"
               onClick={() =>
                 onNavigate(
                   !profile.onboardingCompleted
@@ -209,7 +209,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <span>
                 {!profile.onboardingCompleted ? "Resume Onboarding" : "Confirm Equipment"}
               </span>
-              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+              <ChevronRight className="h-3.5 w-3.5 ml-1" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -217,8 +217,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
       {/* Applied Target Alert */}
       {appliedTargetNotice && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in"
+        >
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true" />
           <span>{appliedTargetNotice}</span>
         </div>
       )}
@@ -231,7 +235,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         onResetDemoFixture={resetDemoFixture}
       />
 
-      {/* 2. Compact readiness strip: score if check-in exists, else "No check-in yet" with link */}
+      {/* 2. Hero Readiness telemetry strip */}
       <ReadinessStrip
         hasTodayCheckIn={hasTodayCheckIn}
         readiness={readiness}
@@ -239,52 +243,56 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         onSubmitCheckIn={submitCheckIn}
       />
 
-      {/* 3. Quick actions row (min-h-[44px]): Log meal, Start workout, Log weight, Check-in */}
+      {/* 3. Tactile Quick actions row (min-h-[44px]): Log meal, Start workout, Log weight, Check-in */}
       <QuickActionsRow />
 
-      {/* Cards Grid: 1 column on mobile (390px), responsive columns on tablet/desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 4. Nutrition card */}
-        <NutritionCard
-          calorieTargetKcal={goals.calorieTargetKcal}
-          calorieProvenance={goals.calorieProvenance}
-          proteinTargetG={goals.proteinTargetG}
-          proteinMinG={goals.proteinMinG}
-          proteinMaxG={goals.proteinMaxG}
-          proteinProvenance={goals.proteinProvenance}
-          confirmedCalories={dailyNutrition.confirmedTotals.caloriesKcal}
-          confirmedProtein={dailyNutrition.confirmedTotals.proteinG}
-          confirmedCarbs={dailyNutrition.confirmedTotals.carbsG}
-          confirmedFat={dailyNutrition.confirmedTotals.fatG}
-          unconfirmedCount={dailyNutrition.unconfirmedEstimates.entryCount}
-          weightKg={latestWeight ? latestWeight.weightKg : profile.weightKg}
-        />
+      {/* Asymmetric Telemetry Bento Grid: 1 column on 390px mobile, 12-col bento on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
+        <div className="lg:col-span-7 flex flex-col">
+          <NutritionCard
+            calorieTargetKcal={goals.calorieTargetKcal}
+            calorieProvenance={goals.calorieProvenance}
+            proteinTargetG={goals.proteinTargetG}
+            proteinMinG={goals.proteinMinG}
+            proteinMaxG={goals.proteinMaxG}
+            proteinProvenance={goals.proteinProvenance}
+            confirmedCalories={dailyNutrition.confirmedTotals.caloriesKcal}
+            confirmedProtein={dailyNutrition.confirmedTotals.proteinG}
+            confirmedCarbs={dailyNutrition.confirmedTotals.carbsG}
+            confirmedFat={dailyNutrition.confirmedTotals.fatG}
+            unconfirmedCount={dailyNutrition.unconfirmedEstimates.entryCount}
+            weightKg={latestWeight ? latestWeight.weightKg : profile.weightKg}
+          />
+        </div>
 
-        {/* 5. Today's training */}
-        <TodayTrainingCard
-          equipmentConfirmed={profile.equipmentConfirmed}
-          unconfirmedEquipmentCount={unconfirmedEquipmentCount}
-          todayWorkouts={todayWorkouts}
-          trainingDaysPerWeek={profile.trainingDaysPerWeek}
-          trainingScope={profile.trainingScope}
-          onNavigate={onNavigate}
-        />
+        <div className="lg:col-span-5 flex flex-col">
+          <TodayTrainingCard
+            equipmentConfirmed={profile.equipmentConfirmed}
+            unconfirmedEquipmentCount={unconfirmedEquipmentCount}
+            todayWorkouts={todayWorkouts}
+            trainingDaysPerWeek={profile.trainingDaysPerWeek}
+            trainingScope={profile.trainingScope}
+            onNavigate={onNavigate}
+          />
+        </div>
 
-        {/* 6. Weight trend sparkline */}
-        <WeightTrendCard
-          bodyMetrics={bodyMetrics}
-          weightTrend={weightTrend}
-          latestWeight={latestWeight}
-          onNavigate={onNavigate}
-        />
+        <div className="lg:col-span-7 flex flex-col">
+          <WeightTrendCard
+            bodyMetrics={bodyMetrics}
+            weightTrend={weightTrend}
+            latestWeight={latestWeight}
+            onNavigate={onNavigate}
+          />
+        </div>
 
-        {/* 7. Weekly consistency */}
-        <WeeklyConsistencyCard
-          trainingDaysPerWeek={profile.trainingDaysPerWeek}
-          workoutSessions={workoutSessions}
-          timezone={preferences?.timezone}
-          onNavigate={onNavigate}
-        />
+        <div className="lg:col-span-5 flex flex-col">
+          <WeeklyConsistencyCard
+            trainingDaysPerWeek={profile.trainingDaysPerWeek}
+            workoutSessions={workoutSessions}
+            timezone={preferences?.timezone}
+            onNavigate={onNavigate}
+          />
+        </div>
       </div>
 
       {/* 8. "More" accordion */}

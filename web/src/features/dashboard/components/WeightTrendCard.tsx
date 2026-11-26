@@ -22,34 +22,32 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
   const hasEnoughData = weightTrend.status === "ok";
   const weighInsCount = bodyMetrics ? bodyMetrics.length : weightTrend.entries.length;
 
-  // Generate SVG Sparkline coordinates strictly from calculateWeightTrend output
   const sparklineData = useMemo(() => {
     return generateWeightSparkline(weightTrend);
   }, [weightTrend]);
 
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center justify-between border-b border-athloniq-border pb-3">
-        <div className="flex items-center gap-2">
-          <Scale className="h-5 w-5 text-athloniq-lime" />
-          <h3 className="font-bold text-white text-base">Weight Trend</h3>
+    <Card className="h-full flex flex-col justify-between space-y-4">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-athloniq-border pb-3">
+          <div className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-athloniq-lime shrink-0" aria-hidden="true" />
+            <h3 className="font-bold text-white text-base tracking-tight">
+              Weight Trend
+            </h3>
+          </div>
+          <ProvenanceBadge
+            provenance={hasEnoughData ? "calculated_estimate" : "provisional_default"}
+          />
         </div>
-        <ProvenanceBadge
-          provenance={hasEnoughData ? "calculated_estimate" : "provisional_default"}
-        />
-      </div>
 
-      {!hasEnoughData ? (
-        /* Insufficient Data State (< 3 weigh-ins) */
-        <div className="space-y-3">
-          <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-400">
-                Need 3 weigh-ins
-              </span>
+        {!hasEnoughData ? (
+          <div className="surface-well p-4 rounded-xl space-y-2 border-l-2 border-l-amber-400/70">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-amber-300">Need 3 weigh-ins</span>
               <Badge variant="amber">CALIBRATING</Badge>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed tabular-nums">
               {weighInsCount}/3 weigh-ins logged. Log 3 separate body weight entries to
               unlock the 7-day rolling trend and sparkline.
             </p>
@@ -59,37 +57,24 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
               </div>
             )}
           </div>
-
-          <Link
-            to="/progress"
-            onClick={() => onNavigate?.("progress")}
-            className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-athloniq-surface hover:bg-athloniq-card-alt border border-athloniq-border transition-all active:scale-[0.98]"
-          >
-            <span>Log Today's Weight</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      ) : (
-        /* >= 3 Entries with Sparkline */
-        <div className="space-y-3">
-          <div className="p-3.5 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-2.5">
-            <div className="flex items-start justify-between gap-2">
+        ) : (
+          <div className="surface-well p-4 rounded-xl space-y-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-medium">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-semibold">
                   Latest Weight
                 </span>
-                <div className="text-2xl font-black text-white font-mono mt-0.5 tabular-nums">
+                <div className="text-3xl font-black tracking-tight text-white font-mono mt-0.5 tabular-nums">
                   {latestWeight?.weightKg.toFixed(1)}{" "}
-                  <span className="text-xs text-slate-400">kg</span>
+                  <span className="text-xs text-slate-400 font-medium">kg</span>
                 </div>
               </div>
 
-              {/* Sparkline Graphic */}
               {sparklineData && (
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end shrink-0">
                   <svg
                     viewBox={`0 0 ${sparklineData.width} ${sparklineData.height}`}
-                    className="w-32 h-10 overflow-visible"
+                    className="w-32 h-11 overflow-visible"
                     aria-label="Weight trend sparkline"
                   >
                     <path
@@ -111,24 +96,28 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
                       />
                     ))}
                   </svg>
-                  <span className="text-[9px] font-mono text-slate-500 tabular-nums">
+                  <span className="text-[10px] font-mono text-slate-400 tabular-nums mt-0.5">
                     {weighInsCount} weigh-ins
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-athloniq-border/60">
+            <div className="grid grid-cols-2 gap-2.5 text-xs pt-2 border-t border-athloniq-border/70">
               <div>
-                <span className="text-[10px] text-slate-400">7-Day Rolling Avg:</span>
-                <div className="text-xs font-mono font-bold text-slate-200 mt-0.5 tabular-nums">
+                <span className="text-[10px] text-slate-400 font-mono uppercase">
+                  7-Day Rolling Avg:
+                </span>
+                <div className="text-sm font-mono font-bold text-white mt-0.5 tabular-nums">
                   {weightTrend.rolling7dKg?.toFixed(2)} kg
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400">Weekly Delta:</span>
-                <div className="text-xs font-mono font-bold text-athloniq-lime mt-0.5 tabular-nums flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" />
+                <span className="text-[10px] text-slate-400 font-mono uppercase">
+                  Weekly Delta:
+                </span>
+                <div className="text-sm font-mono font-bold text-athloniq-lime mt-0.5 tabular-nums flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>
                     {weightTrend.weeklyDeltaKg && weightTrend.weeklyDeltaKg >= 0 ? "+" : ""}
                     {weightTrend.weeklyDeltaKg?.toFixed(2)} kg/wk
@@ -137,17 +126,17 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
               </div>
             </div>
           </div>
+        )}
+      </div>
 
-          <Link
-            to="/progress"
-            onClick={() => onNavigate?.("progress")}
-            className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-athloniq-surface hover:bg-athloniq-card-alt border border-athloniq-border transition-all active:scale-[0.98]"
-          >
-            <span>Open Weight Analytics</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      )}
+      <Link
+        to="/progress"
+        onClick={() => onNavigate?.("progress")}
+        className="surface-elevated tactile-press w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:border-athloniq-lime/40"
+      >
+        <span>{hasEnoughData ? "Open Weight Analytics" : "Log Today's Weight"}</span>
+        <ArrowRight className="h-4 w-4 text-athloniq-lime shrink-0" aria-hidden="true" />
+      </Link>
     </Card>
   );
 };

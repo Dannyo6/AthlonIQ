@@ -14,9 +14,8 @@ import {
   ShieldAlert,
   ArrowRight,
 } from "lucide-react";
-import type { LeanBulkCalibrationResult, FatigueAdvisoryResult } from "@/types";
+import type { LeanBulkCalibrationResult, FatigueAdvisoryResult, BodyMetric } from "@/types";
 import type { BmiResult } from "@/lib/calculations";
-import type { BodyMetric } from "@/types";
 
 interface MoreAccordionProps {
   leanBulkCalibration: LeanBulkCalibrationResult;
@@ -55,37 +54,39 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
   };
 
   return (
-    <section aria-label="Detailed Analytics and Tools" className="space-y-3">
-      <div className="flex items-center justify-between pt-2">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">
+    <section aria-label="Detailed Analytics and Tools" className="space-y-3 pt-1">
+      <div className="flex items-center justify-between pt-1">
+        <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
           In-Depth Tools & Advisory
         </h3>
-        <span className="text-[11px] text-slate-500 font-mono">4 Modules</span>
+        <span className="text-[11px] text-slate-500 font-mono tabular-nums">4 Modules</span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Accordion 1: 14-Day Lean-Bulk Calibrator */}
-        <Card className="p-0 overflow-hidden border-athloniq-border">
+        <Card className="p-0 overflow-hidden">
           <button
             type="button"
+            aria-expanded={openSections.calibrator}
+            aria-controls="more-panel-calibrator"
             onClick={() => toggleSection("calibrator")}
-            className="w-full min-h-[44px] p-4 flex items-center justify-between text-left hover:bg-athloniq-card-alt/40 transition-colors"
+            className="tactile-press w-full min-h-[44px] p-4 flex items-center justify-between gap-3 text-left hover:bg-athloniq-surface/40"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-athloniq-surface text-athloniq-lime">
-                <Flame className="h-4 w-4" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg surface-well text-athloniq-lime shrink-0">
+                <Flame className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
                   14-Day Lean-Bulk Calibrator
                 </h4>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 tabular-nums">
                   Observation: {leanBulkCalibration.observation_days_logged}/10 days •{" "}
                   {leanBulkCalibration.observation_weigh_ins}/4 weigh-ins
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Badge
                 variant={
                   leanBulkCalibration.status === "on_track"
@@ -100,26 +101,29 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                 {leanBulkCalibration.status.toUpperCase().replace("_", " ")}
               </Badge>
               {openSections.calibrator ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               )}
             </div>
           </button>
 
           {openSections.calibrator && (
-            <div className="p-4 border-t border-athloniq-border bg-athloniq-surface/40 space-y-3 animate-in fade-in">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <span className="text-[10px] text-slate-400 uppercase">
+            <div
+              id="more-panel-calibrator"
+              className="p-4 border-t border-athloniq-border bg-athloniq-surface/30 space-y-3 animate-in fade-in"
+            >
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="surface-well p-3 rounded-xl">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase">
                     Target Corridor:
                   </span>
                   <div className="text-xs font-mono font-bold text-white mt-0.5 tabular-nums">
                     +0.10 to +0.25 kg/wk
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <span className="text-[10px] text-slate-400 uppercase">
+                <div className="surface-well p-3 rounded-xl">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase">
                     Weekly Delta:
                   </span>
                   <div className="text-xs font-mono font-bold text-athloniq-lime mt-0.5 tabular-nums">
@@ -139,10 +143,10 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
-                  className="w-full min-h-[44px]"
+                  className="w-full min-h-[44px] tactile-press"
                   onClick={onApplyCalibratedTarget}
                 >
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>
                     Confirm & Apply Target ({leanBulkCalibration.new_calorie_target_kcal} kcal)
                   </span>
@@ -153,26 +157,28 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
         </Card>
 
         {/* Accordion 2: Multi-Sport Workload Advisory */}
-        <Card className="p-0 overflow-hidden border-athloniq-border">
+        <Card className="p-0 overflow-hidden">
           <button
             type="button"
+            aria-expanded={openSections.fatigue}
+            aria-controls="more-panel-fatigue"
             onClick={() => toggleSection("fatigue")}
-            className="w-full min-h-[44px] p-4 flex items-center justify-between text-left hover:bg-athloniq-card-alt/40 transition-colors"
+            className="tactile-press w-full min-h-[44px] p-4 flex items-center justify-between gap-3 text-left hover:bg-athloniq-surface/40"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-athloniq-surface text-amber-400">
-                <Zap className="h-4 w-4" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg surface-well text-amber-400 shrink-0">
+                <Zap className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
                   Multi-Sport Workload Advisory
                 </h4>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 truncate">
                   Gym + Badminton + Running Strain Triangulation
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Badge
                 variant={
                   fatigueAdvisory.status === "optimal"
@@ -185,30 +191,37 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                 {fatigueAdvisory.status.toUpperCase().replace("_", " ")}
               </Badge>
               {openSections.fatigue ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               )}
             </div>
           </button>
 
           {openSections.fatigue && (
-            <div className="p-4 border-t border-athloniq-border bg-athloniq-surface/40 space-y-3 animate-in fade-in">
+            <div
+              id="more-panel-fatigue"
+              className="p-4 border-t border-athloniq-border bg-athloniq-surface/30 space-y-3 animate-in fade-in"
+            >
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <div className="text-[10px] text-slate-500 font-bold uppercase">Gym</div>
+                <div className="surface-well p-2.5 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold font-mono uppercase">Gym</div>
                   <div className="text-sm font-bold font-mono text-white mt-0.5 tabular-nums">
                     {fatigueAdvisory.gym_sessions_7d} sets/wk
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <div className="text-[10px] text-slate-500 font-bold uppercase">Badminton</div>
+                <div className="surface-well p-2.5 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold font-mono uppercase">
+                    Badminton
+                  </div>
                   <div className="text-sm font-bold font-mono text-white mt-0.5 tabular-nums">
                     {fatigueAdvisory.badminton_minutes_7d.toFixed(0)} min
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <div className="text-[10px] text-slate-500 font-bold uppercase">Running</div>
+                <div className="surface-well p-2.5 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold font-mono uppercase">
+                    Running
+                  </div>
                   <div className="text-sm font-bold font-mono text-white mt-0.5 tabular-nums">
                     {fatigueAdvisory.running_km_7d.toFixed(1)} km
                   </div>
@@ -219,8 +232,8 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                 {fatigueAdvisory.explanation}
               </p>
 
-              <div className="p-2.5 rounded-lg bg-athloniq-card border border-athloniq-border text-[10px] text-slate-500 flex items-center gap-1.5">
-                <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="surface-well p-2.5 rounded-lg text-[10px] text-slate-400 flex items-center gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
                 <span>Workload advisory only; not a clinical injury risk calculation.</span>
               </div>
             </div>
@@ -228,42 +241,47 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
         </Card>
 
         {/* Accordion 3: Biometrics & Anthropometric Screening */}
-        <Card className="p-0 overflow-hidden border-athloniq-border">
+        <Card className="p-0 overflow-hidden">
           <button
             type="button"
+            aria-expanded={openSections.biometrics}
+            aria-controls="more-panel-biometrics"
             onClick={() => toggleSection("biometrics")}
-            className="w-full min-h-[44px] p-4 flex items-center justify-between text-left hover:bg-athloniq-card-alt/40 transition-colors"
+            className="tactile-press w-full min-h-[44px] p-4 flex items-center justify-between gap-3 text-left hover:bg-athloniq-surface/40"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-athloniq-surface text-athloniq-lime">
-                <Scale className="h-4 w-4" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg surface-well text-athloniq-lime shrink-0">
+                <Scale className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
                   Biometrics & Screening
                 </h4>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 truncate">
                   Weight, Height & Scientific BMI Screening
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <ProvenanceBadge
                 provenance={latestWeight ? "user_confirmed" : "calculated_estimate"}
               />
               {openSections.biometrics ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               )}
             </div>
           </button>
 
           {openSections.biometrics && (
-            <div className="p-4 border-t border-athloniq-border bg-athloniq-surface/40 space-y-3 animate-in fade-in">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <span className="text-[10px] text-slate-400 uppercase">
+            <div
+              id="more-panel-biometrics"
+              className="p-4 border-t border-athloniq-border bg-athloniq-surface/30 space-y-3 animate-in fade-in"
+            >
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="surface-well p-3 rounded-xl">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase">
                     {latestWeight ? `Weight (${latestWeight.loggedDate})` : "Body Weight"}
                   </span>
                   <div className="text-base font-black text-white font-mono mt-0.5 tabular-nums">
@@ -274,8 +292,8 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-athloniq-surface border border-athloniq-border">
-                  <span className="text-[10px] text-slate-400 uppercase">Height</span>
+                <div className="surface-well p-3 rounded-xl">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase">Height</span>
                   <div className="text-base font-black text-white font-mono mt-0.5 tabular-nums">
                     {heightCm != null ? heightCm : "Not set"}{" "}
                     {heightCm != null && <span className="text-xs text-slate-400">cm</span>}
@@ -283,65 +301,68 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-1">
-                <div className="flex items-center justify-between text-xs">
+              <div className="surface-well p-3 rounded-xl space-y-1">
+                <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="font-semibold text-slate-300 font-mono tabular-nums">
                     BMI: {bmi.bmi} kg/m²
                   </span>
                   <Badge variant="amber">SCREENING METRIC ONLY</Badge>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                  {bmi.disclaimer}
-                </p>
+                <p className="text-[10px] text-slate-400 leading-relaxed">{bmi.disclaimer}</p>
               </div>
 
               <Link
                 to="/progress"
                 onClick={() => onNavigate?.("progress")}
-                className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-athloniq-surface hover:bg-athloniq-card-alt border border-athloniq-border transition-all active:scale-[0.98]"
+                className="surface-elevated tactile-press w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white hover:border-athloniq-lime/40"
               >
                 <span>View Full Physique History</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 text-athloniq-lime shrink-0" aria-hidden="true" />
               </Link>
             </div>
           )}
         </Card>
 
         {/* Accordion 4: Training & Equipment Status */}
-        <Card className="p-0 overflow-hidden border-athloniq-border">
+        <Card className="p-0 overflow-hidden">
           <button
             type="button"
+            aria-expanded={openSections.equipment}
+            aria-controls="more-panel-equipment"
             onClick={() => toggleSection("equipment")}
-            className="w-full min-h-[44px] p-4 flex items-center justify-between text-left hover:bg-athloniq-card-alt/40 transition-colors"
+            className="tactile-press w-full min-h-[44px] p-4 flex items-center justify-between gap-3 text-left hover:bg-athloniq-surface/40"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-athloniq-surface text-athloniq-lime">
-                <Dumbbell className="h-4 w-4" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg surface-well text-athloniq-lime shrink-0">
+                <Dumbbell className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
+              <div className="min-w-0">
+                <h4 className="text-sm font-bold text-white truncate">
                   Training & Equipment
                 </h4>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 truncate">
                   Home Gym Hardware Availability
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <ProvenanceBadge
                 provenance={equipmentConfirmed ? "user_confirmed" : "unconfirmed_equipment"}
               />
               {openSections.equipment ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
+                <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
+                <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               )}
             </div>
           </button>
 
           {openSections.equipment && (
-            <div className="p-4 border-t border-athloniq-border bg-athloniq-surface/40 space-y-3 animate-in fade-in">
-              <div className="p-3 rounded-xl bg-athloniq-surface border border-athloniq-border space-y-1.5 text-xs">
+            <div
+              id="more-panel-equipment"
+              className="p-4 border-t border-athloniq-border bg-athloniq-surface/30 space-y-3 animate-in fade-in"
+            >
+              <div className="surface-well p-3 rounded-xl space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Home Equipment:</span>
                   <span
@@ -363,7 +384,7 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
 
               {trainingScope.length > 0 && (
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-400 uppercase font-medium">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase font-medium">
                     Training Focus:
                   </span>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -382,10 +403,10 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               <Link
                 to="/workouts"
                 onClick={() => onNavigate?.("workouts")}
-                className="w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-athloniq-surface hover:bg-athloniq-card-alt border border-athloniq-border transition-all active:scale-[0.98]"
+                className="surface-elevated tactile-press w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white hover:border-athloniq-lime/40"
               >
                 <span>Manage Equipment & Routines</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 text-athloniq-lime shrink-0" aria-hidden="true" />
               </Link>
             </div>
           )}

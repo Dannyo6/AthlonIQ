@@ -687,7 +687,7 @@ const AppShell: React.FC = () => {
       </main>
 
       {/* Mobile Bottom Navigation Bar for thumb ergonomics */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-athloniq-dark-nav/95 border-t border-white/[0.08] px-2 py-1.5 flex items-center justify-around z-50 backdrop-blur-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-athloniq-dark-nav/95 border-t border-white/[0.08] px-2 py-1.5 safe-area-bottom flex items-center justify-around z-50 backdrop-blur-lg">
         {MOBILE_DOCK_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
