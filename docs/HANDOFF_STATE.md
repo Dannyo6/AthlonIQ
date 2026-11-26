@@ -1,11 +1,11 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-14 15:30 IST  
+**Timestamp**: 2026-11-26 14:50 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
 **Current Branch**: `main`  
-**Node Version**: `v22.23.5` (Node 22 LTS pinned via `.nvmrc`)  
+**Node Version**: `v24.15.0`  
 
 ---
 
@@ -13,25 +13,18 @@
 
 ### Recent Commits (`git log --oneline -n 5`)
 ```text
-927407b docs(handoff): record passing 19/19 hosted RLS and live FastAPI ES256 JWT checks
-61383f7 test(web): expand tailwind token audit to full src tree and sync handoff state
-27f777e style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
-6839751 style(web): enforce theme tokens across all views, 390px touch targets, and sync handoff state (UI-4)
-f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px Mobile-First)
+94c2df1 feat(web): add reduced-motion baseline, CountUp, ClickSpark, Card spotlight, and budget gate (UI-8A)
+307ab4c web
+eb17a97 feat(api): Epley one-rep-max with 1-rep and 30-rep boundaries; add golden cases
+cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, optional RIR
+5a61ebe feat(tools): generate API types from OpenAPI with stale check; add golden-value parity fixtures
 ```
 
 ### Current Working Tree (`git status -s`)
 ```text
  M docs/HANDOFF_STATE.md
- M web/src/features/activities/ActivitiesView.tsx
- M web/src/features/coach/CoachView.tsx
- M web/src/features/nutrition/NutritionView.tsx
- M web/src/features/progress/ProgressView.tsx
- M web/src/features/recovery/RecoveryView.tsx
- M web/src/features/workouts/WorkoutsView.tsx
-?? web/src/test/mobile-ergonomics-ui5.test.tsx
 ```
-*(Zero unapproved agent commits. All working tree changes inspected without auto-commit).*
+*(Zero unapproved agent commits. Only `docs/HANDOFF_STATE.md` modified in working tree).*
 
 ---
 
@@ -39,15 +32,11 @@ f353b4a UI-3 — First-Run Onboarding Flow & Equipment-Confirmation Gate (390px 
 
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
-| **Pytest** (`api/`) | `api\.venv\Scripts\python.exe -m pytest -q` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, vision fallback & demo modes, coach tools, acceptance contracts | **154 passed**, 2 warnings | 13.12s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 17 files: routing, PWA caching, optimistic rollback, auth gate, progression fallbacks, recovery slider, profile live BMI, offline weekly review, Lane B3 honest null states, MealPhotoUploader, UI-2 Today 390px, UI-3 Onboarding & Equipment Gate, UI-4 Full-App Theme Token & Zero-Hex Enforcement, and UI-5 390px Ergonomics Regression Suite | **124 passed** (17 files) | ~12s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (with `web/.env.local` absent) | **0 errors** (18 chunks generated, PWA precache 31 entries) | 3.27s |
-| **PGlite RLS Suite** (`tools/`) | `npm --prefix tools run test:rls` | PostgreSQL hermetic RLS: 18 tables, dual tenant isolation, storage buckets, anti-spoofing | **279 checks passed** (0 failures) | ~5s |
-| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 159 tracked files | <3s |
-| **Secret Scanner Unit Test** (`tools/`) | `npm run test:scan` | Temporary git repo unit verification with planted secret fixtures | **Clean: 2 tests passed** (0 violations) | ~5s |
-| **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only inspection | 18/18 public tables `rls_enabled: true`, 72 active policies, storage buckets `meal-photos` & `progress-photos` private, 1 advisor warning (`auth_leaked_password_protection`) | **Verified 100% compliant** | — |
-| **Hosted Token Verification** (`tools/`) | `.\api\.venv\Scripts\python.exe tools\verify_hosted_token.py` | PyJWKClient asymmetric ES256 verification against live JWKS (401, 401, 200) | **401, 401, 200 ALL PASSED (100%)** | 3.65s |
-| **Hosted Supabase RLS** (`tools/`) | `npx -y node@22 tools/test-hosted-rls.mjs` | End-to-end multi-tenant check against live hosted Supabase (17 tables, 2 buckets) | **19/19 CHECKS PASSED (100%)** | 8.24s |
+| **Pytest** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision fallback & demo modes, coach tools, acceptance contracts | **181 passed**, 2 warnings | 467.51s |
+| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 24 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **218 passed** (24 files) | 15.35s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-5GvRQLm5.js` at `214.30 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 34 entries) | 3.40s |
+| **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
+| **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 194 tracked files | <3s |
 
 ---
 
@@ -451,6 +440,16 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
   - Asserts mobile touch target ergonomics (`min-h-[44px]`) on all primary action buttons, meal slot triggers, workout tabs, sport mode selectors, drawer buttons, and sub-tab triggers.
   - Asserts numerical precision and layout stability via `tabular-nums` on macro bars, set/rep counters, pace/distance metrics, readiness scores, and weight trends.
   - Enforces Truth in UI (AGENTS.md): uncalibrated goals render explicit `"Calorie target not set — finish onboarding"`, empty history states show `"No sessions logged yet"` and `"No activities logged yet"`, and insufficient weigh-ins (<3) display `"0/3 WEIGH-INS"` and `"Insufficient Data"` without fabricating numbers.
+
+### 6. UI-8A — Reduced-Motion Baseline, Purposeful Micro-Interactions & Budget Gates (`94c2df1`)
+- **24/24 Vitest Suites (`218` tests passing)**, `0` new packages in `web/package.json` (`budget-gate.test.ts` snapshot enforced), entry chunk `214.30 kB` (`<= 210 KiB`).
+- **Extended CSS Token Guard (`web/src/test/tailwind-tokens.test.ts`)**: Scans all `.css` files under `web/src/` forbidding raw hex and `rgb`/`rgba` literals outside `--*: ...;` definitions in `web/src/styles/globals.css`.
+- **Reduced-Motion Baseline**: Added global `@media (prefers-reduced-motion: reduce)` rules in `web/src/styles/globals.css` (disabling animations including `.animate-pulse`, transitions, and `scroll-behavior`) plus `usePrefersReducedMotion` hook, `CountUp`, `ClickSpark`, and `Card` `spotlight` with `cyan` completely removed.
+
+### 7. Hosted Migration Parity & Vision Provider Audit (2026-11-26)
+- **Hosted Migration Parity (`ghxotyoiquyyowydxshb`)**: `supabase_migrations.schema_migrations` does not exist on hosted (`list_migrations` returned `[]`), **however** `information_schema.columns` and `pg_constraint` confirm both `20261117000004` (`food_entries.provenance`, `food_entries.is_confirmed`) and `20261117000005` (`exercise_sets.is_completed`) are **already applied in schema**: all three columns are `NOT NULL` with `column_default = null`, `food_entries_provenance_check` enforces the 7 allowed provenance values, and `pg_tables` shows **18/18** public tables with `rowsecurity = true`.
+- **Vision Provider Config (`api/.env`)**: `VISION_PROVIDER='unset'`, `GEMINI_API_KEY_CONFIGURED=True`.
+- **Backend Pytest**: `181 passed, 2 warnings` via `.\api\.venv\Scripts\pytest.exe api/tests`.
 
 ---
 
