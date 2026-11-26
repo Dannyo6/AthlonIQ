@@ -1,6 +1,6 @@
 # AthlonIQ — Handoff State & Verification Snapshot
 
-**Timestamp**: 2026-11-26 15:53 IST  
+**Timestamp**: 2026-11-26 20:08 IST  
 **Project**: AthlonIQ (Personal AI Performance & Physique OS)  
 **Hosted Supabase Reference**: `ghxotyoiquyyowydxshb`  
 **API Auth**: FastAPI with PyJWKClient against Supabase Auth JWKS (`https://ghxotyoiquyyowydxshb.supabase.co/auth/v1/.well-known/jwks.json`)  
@@ -24,6 +24,7 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 ```text
  M docs/HANDOFF_STATE.md
  M web/src/features/activities/ActivitiesView.tsx
+ M web/src/features/progress/ProgressView.tsx
  M web/src/features/recovery/RecoveryView.tsx
 ?? web/src/features/activities/components/ActivityHistoryList.tsx
 ?? web/src/features/activities/components/ActivityLogForm.tsx
@@ -31,12 +32,23 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 ?? web/src/features/activities/components/ActivityWeeklySummary.tsx
 ?? web/src/features/activities/constants.ts
 ?? web/src/features/activities/hooks/useActivityFormDirty.ts
+?? web/src/features/progress/components/LeanBulkCalibrationCard.tsx
+?? web/src/features/progress/components/MultiSportFatigueCard.tsx
+?? web/src/features/progress/components/ProgressBodyMetricsList.tsx
+?? web/src/features/progress/components/ProgressHeaderActions.tsx
+?? web/src/features/progress/components/ProgressKeyStatsGrid.tsx
+?? web/src/features/progress/components/ProgressPhotosSection.tsx
+?? web/src/features/progress/components/ProgressWeighInDrawer.tsx
+?? web/src/features/progress/components/TrainingVolumeSection.tsx
+?? web/src/features/progress/components/WeightTrendSection.tsx
+?? web/src/features/progress/hooks/useProgressFormDirty.ts
 ?? web/src/features/recovery/components/RecoveryAuditPanel.tsx
 ?? web/src/features/recovery/components/RecoveryCheckInForm.tsx
 ?? web/src/features/recovery/components/RecoveryHistoryList.tsx
 ?? web/src/features/recovery/components/RecoveryReadinessSummary.tsx
 ?? web/src/features/recovery/hooks/useRecoveryFormDirty.ts
 ?? web/src/test/activities-components.test.tsx
+?? web/src/test/progress-components.test.tsx
 ?? web/src/test/recovery-components.test.tsx
 ```
 *(Zero unapproved agent commits; `api/` untouched).*
@@ -48,8 +60,8 @@ cdddb8e feat(web): weekday-scheduled workout templates, estimated 1RM labels, op
 | Test Suite | Command | Scope | Raw Result | Duration |
 | :--- | :--- | :--- | :--- | :--- |
 | **Pytest** (`api/`) | `.\api\.venv\Scripts\pytest.exe api/tests` | API routes, JWT security, CORS, timezone calculation, production override rejection, biometrics, Epley 1RM golden parity, vision fallback & demo modes, coach tools, acceptance contracts | **181 passed**, 2 warnings | 467.51s |
-| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 26 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView` split components & dirty guards), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **227 passed** (26 files) | 44.38s |
-| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-BfSUMFHB.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 5.18s |
+| **Vitest** (`web/`) | `npm --prefix web test` | Full client test suite across 27 files: UI-8A (`usePrefersReducedMotion`, `CountUp`, `ClickSpark`, `Card` spotlight, zero-cyan, CSS token guard, dependency & bundle budget gate), UI-8B (`RecoveryView` & `ActivitiesView` split components & dirty guards), UI-8C (`ProgressView` modularization, inline form validation, focus management, dirty guards), golden fixtures, API type conformance, nutrition, workouts, routing, PWA caching, auth gate | **232 passed** (27 files) | 19.06s |
+| **Vite Production Build** (`web/`) | `npm --prefix web run build` | TypeScript strict mode (`tsc`) + Vite bundler (`dist/assets/index-CgrzXsX0.js` at `214.35 kB`, <= 210 KiB gate) | **0 errors** (PWA precache 35 entries) | 4.87s |
 | **Hosted Supabase MCP Audit** (`ghxotyoiquyyowydxshb`) | Supabase MCP read-only `execute_sql` + `list_migrations` | `18/18` public tables `rowsecurity = true`; `food_entries` (`provenance`, `is_confirmed`) & `exercise_sets` (`is_completed`) schema parity confirmed (`NOT NULL`, `column_default = null`, `food_entries_provenance_check` intact); `supabase_migrations.schema_migrations` absent (`list_migrations: []`) | **Schema parity & 18/18 RLS verified** | — |
 | **Secrets Scanner** (`tools/`) | `npm run scan:secrets` | Scans `git ls-files` for `sb_secret_`, JWT-like strings, service role keys, and `.env*` files other than `.env.example` | **Clean: 0 violations** across 200 tracked files | <3s |
 
@@ -470,6 +482,11 @@ ALL HOSTED RLS & STORAGE ISOLATION CHECKS PASSED SUCCESSFULLY.
 - **26/26 Vitest Suites (`227` tests passing)**, `0` new deps in `web/package.json`, lazy-loaded route chunks preserved (`dist/assets/index-BfSUMFHB.js` at `214.35 kB`, `<= 210 KiB` gate).
 - **`features/recovery/` Split**: Extracted `RecoveryCheckInForm.tsx`, `RecoveryReadinessSummary.tsx`, `RecoveryAuditPanel.tsx`, `RecoveryHistoryList.tsx`, and `useRecoveryFormDirty.ts` (`UnsavedWorkContext`). Preserved native `<input type="range">` stress slider (`null` / `"Not set"` until touched + Clear action), `min-h-[44px]` / `min-h-[48px]` touch targets, `tabular-nums`, and `Card spotlight` on primary check-in/audit cards only. Added `web/src/test/recovery-components.test.tsx` (5 tests).
 - **`features/activities/` Split**: Extracted `ActivitySportSelector.tsx`, `ActivityWeeklySummary.tsx`, `ActivityLogForm.tsx`, `ActivityHistoryList.tsx`, `constants.ts`, and `useActivityFormDirty.ts` (`UnsavedWorkContext`). Enforced deterministic pace calculation via `calculateRunningPace`, explicit `"Not set"` / empty states, `min-h-[44px]` across selectors/inputs/delete controls, `390px` responsive wrapping, and `Card spotlight` on the log form card. Added `web/src/test/activities-components.test.tsx` (4 tests).
+
+### 9. UI-8C — Functional Screen Modularization & Hardening (`ProgressView`)
+- **27/27 Vitest Suites (`232` tests passing)**, `0` new deps in `web/package.json`, lazy-loaded route chunk preserved (`dist/assets/index-CgrzXsX0.js` at `214.35 kB`, `<= 210 KiB` gate).
+- **`features/progress/` Split**: Extracted `ProgressHeaderActions.tsx`, `ProgressKeyStatsGrid.tsx`, `LeanBulkCalibrationCard.tsx`, `MultiSportFatigueCard.tsx`, `ProgressPhotosSection.tsx`, `ProgressWeighInDrawer.tsx`, `WeightTrendSection.tsx`, `ProgressBodyMetricsList.tsx`, `TrainingVolumeSection.tsx`, and `useProgressFormDirty.ts` (`UnsavedWorkContext`).
+- **Accessibility & Truth-in-UI Hardening**: Eliminated silent `?? 8` / `?? 2` fatigue defaults and `Target: null g/day` display; preserved `"0/3 WEIGH-INS"` / `"Insufficient Data"` and empty photo states; added visible `<label htmlFor>`, `role="alert"` + `aria-describedby` + `aria-invalid` on-blur/submit validation, drawer focus management, `aria-hidden="true"` on decorative icons, descriptive `alt` / `aria-label` tags, non-color delta indicators, `min-h-[44px]` touch targets, `tabular-nums`, and `Card spotlight` on top-level summary cards only. Added `web/src/test/progress-components.test.tsx` (5 tests).
 
 ---
 
