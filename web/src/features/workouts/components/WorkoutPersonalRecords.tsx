@@ -5,6 +5,8 @@ import { WorkoutSession } from "@/types";
 import { extractPersonalRecords } from "@/lib/calculations";
 import { Trophy, Star, Calendar } from "lucide-react";
 
+import { ClickSpark } from "@/components/ui/ClickSpark";
+
 export interface WorkoutPersonalRecordsProps {
   workoutSessions: WorkoutSession[];
 }
@@ -32,9 +34,11 @@ export const WorkoutPersonalRecords: React.FC<WorkoutPersonalRecordsProps> = ({
             provenance="calculated_estimate"
             labelOverride="1RM is an Estimate"
           />
-          <Badge variant="lime" className="font-mono tabular-nums">
-            {prs.length} PR{prs.length > 1 ? "s" : ""}
-          </Badge>
+          <ClickSpark className="inline-flex min-h-[44px] items-center">
+            <Badge variant="lime" className="font-mono tabular-nums cursor-pointer">
+              {prs.length} PR{prs.length > 1 ? "s" : ""}
+            </Badge>
+          </ClickSpark>
         </div>
       </div>
 

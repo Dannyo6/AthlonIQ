@@ -5,7 +5,7 @@ import type { DisplayBadge, Provenance } from "@/types";
 export type ProvenanceType = Provenance | DisplayBadge;
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "lime" | "emerald" | "violet" | "amber" | "rose" | "neutral" | "cyan";
+  variant?: "lime" | "emerald" | "violet" | "amber" | "rose" | "neutral";
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -16,7 +16,6 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variantStyles = {
     lime: "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
-    cyan: "bg-athloniq-lime/15 text-athloniq-lime border-athloniq-lime/30 shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)]",
     emerald: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]",
     violet: "bg-purple-500/15 text-purple-300 border-purple-500/30 shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15)]",
     amber: "bg-amber-500/15 text-amber-300 border-amber-500/30 shadow-[inset_0_1px_0_0_rgba(245,158,11,0.15)]",

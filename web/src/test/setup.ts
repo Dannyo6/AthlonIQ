@@ -18,6 +18,55 @@ if (typeof window !== "undefined" && !window.matchMedia) {
   });
 }
 
+// Standard jsdom ResizeObserver, IntersectionObserver, and Element.animate no-op stubs
+if (typeof window !== "undefined") {
+  if (!("ResizeObserver" in window)) {
+    Object.defineProperty(window, "ResizeObserver", {
+      writable: true,
+      value: class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    });
+  }
+  if (!("IntersectionObserver" in window)) {
+    Object.defineProperty(window, "IntersectionObserver", {
+      writable: true,
+      value: class IntersectionObserver {
+        readonly root: Element | Document | null = null;
+        readonly rootMargin = "0px";
+        readonly thresholds: ReadonlyArray<number> = [0];
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+        takeRecords(): IntersectionObserverEntry[] {
+          return [];
+        }
+      },
+    });
+  }
+}
+
+if (typeof globalThis.ResizeObserver === "undefined" && typeof window !== "undefined") {
+  (globalThis as Record<string, unknown>).ResizeObserver = window.ResizeObserver;
+}
+if (typeof globalThis.IntersectionObserver === "undefined" && typeof window !== "undefined") {
+  (globalThis as Record<string, unknown>).IntersectionObserver = window.IntersectionObserver;
+}
+
+if (typeof Element !== "undefined" && !Element.prototype.animate) {
+  Element.prototype.animate = () =>
+    ({
+      cancel: () => {},
+      finish: () => {},
+      pause: () => {},
+      play: () => {},
+      reverse: () => {},
+      finished: Promise.resolve(),
+    }) as unknown as Animation;
+}
+
 const defaultProfileRow = {
   id: "019488a0-7f28-7a54-8e47-cf42861e69ab",
   user_id: "019488a0-7f28-7a54-8e47-cf42861e69ab",

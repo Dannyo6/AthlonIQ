@@ -79,7 +79,7 @@ athloniq/
 
 ### Frontend (`web/`)
 - **Framework**: React (v18+) with TypeScript in strict mode.
-- **Styling**: Tailwind CSS with custom AthlonIQ theme palette (Obsidian, Cyan, Emerald, Electric Violet).
+- **Styling**: Tailwind CSS with custom AthlonIQ theme palette (Obsidian, Electric Lime, Emerald, Electric Violet).
 - **Icons**: `lucide-react` for clean, consistent iconography.
 - **State Management**: React Context / Hooks for UI state; Server state managed cleanly with fetch wrappers or query hooks.
 - **Rule**: Do not use ad-hoc inline styles or raw color codes. Always utilize theme tokens (`brand.ts` and Tailwind utility classes).

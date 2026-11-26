@@ -12,7 +12,7 @@ interface StatCardProps {
     positive: boolean;
   };
   icon?: React.ReactNode;
-  glow?: "lime" | "emerald" | "violet" | "none" | "cyan";
+  glow?: "lime" | "emerald" | "violet" | "none";
   badge?: React.ReactNode;
 }
 

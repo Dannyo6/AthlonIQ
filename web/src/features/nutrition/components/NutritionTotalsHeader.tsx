@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
+import { CountUp } from "@/components/ui/CountUp";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { AlertCircle } from "lucide-react";
 import { DisplayBadge, Provenance } from "@/types";
@@ -97,11 +98,14 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             </div>
             {hasCalorieTarget ? (
               <h3 className="text-2xl font-black text-white mt-1 font-mono tabular-nums">
-                {confirmedTotals.caloriesKcal} / {calorieTargetKcal} kcal
+                <CountUp
+                  value={confirmedTotals.caloriesKcal}
+                  suffix={` / ${calorieTargetKcal} kcal`}
+                />
               </h3>
             ) : (
               <h3 className="text-2xl font-black text-white mt-1 font-mono tabular-nums">
-                {confirmedTotals.caloriesKcal} kcal logged
+                <CountUp value={confirmedTotals.caloriesKcal} suffix=" kcal logged" />
               </h3>
             )}
           </div>
@@ -171,7 +175,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             {proteinTargetG !== null && proteinTargetG > 0 ? (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-emerald-400">
-                  {confirmedTotals.proteinG} / {proteinTargetG} g
+                  <CountUp value={confirmedTotals.proteinG} suffix={` / ${proteinTargetG} g`} />
                 </div>
                 <div className="h-2 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
                   <div
@@ -183,7 +187,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             ) : (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-emerald-400">
-                  {confirmedTotals.proteinG} g logged
+                  <CountUp value={confirmedTotals.proteinG} suffix=" g logged" />
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono">
                   Target not set — complete onboarding
@@ -201,7 +205,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             {carbsTargetG !== null && carbsTargetG > 0 ? (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-amber-400">
-                  {confirmedTotals.carbsG} / {carbsTargetG} g
+                  <CountUp value={confirmedTotals.carbsG} suffix={` / ${carbsTargetG} g`} />
                 </div>
                 <div className="h-2 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
                   <div
@@ -213,7 +217,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             ) : (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-amber-400">
-                  {confirmedTotals.carbsG} g logged
+                  <CountUp value={confirmedTotals.carbsG} suffix=" g logged" />
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono">
                   Target not set — complete onboarding
@@ -231,7 +235,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             {fatTargetG !== null && fatTargetG > 0 ? (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-purple-400">
-                  {confirmedTotals.fatG} / {fatTargetG} g
+                  <CountUp value={confirmedTotals.fatG} suffix={` / ${fatTargetG} g`} />
                 </div>
                 <div className="h-2 w-full bg-athloniq-card rounded-full overflow-hidden border border-athloniq-border">
                   <div
@@ -243,7 +247,7 @@ export const NutritionTotalsHeader: React.FC<NutritionTotalsHeaderProps> = ({
             ) : (
               <>
                 <div className="font-mono text-xl font-bold tabular-nums text-purple-400">
-                  {confirmedTotals.fatG} g logged
+                  <CountUp value={confirmedTotals.fatG} suffix=" g logged" />
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono">
                   Target not set — complete onboarding

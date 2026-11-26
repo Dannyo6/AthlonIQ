@@ -12,7 +12,7 @@ export const NotFoundView: React.FC = () => {
       <div className="max-w-md w-full bg-athloniq-card border border-white/[0.08] rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
         {/* Ambient background glow */}
         <div className="absolute -top-12 -right-12 w-36 h-36 bg-athloniq-lime/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-athloniq-emerald/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="h-16 w-16 rounded-2xl bg-white/[0.04] border border-white/[0.1] text-athloniq-lime mx-auto flex items-center justify-center shadow-glow-lime">
           <Compass className="h-8 w-8 animate-pulse" />

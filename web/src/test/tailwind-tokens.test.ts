@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 
 /**
@@ -19,8 +22,27 @@ describe("Tailwind Token, Hex & Default Lime Enforcement (UI-4)", () => {
       eager: true,
     }
   );
+  const testDir = path.dirname(fileURLToPath(import.meta.url));
+  const srcRoot = path.resolve(testDir, "..");
+
+  function findCssFiles(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "test" || entry.name === "node_modules") continue;
+        out.push(...findCssFiles(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith(".css")) {
+        out.push(fullPath);
+      }
+    }
+    return out;
+  }
 
   const hexPattern = /\[#([0-9a-fA-F]{3,8})\]/g;
+  const cssHexPattern = /#([0-9a-fA-F]{3,8})(?![0-9a-fA-F])/g;
+  const cssRgbaPattern = /\brgba?\s*\(/gi;
+  const cssVarDefPattern = /^\s*--[a-zA-Z0-9_-]+\s*:[^;]+;/;
   const defaultLimePattern = /\b(bg|text|border|ring|from|to|via|fill|stroke)?-?lime-\d{2,3}\b/g;
 
   interface ViolationOccurrence {
@@ -80,6 +102,56 @@ describe("Tailwind Token, Hex & Default Lime Enforcement (UI-4)", () => {
     return list;
   }
 
+  function stripCssComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, (block) =>
+      block.replace(/[^\n]/g, " ")
+    );
+  }
+
+  function scanCssContent(cleanPath: string, content: string): ViolationOccurrence[] {
+    const list: ViolationOccurrence[] = [];
+    const stripped = stripCssComments(content);
+    const isGlobals = cleanPath === "src/styles/globals.css";
+    const lines = stripped.split("\n");
+    lines.forEach((line: string, idx: number) => {
+      if (isGlobals && cssVarDefPattern.test(line)) {
+        return;
+      }
+      let match: RegExpExecArray | null;
+      cssHexPattern.lastIndex = 0;
+      while ((match = cssHexPattern.exec(line)) !== null) {
+        list.push({
+          file: cleanPath,
+          line: idx + 1,
+          match: "#" + match[1].toUpperCase(),
+          rawLine: line.trim(),
+        });
+      }
+      cssRgbaPattern.lastIndex = 0;
+      while ((match = cssRgbaPattern.exec(line)) !== null) {
+        list.push({
+          file: cleanPath,
+          line: idx + 1,
+          match: match[0],
+          rawLine: line.trim(),
+        });
+      }
+    });
+    return list;
+  }
+
+  function collectCssViolations(): { filesScanned: number; violations: ViolationOccurrence[] } {
+    const cssFiles = findCssFiles(srcRoot);
+    const list: ViolationOccurrence[] = [];
+    for (const fullPath of cssFiles) {
+      const rel = path.relative(srcRoot, fullPath).replace(/\\/g, "/");
+      const cleanPath = `src/${rel}`;
+      const content = fs.readFileSync(fullPath, "utf8");
+      list.push(...scanCssContent(cleanPath, content));
+    }
+    return { filesScanned: cssFiles.length, violations: list };
+  }
+
   it("asserts zero arbitrary [#hex] classes exist anywhere across the UI component tree", () => {
     const hexViolations = collectHexViolations();
 
@@ -127,5 +199,43 @@ describe("Tailwind Token, Hex & Default Lime Enforcement (UI-4)", () => {
       limeMatches.push(m[0]);
     }
     expect(limeMatches).toContain("text-lime-400");
+  });
+
+  it("scans all .css files under web/src/ and forbids raw hex and rgb/rgba outside globals.css custom properties", () => {
+    const { filesScanned, violations: cssViolations } = collectCssViolations();
+    expect(filesScanned).toBeGreaterThan(0);
+
+    if (cssViolations.length > 0) {
+      const formatted = cssViolations
+        .map((v) => `  ${v.file}:${v.line} (${v.match}) -> ${v.rawLine}`)
+        .join("\n");
+      throw new Error(
+        `Found ${cssViolations.length} unauthorized raw hex/rgb literal(s) in CSS files:\n${formatted}`
+      );
+    }
+
+    expect(cssViolations).toHaveLength(0);
+  });
+
+  it("flags raw hex and rgb/rgba in synthetic CSS unless defined as --*: ...; inside globals.css", () => {
+    const globalsSample = [
+      ":root {",
+      "  --color-lime: #bef264;",
+      "  --color-glow: rgba(190, 242, 100, 0.25);",
+      "}",
+      ".bad { color: #bef264; background: rgba(0, 0, 0, 0.5); border-color: rgb(1, 2, 3); }",
+    ].join("\n");
+    const globalsViolations = scanCssContent("src/styles/globals.css", globalsSample);
+    expect(globalsViolations.map((v) => v.match)).toEqual([
+      "#BEF264",
+      "rgba(",
+      "rgb(",
+    ]);
+
+    const otherCssViolations = scanCssContent(
+      "src/components/Other.css",
+      "  --color-lime: #bef264;\n.x { color: rgba(0, 0, 0, 0.1); }"
+    );
+    expect(otherCssViolations.map((v) => v.match)).toEqual(["#BEF264", "rgba("]);
   });
 });

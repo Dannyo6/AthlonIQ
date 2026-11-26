@@ -1,6 +1,7 @@
 import React from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { ClickSpark } from "@/components/ui/ClickSpark";
 import {
   EquipmentItem,
   UserProfile,
@@ -408,15 +409,22 @@ export const WorkoutActiveSession: React.FC<WorkoutActiveSessionProps> = ({
                     />
                   </div>
                   <div className="col-span-1 flex justify-center">
-                    <input
-                      type="checkbox"
-                      aria-label="Set completed"
-                      checked={set.isCompleted}
-                      onChange={(e) =>
-                        onUpdateSet(ex.id, idx, { isCompleted: e.target.checked })
-                      }
-                      className="w-4 h-4 accent-athloniq-lime cursor-pointer"
-                    />
+                    <ClickSpark className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center">
+                      <label
+                        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center cursor-pointer"
+                        title="Complete set"
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label="Set completed"
+                          checked={set.isCompleted}
+                          onChange={(e) =>
+                            onUpdateSet(ex.id, idx, { isCompleted: e.target.checked })
+                          }
+                          className="w-4 h-4 accent-athloniq-lime cursor-pointer"
+                        />
+                      </label>
+                    </ClickSpark>
                   </div>
                   <div className="col-span-1 flex justify-center">
                     {set.isPr && <Star className="h-3.5 w-3.5 text-amber-400" />}

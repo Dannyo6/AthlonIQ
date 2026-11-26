@@ -1421,7 +1421,7 @@ export const ProfileView: React.FC = () => {
             className="flex items-center justify-center gap-2"
             onClick={handleExportJSON}
           >
-            <FileJson className="h-4 w-4 text-cyan-400" />
+            <FileJson className="h-4 w-4 text-athloniq-lime" />
             <span>Export Complete JSON</span>
           </Button>
 

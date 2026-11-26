@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ProvenanceBadge, Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ClickSpark } from "@/components/ui/ClickSpark";
 import { MEAL_SLOTS, QUANTITY_OPTIONS } from "../constants";
 import { CandidateFoodItem, FoodEntry, MealSlot, FoodProvenance } from "@/types";
 import {
@@ -378,15 +379,17 @@ export const CandidateReviewForm: React.FC<CandidateReviewFormProps> = ({
         <Button variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          onClick={handleConfirmAndLog}
-          disabled={items.length === 0}
-          className="gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          Confirm & Log ({items.length} {items.length === 1 ? "item" : "items"})
-        </Button>
+        <ClickSpark className="inline-flex">
+          <Button
+            variant="primary"
+            onClick={handleConfirmAndLog}
+            disabled={items.length === 0}
+            className="gap-2 min-h-[44px]"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Confirm & Log ({items.length} {items.length === 1 ? "item" : "items"})
+          </Button>
+        </ClickSpark>
       </div>
     </div>
   );

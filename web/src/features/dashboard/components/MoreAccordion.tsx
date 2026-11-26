@@ -91,7 +91,7 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                   leanBulkCalibration.status === "on_track"
                     ? "lime"
                     : leanBulkCalibration.status === "increase_surplus"
-                    ? "cyan"
+                    ? "emerald"
                     : leanBulkCalibration.status === "trim_surplus"
                     ? "amber"
                     : "neutral"
@@ -178,7 +178,7 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                   fatigueAdvisory.status === "optimal"
                     ? "lime"
                     : fatigueAdvisory.status === "moderate_strain"
-                    ? "cyan"
+                    ? "emerald"
                     : "rose"
                 }
               >

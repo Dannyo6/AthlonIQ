@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { CheckCircle2, ChevronDown, ChevronUp, Moon, Sliders } from "lucide-react";
 import type { ReadinessResult } from "@/types";
 
+import { CountUp } from "@/components/ui/CountUp";
+
 interface ReadinessStripProps {
   hasTodayCheckIn: boolean;
   readiness: ReadinessResult | null;
@@ -68,7 +70,10 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
             Daily Readiness:{" "}
             {hasTodayCheckIn && readiness ? (
               <span className="text-athloniq-lime font-mono tabular-nums">
-                {readiness.readinessScore}% ({readiness.status})
+                <CountUp
+                  value={readiness.readinessScore}
+                  suffix={`% (${readiness.status})`}
+                />
               </span>
             ) : (
               <span className="text-slate-400 font-normal">No check-in yet</span>
@@ -117,8 +122,8 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
               {drawerOpen
                 ? "Close"
                 : hasTodayCheckIn
-                ? "Update"
-                : "Quick Check-in"}
+                  ? "Update"
+                  : "Quick Check-in"}
             </span>
             {drawerOpen ? (
               <ChevronUp className="h-3.5 w-3.5 ml-1" />
