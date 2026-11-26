@@ -8,6 +8,8 @@ import {
   ReadinessResult,
   FoodEntry,
   WorkoutSession,
+  WorkoutTemplate,
+  Weekday,
   ActivitySession,
   BodyMetric,
   EpistemicCoachMessage,
@@ -30,11 +32,16 @@ import {
   recoveryRepo,
   foodEntriesRepo,
   workoutSessionsRepo,
+  workoutTemplatesRepo,
   activitySessionsRepo,
   bodyMetricsRepo,
   coachRepo,
   progressPhotosRepo,
 } from "@/services/repo";
+import {
+  cloneStarterTemplates,
+  mergeWithStarterTemplates,
+} from "@/features/workouts/constants";
 
 export interface AthlonToast {
   id: string;
@@ -225,6 +232,9 @@ export interface AthloniqContextType {
   updateWorkoutSession: (id: string, updates: Partial<WorkoutSession>) => void;
   deleteWorkoutSession: (id: string) => void;
   getTodayWorkout: () => WorkoutSession | undefined;
+  workoutTemplates: WorkoutTemplate[];
+  updateWorkoutTemplate: (updated: WorkoutTemplate) => Promise<void>;
+  toggleTemplateWeekday: (templateId: string, day: Weekday) => Promise<void>;
 
   // Phase 2: Activities
   activitySessions: ActivitySession[];
@@ -291,6 +301,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(() =>
+    cloneStarterTemplates()
+  );
   const [activitySessions, setActivitySessions] = useState<ActivitySession[]>([]);
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>([]);
   const [coachMessages, setCoachMessages] = useState<EpistemicCoachMessage[]>(DEFAULT_COACH_MESSAGES);
@@ -349,6 +362,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setHasTodayCheckIn(false);
     setFoodEntries([]);
     setWorkoutSessions([]);
+    setWorkoutTemplates(cloneStarterTemplates());
     setActivitySessions([]);
     setBodyMetrics([]);
     setCoachMessages(DEFAULT_COACH_MESSAGES);
@@ -406,6 +420,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         cloudPreferences,
         cloudFoods,
         cloudWorkouts,
+        cloudTemplates,
         cloudActivities,
         cloudMetrics,
         cloudRecovery,
@@ -417,6 +432,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         preferencesRepo.fetchPreferences(userId),
         foodEntriesRepo.fetchEntries(userId),
         workoutSessionsRepo.fetchSessions(userId),
+        workoutTemplatesRepo.fetchTemplates(userId),
         activitySessionsRepo.fetchActivities(userId),
         bodyMetricsRepo.fetchMetrics(userId),
         recoveryRepo.fetchHistory(userId, 1),
@@ -432,6 +448,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setPreferences(cloudPreferences || DEFAULT_PREFERENCES);
       setFoodEntries(cloudFoods || []);
       setWorkoutSessions(cloudWorkouts || []);
+      setWorkoutTemplates(mergeWithStarterTemplates(cloudTemplates || []));
       setActivitySessions(cloudActivities || []);
       setBodyMetrics(cloudMetrics || []);
       setTodayCheckIn(cloudRecovery && cloudRecovery.length > 0 ? cloudRecovery[0] : DEFAULT_CHECKIN);
@@ -823,6 +840,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setHasTodayCheckIn(false);
     setFoodEntries([]);
     setWorkoutSessions([]);
+    setWorkoutTemplates(cloneStarterTemplates());
     setActivitySessions([]);
     setBodyMetrics([]);
     setCoachMessages(DEFAULT_COACH_MESSAGES);
@@ -1011,6 +1029,84 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const getTodayWorkout = useCallback(
     () => workoutSessions.find((s) => s.loggedDate === todayISO()),
     [workoutSessions]
+  );
+
+  const updateWorkoutTemplate = useCallback(
+    async (updated: WorkoutTemplate) => {
+      const assignedDays = new Set(updated.scheduledWeekdays);
+      const changedOthers: WorkoutTemplate[] = [];
+
+      await executeOptimisticMutation(
+        () => {
+          const prev = workoutTemplates;
+          const next = prev.map((t) => {
+            if (t.id === updated.id) {
+              return { ...updated, scheduledWeekdays: [...assignedDays] };
+            }
+            const filtered = t.scheduledWeekdays.filter(
+              (d) => !assignedDays.has(d)
+            );
+            if (filtered.length !== t.scheduledWeekdays.length) {
+              const cleaned = { ...t, scheduledWeekdays: filtered };
+              // Persist weekday removal on any previously saved DB template
+              if (
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                  t.id
+                )
+              ) {
+                changedOthers.push(cleaned);
+              }
+              return cleaned;
+            }
+            return t;
+          });
+          setWorkoutTemplates(next);
+          showToast(`Saved template — ${updated.name}`, "success");
+          return prev;
+        },
+        (prev) => setWorkoutTemplates(prev),
+        async () => {
+          if (!user?.id) return;
+          const savedTarget = await workoutTemplatesRepo.saveTemplate(
+            user.id,
+            updated
+          );
+          const savedOthers = await Promise.all(
+            changedOthers.map((other) =>
+              workoutTemplatesRepo.saveTemplate(user.id, other)
+            )
+          );
+          const savedByMatchKey = new Map<string, WorkoutTemplate>();
+          savedByMatchKey.set(updated.id, savedTarget);
+          for (const s of savedOthers) {
+            savedByMatchKey.set(s.id, s);
+          }
+          setWorkoutTemplates((curr) =>
+            curr.map((t) => {
+              if (t.id === updated.id) return savedTarget;
+              if (savedTarget.starterKey && t.starterKey === savedTarget.starterKey) {
+                return savedTarget;
+              }
+              return savedByMatchKey.get(t.id) ?? t;
+            })
+          );
+        }
+      );
+    },
+    [workoutTemplates, executeOptimisticMutation, user?.id, showToast]
+  );
+
+  const toggleTemplateWeekday = useCallback(
+    async (templateId: string, day: Weekday) => {
+      const target = workoutTemplates.find((t) => t.id === templateId);
+      if (!target) return;
+      const currentlyAssigned = target.scheduledWeekdays.includes(day);
+      const nextDays = currentlyAssigned
+        ? target.scheduledWeekdays.filter((d) => d !== day)
+        : [...target.scheduledWeekdays.filter((d) => d !== day), day];
+      await updateWorkoutTemplate({ ...target, scheduledWeekdays: nextDays });
+    },
+    [workoutTemplates, updateWorkoutTemplate]
   );
 
   // ---------------------------------------------------------------------------
@@ -1409,6 +1505,9 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateWorkoutSession,
         deleteWorkoutSession,
         getTodayWorkout,
+        workoutTemplates,
+        updateWorkoutTemplate,
+        toggleTemplateWeekday,
         activitySessions,
         addActivitySession,
         updateActivitySession,

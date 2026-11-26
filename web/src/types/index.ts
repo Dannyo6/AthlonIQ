@@ -27,17 +27,24 @@ export type {
   VisionMeta,
 } from "./api.generated";
 
-export type ValueProvenance =
-  | "provisional_default"
-  | "calculated_estimate"
+/** Real auditable provenance values persisted to DB and returned by backend domain logic */
+export type Provenance =
   | "user_confirmed"
-  | "ai_estimated"
-  | "awaiting_onboarding"
-  | "unconfirmed_equipment" // UI display badge text only (never persisted to DB or sent to API)
+  | "calculated_estimate"
+  | "provisional_default"
   | "verified_reference"
   | "manual_entry"
   | "user_corrected"
+  | "ai_estimated";
+
+/** UI-only display badge states — never accepted by repositories or persisted to DB */
+export type DisplayBadge =
+  | "awaiting_onboarding"
+  | "unconfirmed_equipment"
   | "rules_based_progression";
+
+/** Alias for real persisted provenance only (DisplayBadge excluded) */
+export type ValueProvenance = Provenance;
 
 export type FoodProvenance =
   | "verified_reference"
@@ -392,8 +399,9 @@ export interface WorkoutTemplate {
   focus: string;
   estimatedDurationMin?: number;
   exercises: TemplateExercise[];
-  isStarter?: boolean;
-  scheduledWeekdays?: Weekday[];
+  isStarter: boolean;
+  starterKey?: string | null;
+  scheduledWeekdays: Weekday[];
 }
 
 export interface TemplateExercise {
@@ -458,7 +466,7 @@ export interface ProgressionSuggestion {
   newLoadKg?: number | null;
   newRepsSuggestion?: string | null;
   requiresUserConfirmation: boolean;
-  provenance: ValueProvenance;
+  provenance: Provenance | DisplayBadge;
 }
 
 /** Weight trend result from the rolling-average engine */

@@ -310,3 +310,39 @@ export const STARTER_TEMPLATES: WorkoutTemplate[] = [
 ];
 
 export const HOME_GYM_TEMPLATES = STARTER_TEMPLATES;
+
+export function cloneStarterTemplates(): WorkoutTemplate[] {
+  return STARTER_TEMPLATES.map((t) => ({
+    ...t,
+    isStarter: true,
+    starterKey: t.id,
+    scheduledWeekdays: [...t.scheduledWeekdays],
+    exercises: t.exercises.map((e) => ({ ...e })),
+  }));
+}
+
+/**
+ * Merges persisted workout_templates from Supabase with built-in starter templates.
+ * Any starter template that has been customized or assigned weekdays in the DB
+ * replaces its unedited starter counterpart cleanly by starterKey.
+ */
+export function mergeWithStarterTemplates(
+  cloudTemplates: WorkoutTemplate[]
+): WorkoutTemplate[] {
+  const byStarterKey = new Map<string, WorkoutTemplate>();
+  const customTemplates: WorkoutTemplate[] = [];
+
+  for (const tmpl of cloudTemplates) {
+    if (tmpl.starterKey) {
+      byStarterKey.set(tmpl.starterKey, tmpl);
+    } else {
+      customTemplates.push(tmpl);
+    }
+  }
+
+  const mergedStarters = cloneStarterTemplates().map(
+    (starter) => byStarterKey.get(starter.starterKey!) ?? starter
+  );
+
+  return [...mergedStarters, ...customTemplates];
+}

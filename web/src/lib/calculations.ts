@@ -9,6 +9,8 @@
 import {
   ReadinessResult,
   UserProfile,
+  Provenance,
+  DisplayBadge,
   ValueProvenance,
   FoodCatalogItem,
   FoodEntry,
@@ -108,7 +110,7 @@ export interface EnergyEstimateResult {
   surplusKcal: number | null;
   activityMultiplier: number | null;
   sexAssumed: boolean;
-  provenance: ValueProvenance;
+  provenance: Provenance | DisplayBadge;
   macros: {
     proteinG: number;
     carbsG: number;

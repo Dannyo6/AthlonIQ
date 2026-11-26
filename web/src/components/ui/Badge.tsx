@@ -1,13 +1,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import type { DisplayBadge, Provenance } from "@/types";
 
-export type ProvenanceType =
-  | "provisional_default"
-  | "calculated_estimate"
-  | "user_confirmed"
-  | "ai_estimated"
-  | "awaiting_onboarding"
-  | "unconfirmed_equipment";
+export type ProvenanceType = Provenance | DisplayBadge;
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: "lime" | "emerald" | "violet" | "amber" | "rose" | "neutral" | "cyan";
@@ -44,7 +39,7 @@ export const Badge: React.FC<BadgeProps> = ({
 };
 
 interface ProvenanceBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  provenance: ProvenanceType | string;
+  provenance: Provenance | DisplayBadge;
   labelOverride?: string;
 }
 

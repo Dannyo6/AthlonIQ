@@ -1,6 +1,18 @@
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
-import { UserGoals, ValueProvenance } from "@/types";
+import { Provenance, UserGoals } from "@/types";
+
+export const REAL_PROVENANCE_VALUES = [
+  "user_confirmed",
+  "calculated_estimate",
+  "provisional_default",
+  "verified_reference",
+  "manual_entry",
+  "user_corrected",
+  "ai_estimated",
+] as const;
+
+export const ProvenanceSchema = z.enum(REAL_PROVENANCE_VALUES);
 
 export const GoalsDbRowSchema = z.object({
   id: z.string().uuid(),
@@ -8,9 +20,9 @@ export const GoalsDbRowSchema = z.object({
   protein_min_g: z.coerce.number().int().min(1).default(88),
   protein_max_g: z.coerce.number().int().min(1).default(121),
   protein_target_g: z.coerce.number().int().min(1).default(110),
-  protein_provenance: z.string().default("provisional_default"),
+  protein_provenance: ProvenanceSchema.default("provisional_default"),
   calorie_target_kcal: z.coerce.number().int().nullable().default(null),
-  calorie_provenance: z.string().default("provisional_default"),
+  calorie_provenance: ProvenanceSchema.default("provisional_default"),
   carbs_target_g: z.coerce.number().int().nullable().default(null),
   fat_target_g: z.coerce.number().int().nullable().default(null),
   water_target_ml: z.coerce.number().int().min(1).default(3500),
@@ -23,9 +35,9 @@ export function mapDbGoalsToDomain(row: GoalsDbRow): UserGoals {
     proteinMinG: row.protein_min_g,
     proteinMaxG: row.protein_max_g,
     proteinTargetG: row.protein_target_g,
-    proteinProvenance: row.protein_provenance as ValueProvenance,
+    proteinProvenance: row.protein_provenance as Provenance,
     calorieTargetKcal: row.calorie_target_kcal,
-    calorieProvenance: row.calorie_provenance as ValueProvenance,
+    calorieProvenance: row.calorie_provenance as Provenance,
     carbsTargetG: row.carbs_target_g,
     fatTargetG: row.fat_target_g,
     waterTargetMl: row.water_target_ml,
@@ -49,14 +61,18 @@ export const goalsRepo = {
   },
 
   async upsertGoals(userId: string, goals: UserGoals): Promise<UserGoals> {
+    // Reject UI-only DisplayBadge tags at runtime in addition to TypeScript Provenance type
+    const proteinProvenance = ProvenanceSchema.parse(goals.proteinProvenance);
+    const calorieProvenance = ProvenanceSchema.parse(goals.calorieProvenance);
+
     const payload = {
       user_id: userId,
       protein_min_g: goals.proteinMinG,
       protein_max_g: goals.proteinMaxG,
       protein_target_g: goals.proteinTargetG,
-      protein_provenance: goals.proteinProvenance,
+      protein_provenance: proteinProvenance,
       calorie_target_kcal: goals.calorieTargetKcal,
-      calorie_provenance: goals.calorieProvenance,
+      calorie_provenance: calorieProvenance,
       carbs_target_g: goals.carbsTargetG,
       fat_target_g: goals.fatTargetG,
       water_target_ml: goals.waterTargetMl,

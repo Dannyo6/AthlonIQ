@@ -3,15 +3,15 @@ import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { ProvenanceBadge } from "@/components/ui/Badge";
 import { Flame, ArrowRight, ShieldAlert } from "lucide-react";
-import type { ValueProvenance } from "@/types";
+import type { DisplayBadge, Provenance } from "@/types";
 
 interface NutritionCardProps {
   calorieTargetKcal: number | null;
-  calorieProvenance: ValueProvenance;
+  calorieProvenance: Provenance | DisplayBadge;
   proteinTargetG: number;
   proteinMinG: number;
   proteinMaxG: number;
-  proteinProvenance: ValueProvenance;
+  proteinProvenance: Provenance | DisplayBadge;
   confirmedCalories: number;
   confirmedProtein: number;
   confirmedCarbs: number;

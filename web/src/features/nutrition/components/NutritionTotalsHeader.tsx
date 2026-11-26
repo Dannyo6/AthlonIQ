@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
 import { AlertCircle } from "lucide-react";
-import { ValueProvenance } from "@/types";
+import { DisplayBadge, Provenance } from "@/types";
 
 interface NutritionTotalsHeaderProps {
   confirmedTotals: {
@@ -16,11 +16,11 @@ interface NutritionTotalsHeaderProps {
   unconfirmedCalories: number;
   unconfirmedCount: number;
   calorieTargetKcal: number | null;
-  calorieProvenance?: ValueProvenance;
+  calorieProvenance?: Provenance | DisplayBadge;
   proteinTargetG: number | null;
   proteinMinG: number | null;
   proteinMaxG: number | null;
-  proteinProvenance?: ValueProvenance;
+  proteinProvenance?: Provenance | DisplayBadge;
   carbsTargetG?: number | null;
   fatTargetG?: number | null;
   isLoading?: boolean;

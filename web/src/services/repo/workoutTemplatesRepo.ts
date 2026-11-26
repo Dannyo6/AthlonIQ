@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
-import { WorkoutTemplate, TemplateExercise } from "@/types";
+import { WorkoutTemplate, TemplateExercise, Weekday } from "@/types";
+
+export const WeekdaySchema = z.enum([
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+]);
 
 export const TemplateExerciseDbRowSchema = z.object({
   id: z.string().uuid(),
@@ -22,9 +32,14 @@ export const WorkoutTemplateDbRowSchema = z.object({
   name: z.string(),
   focus: z.string(),
   estimated_duration_min: z.coerce.number().int().nullable().default(null),
+  is_starter: z.boolean().default(false),
+  starter_key: z.string().nullable().default(null),
+  scheduled_weekdays: z.array(WeekdaySchema).default([]),
 });
 
-export function mapDbTemplateExerciseToDomain(row: z.infer<typeof TemplateExerciseDbRowSchema>): TemplateExercise {
+export function mapDbTemplateExerciseToDomain(
+  row: z.infer<typeof TemplateExerciseDbRowSchema>
+): TemplateExercise {
   return {
     id: row.id,
     exerciseName: row.exercise_name,
@@ -37,6 +52,25 @@ export function mapDbTemplateExerciseToDomain(row: z.infer<typeof TemplateExerci
     sortOrder: row.sort_order,
   };
 }
+
+export function mapDbTemplateToDomain(
+  row: z.infer<typeof WorkoutTemplateDbRowSchema>,
+  exercises: TemplateExercise[]
+): WorkoutTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    focus: row.focus,
+    estimatedDurationMin: row.estimated_duration_min ?? undefined,
+    isStarter: row.is_starter,
+    starterKey: row.starter_key,
+    scheduledWeekdays: row.scheduled_weekdays as Weekday[],
+    exercises,
+  };
+}
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const workoutTemplatesRepo = {
   async fetchTemplates(userId: string): Promise<WorkoutTemplate[]> {
@@ -66,34 +100,62 @@ export const workoutTemplatesRepo = {
     const exercisesByTemplate: Record<string, TemplateExercise[]> = {};
     (exerciseRows || []).forEach((row) => {
       const validated = TemplateExerciseDbRowSchema.parse(row);
-      exercisesByTemplate[validated.template_id] = exercisesByTemplate[validated.template_id] || [];
-      exercisesByTemplate[validated.template_id].push(mapDbTemplateExerciseToDomain(validated));
+      exercisesByTemplate[validated.template_id] =
+        exercisesByTemplate[validated.template_id] || [];
+      exercisesByTemplate[validated.template_id].push(
+        mapDbTemplateExerciseToDomain(validated)
+      );
     });
 
     return templateRows.map((row) => {
       const validated = WorkoutTemplateDbRowSchema.parse(row);
-      return {
-        id: validated.id,
-        name: validated.name,
-        focus: validated.focus,
-        estimatedDurationMin: validated.estimated_duration_min ?? undefined,
-        exercises: exercisesByTemplate[validated.id] || [],
-      };
+      return mapDbTemplateToDomain(
+        validated,
+        exercisesByTemplate[validated.id] || []
+      );
     });
   },
 
-  async saveTemplate(userId: string, template: WorkoutTemplate): Promise<WorkoutTemplate> {
+  async saveTemplate(
+    userId: string,
+    template: WorkoutTemplate
+  ): Promise<WorkoutTemplate> {
+    if (typeof template.isStarter !== "boolean") {
+      throw new Error(
+        "[workoutTemplatesRepo] Explicit isStarter boolean is required to save a workout template."
+      );
+    }
+    if (!Array.isArray(template.scheduledWeekdays)) {
+      throw new Error(
+        "[workoutTemplatesRepo] Explicit scheduledWeekdays array is required to save a workout template."
+      );
+    }
+    const validatedWeekdays = z.array(WeekdaySchema).parse(template.scheduledWeekdays);
+
+    const hasUuid = Boolean(template.id && UUID_REGEX.test(template.id));
+    const resolvedStarterKey =
+      template.starterKey ??
+      (template.isStarter && !hasUuid ? template.id : null);
+
     const templatePayload = {
-      ...(template.id && !template.id.startsWith("tpl-") ? { id: template.id } : {}),
+      ...(hasUuid ? { id: template.id } : {}),
       user_id: userId,
       name: template.name,
       focus: template.focus,
-      estimated_duration_min: template.estimatedDurationMin || null,
+      estimated_duration_min: template.estimatedDurationMin ?? null,
+      is_starter: template.isStarter,
+      starter_key: resolvedStarterKey,
+      scheduled_weekdays: validatedWeekdays,
     };
 
-    const { data: savedTemplateRow, error: tErr } = await supabase
-      .from("workout_templates")
-      .upsert(templatePayload)
+    const query =
+      !hasUuid && resolvedStarterKey
+        ? supabase
+            .from("workout_templates")
+            .upsert(templatePayload, { onConflict: "user_id,starter_key" })
+        : supabase.from("workout_templates").upsert(templatePayload);
+
+    const { data: savedTemplateRow, error: tErr } = await query
       .select()
       .single();
 
@@ -105,7 +167,17 @@ export const workoutTemplatesRepo = {
     const assignedTemplateId = validatedTemplate.id;
 
     // Delete existing template exercises to ensure clean atomic sync
-    await supabase.from("workout_template_exercises").delete().eq("template_id", assignedTemplateId).eq("user_id", userId);
+    const { error: delErr } = await supabase
+      .from("workout_template_exercises")
+      .delete()
+      .eq("template_id", assignedTemplateId)
+      .eq("user_id", userId);
+
+    if (delErr) {
+      throw new Error(
+        `[workoutTemplatesRepo] Error clearing template exercises: ${delErr.message}`
+      );
+    }
 
     const savedExercises: TemplateExercise[] = [];
     if (template.exercises && template.exercises.length > 0) {
@@ -114,12 +186,12 @@ export const workoutTemplatesRepo = {
         user_id: userId,
         exercise_name: ex.exerciseName,
         category: ex.category || "compound",
-        equipment_key: ex.equipmentKey || null,
-        target_sets: ex.targetSets || 3,
-        target_reps_min: ex.targetRepsMin || 6,
-        target_reps_max: ex.targetRepsMax || 12,
-        rest_seconds: ex.restSeconds || 90,
-        sort_order: ex.sortOrder !== undefined ? ex.sortOrder : idx,
+        equipment_key: ex.equipmentKey ?? null,
+        target_sets: ex.targetSets,
+        target_reps_min: ex.targetRepsMin,
+        target_reps_max: ex.targetRepsMax,
+        rest_seconds: ex.restSeconds,
+        sort_order: ex.sortOrder !== undefined ? ex.sortOrder : idx + 1,
       }));
 
       const { data: exRows, error: exErr } = await supabase
@@ -128,21 +200,19 @@ export const workoutTemplatesRepo = {
         .select();
 
       if (exErr) {
-        throw new Error(`[workoutTemplatesRepo] Error saving template exercises: ${exErr.message}`);
+        throw new Error(
+          `[workoutTemplatesRepo] Error saving template exercises: ${exErr.message}`
+        );
       }
 
       (exRows || []).forEach((row) => {
-        savedExercises.push(mapDbTemplateExerciseToDomain(TemplateExerciseDbRowSchema.parse(row)));
+        savedExercises.push(
+          mapDbTemplateExerciseToDomain(TemplateExerciseDbRowSchema.parse(row))
+        );
       });
     }
 
-    return {
-      id: assignedTemplateId,
-      name: validatedTemplate.name,
-      focus: validatedTemplate.focus,
-      estimatedDurationMin: validatedTemplate.estimated_duration_min ?? undefined,
-      exercises: savedExercises,
-    };
+    return mapDbTemplateToDomain(validatedTemplate, savedExercises);
   },
 
   async deleteTemplate(userId: string, templateId: string): Promise<void> {

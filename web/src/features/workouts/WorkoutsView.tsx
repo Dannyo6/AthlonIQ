@@ -38,7 +38,7 @@ export const WorkoutsView: React.FC<WorkoutsViewProps> = ({ now }) => {
     updateTemplate,
     toggleWeekday,
     getTemplateForWeekday,
-  } = useWorkoutTemplates(profile?.id);
+  } = useWorkoutTemplates();
 
   const [activeTab, setActiveTab] = useState<"templates" | "active" | "history">(
     "templates"

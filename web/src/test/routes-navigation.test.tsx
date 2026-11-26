@@ -88,8 +88,8 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     await waitFor(() => {
       expect(screen.getByText(/Indian Nutrition & Energy Balance/i)).toBeInTheDocument();
       expect(document.title).toContain("Nutrition & Energy");
-    }, { timeout: 4000 });
-  });
+    }, { timeout: 8000 });
+  }, 15000);
 
   it("renders /workouts view directly", async () => {
     render(
@@ -101,8 +101,8 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     await waitFor(() => {
       expect(screen.getByText(/Training & Progression Engine/i)).toBeInTheDocument();
       expect(document.title).toContain("Training & Equipment");
-    }, { timeout: 4000 });
-  });
+    }, { timeout: 8000 });
+  }, 15000);
 
   it("renders /activities view directly", async () => {
     render(

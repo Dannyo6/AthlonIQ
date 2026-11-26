@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   calculateWeeklyConsistency,
   getMondayToSundayWeek,
+  getWeekdayInTimezone,
   resolveDateInTimezone,
 } from "@/lib/weeklyConsistency";
 import {
@@ -184,6 +185,33 @@ describe("Weekly Consistency & Adherence Engine", () => {
       });
       expect(res.weekStart).toBe("2026-11-09");
       expect(res.todayDate).toBe("2026-11-09");
+    });
+
+    it("resolves getWeekdayInTimezone accurately at 00:30 and 23:30 in Asia/Kolkata and America/New_York", () => {
+      // 2026-11-11 is Wednesday
+      // 1) Asia/Kolkata (+05:30) at 00:30 local -> 2026-11-10T19:00:00Z
+      // In Kolkata it is Wednesday 00:30; in New York (-05:00) it is Tuesday 14:00
+      const kolkata0030 = new Date("2026-11-10T19:00:00Z");
+      expect(getWeekdayInTimezone(kolkata0030, "Asia/Kolkata")).toBe("Wed");
+      expect(getWeekdayInTimezone(kolkata0030, "America/New_York")).toBe("Tue");
+
+      // 2) Asia/Kolkata (+05:30) at 23:30 local -> 2026-11-11T18:00:00Z
+      // In Kolkata it is Wednesday 23:30; in New York (-05:00) it is Wednesday 13:00
+      const kolkata2330 = new Date("2026-11-11T18:00:00Z");
+      expect(getWeekdayInTimezone(kolkata2330, "Asia/Kolkata")).toBe("Wed");
+      expect(getWeekdayInTimezone(kolkata2330, "America/New_York")).toBe("Wed");
+
+      // 3) America/New_York (-05:00) at 00:30 local -> 2026-11-11T05:30:00Z
+      // In New York it is Wednesday 00:30; in Kolkata (+05:30) it is Wednesday 11:00
+      const ny0030 = new Date("2026-11-11T05:30:00Z");
+      expect(getWeekdayInTimezone(ny0030, "America/New_York")).toBe("Wed");
+      expect(getWeekdayInTimezone(ny0030, "Asia/Kolkata")).toBe("Wed");
+
+      // 4) America/New_York (-05:00) at 23:30 local -> 2026-11-12T04:30:00Z
+      // In New York it is still Wednesday 23:30; in Kolkata (+05:30) it is already Thursday 10:00
+      const ny2330 = new Date("2026-11-12T04:30:00Z");
+      expect(getWeekdayInTimezone(ny2330, "America/New_York")).toBe("Wed");
+      expect(getWeekdayInTimezone(ny2330, "Asia/Kolkata")).toBe("Thu");
     });
   });
 
