@@ -286,4 +286,26 @@ describe("UI-2: Today Dashboard Screen & Components (390px spec)", () => {
       fatigue: 2,
     });
   });
+
+  it("Weekly Workload Balance shows neutral 'No sessions' instead of 'OPTIMAL' when zero workouts and activities are logged", () => {
+    setupStateMock({
+      workoutSessions: [],
+      activitySessions: [],
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardView onNavigate={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    const workloadTrigger = screen.getByRole("button", { name: /Weekly Workload Balance/i });
+    expect(workloadTrigger).toHaveTextContent(/No sessions/i);
+    expect(workloadTrigger).not.toHaveTextContent(/OPTIMAL/i);
+
+    fireEvent.click(workloadTrigger);
+    expect(
+      screen.getByText(/No workouts or activities logged in the last 7 days/i)
+    ).toBeInTheDocument();
+  });
 });

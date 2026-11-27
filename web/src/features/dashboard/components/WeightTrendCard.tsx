@@ -42,11 +42,12 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
       icon={Scale}
       tone="lime"
       provenance={hasEnoughData ? "calculated_estimate" : "provisional_default"}
+      compactProvenance
       primaryAction={
         <Link
           to="/progress"
           onClick={() => onNavigate?.("progress")}
-          className="surface-elevated tactile-press w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold text-white hover:border-athloniq-lime/40"
+          className="surface-elevated tactile-press w-full inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white hover:border-athloniq-lime/40"
         >
           <span>{hasEnoughData ? "Open Weight Analytics" : "Log Today's Weight"}</span>
           <ArrowRight className="h-4 w-4 text-athloniq-lime shrink-0" aria-hidden="true" />
@@ -54,7 +55,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
       }
     >
       {!hasEnoughData ? (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <EmptyState
             illustration="trend"
             title="Need 3 weigh-ins"
@@ -67,13 +68,13 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
           )}
         </div>
       ) : (
-        <div className="surface-well p-4 rounded-xl space-y-3.5">
+        <div className="surface-well p-3.5 rounded-xl space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-semibold">
                 Latest Weight
               </span>
-              <div className="text-3xl font-bold tracking-tight text-white font-mono mt-0.5 tabular-nums">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono mt-0.5 tabular-nums">
                 {latestWeight?.weightKg.toFixed(1)}{" "}
                 <span className="text-xs text-slate-400 font-medium">kg</span>
               </div>
@@ -92,7 +93,7 @@ export const WeightTrendCard: React.FC<WeightTrendCardProps> = ({
             tone="lime"
           />
 
-          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-athloniq-border/70">
+          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-athloniq-border/70">
             <StatTile
               label="7-Day Rolling Avg:"
               value={weightTrend.rolling7dKg?.toFixed(2) ?? null}

@@ -19,10 +19,16 @@ export interface DitherProps {
   mouseRadius?: number;
   mouseStrength?: number;
   enableMouseInteraction?: boolean;
+  clickRipple?: boolean;
+  dpr?: number;
   disableAnimation?: boolean;
   intro?: boolean;
   className?: string;
 }
+
+const DEFAULT_BASE: DitherRgbTuple = [0.027, 0.031, 0.035];
+const DEFAULT_WAVE: DitherRgbTuple = [0.063, 0.24, 0.165];
+const DEFAULT_ACCENT: DitherRgbTuple = [0.42, 0.64, 0.2];
 
 const VERTEX_SHADER_SRC = `#version 300 es
 in vec2 a_position;
@@ -54,6 +60,8 @@ uniform vec2 u_mouse;
 uniform float u_mouseActive;
 uniform float u_mouseRadius;
 uniform float u_mouseStrength;
+uniform vec2 u_ripplePos;
+uniform float u_rippleAge;
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -121,12 +129,19 @@ void main() {
   float n2 = fbm(warpedUv + n1 * u_waveAmplitude * 3.0 + vec2(-u_time * 0.4, u_time * 0.55));
   float ridge = smoothstep(0.22, 0.88, n2);
 
-  // Subtle radial falloff keeps the center calm while perimeter waves shimmer
   float centerDist = length(aspectUv);
   float rimLift = smoothstep(0.18, 0.85, centerDist);
   float revealBoost = (u_mouseEffect == 1) ? mouseMask * u_mouseStrength * 0.48 : 0.0;
 
-  float field = clamp(ridge * (0.45 + 0.55 * rimLift) + revealBoost, 0.0, 1.0);
+  float rippleBoost = 0.0;
+  if (u_rippleAge >= 0.0 && u_rippleAge < 1.2) {
+    vec2 aspectRipple = vec2((u_ripplePos.x - 0.5) * aspect, u_ripplePos.y - 0.5);
+    float rDist = distance(aspectUv, aspectRipple);
+    float ring = exp(-pow((rDist - u_rippleAge * 0.65) * 14.0, 2.0));
+    rippleBoost = ring * (1.0 - u_rippleAge / 1.2) * 0.35;
+  }
+
+  float field = clamp(ridge * (0.45 + 0.55 * rimLift) + revealBoost + rippleBoost, 0.0, 1.0);
 
   vec3 col = mix(u_baseColor, u_waveColor, smoothstep(0.12, 0.72, field));
   col = mix(col, u_accentColor, smoothstep(0.66, 1.0, field) * 0.65);
@@ -159,10 +174,10 @@ function compileShader(
   return shader;
 }
 
-export const Dither: React.FC<DitherProps> = ({
-  baseColor = [0.008, 0.01, 0.015],
-  waveColor = [0.14, 0.36, 0.14],
-  accentColor = [0.46, 0.68, 0.22],
+const DitherInner: React.FC<DitherProps> = ({
+  baseColor = DEFAULT_BASE,
+  waveColor = DEFAULT_WAVE,
+  accentColor = DEFAULT_ACCENT,
   ditherMode = "bayer",
   colorNum = 4,
   pixelSize = 2,
@@ -173,6 +188,8 @@ export const Dither: React.FC<DitherProps> = ({
   mouseRadius = 0.28,
   mouseStrength = 0.6,
   enableMouseInteraction = true,
+  clickRipple = true,
+  dpr = 1.5,
   disableAnimation = false,
   intro = true,
   className,
@@ -183,6 +200,79 @@ export const Dither: React.FC<DitherProps> = ({
 
   const shouldAnimate = !disableAnimation && !prefersReduced;
 
+  // Hold live visual parameters in a ref so parent updates or mode toggles update uniforms smoothly without remounting WebGL
+  const paramsRef = useRef({
+    baseColor,
+    waveColor,
+    accentColor,
+    ditherMode,
+    colorNum,
+    pixelSize,
+    waveSpeed,
+    waveFrequency,
+    waveAmplitude,
+    mouseEffect,
+    mouseRadius,
+    mouseStrength,
+    enableMouseInteraction,
+    clickRipple,
+    dpr,
+    intro,
+  });
+
+  const wakeRef = useRef<(() => void) | null>(null);
+  const resizeRef = useRef<(() => void) | null>(null);
+
+  const [baseR, baseG, baseB] = baseColor;
+  const [waveR, waveG, waveB] = waveColor;
+  const [accentR, accentG, accentB] = accentColor;
+
+  useEffect(() => {
+    paramsRef.current = {
+      baseColor: [baseR, baseG, baseB],
+      waveColor: [waveR, waveG, waveB],
+      accentColor: [accentR, accentG, accentB],
+      ditherMode,
+      colorNum,
+      pixelSize,
+      waveSpeed,
+      waveFrequency,
+      waveAmplitude,
+      mouseEffect,
+      mouseRadius,
+      mouseStrength,
+      enableMouseInteraction,
+      clickRipple,
+      dpr,
+      intro,
+    };
+    resizeRef.current?.();
+    wakeRef.current?.();
+  }, [
+    baseR,
+    baseG,
+    baseB,
+    waveR,
+    waveG,
+    waveB,
+    accentR,
+    accentG,
+    accentB,
+    ditherMode,
+    colorNum,
+    pixelSize,
+    waveSpeed,
+    waveFrequency,
+    waveAmplitude,
+    mouseEffect,
+    mouseRadius,
+    mouseStrength,
+    enableMouseInteraction,
+    clickRipple,
+    dpr,
+    intro,
+  ]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -190,7 +280,7 @@ export const Dither: React.FC<DitherProps> = ({
     let gl: WebGL2RenderingContext | null = null;
     try {
       gl = canvas.getContext("webgl2", {
-        alpha: true,
+        alpha: false,
         antialias: false,
         depth: false,
         stencil: false,
@@ -264,10 +354,13 @@ export const Dither: React.FC<DitherProps> = ({
       mouseActive: gl.getUniformLocation(program, "u_mouseActive"),
       mouseRadius: gl.getUniformLocation(program, "u_mouseRadius"),
       mouseStrength: gl.getUniformLocation(program, "u_mouseStrength"),
+      ripplePos: gl.getUniformLocation(program, "u_ripplePos"),
+      rippleAge: gl.getUniformLocation(program, "u_rippleAge"),
     };
 
     const mousePos = { x: 0.5, y: 0.5, active: 0 };
-    let isVisible = true;
+    const ripple = { x: 0.5, y: 0.5, startTs: -1 };
+    let isVisible = document.visibilityState !== "hidden";
     let isInViewport = true;
     let rafId = 0;
     const startTs = performance.now();
@@ -275,10 +368,10 @@ export const Dither: React.FC<DitherProps> = ({
     const resizeCanvas = () => {
       const target = canvasRef.current;
       if (!target || !gl) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const effectiveDpr = Math.min(window.devicePixelRatio || 1, Math.max(0.5, paramsRef.current.dpr));
       const rect = target.getBoundingClientRect();
-      const width = Math.max(1, Math.floor((rect.width || window.innerWidth) * dpr));
-      const height = Math.max(1, Math.floor((rect.height || window.innerHeight) * dpr));
+      const width = Math.max(1, Math.floor((rect.width || window.innerWidth) * effectiveDpr));
+      const height = Math.max(1, Math.floor((rect.height || window.innerHeight) * effectiveDpr));
       if (target.width !== width || target.height !== height) {
         target.width = width;
         target.height = height;
@@ -288,31 +381,38 @@ export const Dither: React.FC<DitherProps> = ({
 
     const drawFrame = (now: number) => {
       if (!gl || !canvasRef.current) return;
+      const p = paramsRef.current;
       const elapsedSec = (now - startTs) * 0.001;
-      const simTime = shouldAnimate ? elapsedSec * waveSpeed * 12.0 : 1.5;
-      const introProgress = !shouldAnimate || !intro ? 1.0 : Math.min(1.0, elapsedSec / 0.85);
+      const simTime = shouldAnimate ? elapsedSec * p.waveSpeed * 12.0 : 1.5;
+      const introProgress = !shouldAnimate || !p.intro ? 1.0 : Math.min(1.0, elapsedSec / 0.85);
+      const rippleAge =
+        shouldAnimate && p.clickRipple && ripple.startTs >= 0
+          ? (now - ripple.startTs) * 0.001
+          : -1;
 
       gl.useProgram(program);
       gl.bindVertexArray(vao);
       gl.uniform2f(loc.resolution, canvasRef.current.width, canvasRef.current.height);
       gl.uniform1f(loc.time, simTime);
       gl.uniform1f(loc.intro, introProgress);
-      gl.uniform3fv(loc.baseColor, baseColor);
-      gl.uniform3fv(loc.waveColor, waveColor);
-      gl.uniform3fv(loc.accentColor, accentColor);
-      gl.uniform1i(loc.ditherMode, ditherMode === "bayer" ? 0 : 1);
-      gl.uniform1f(loc.colorNum, colorNum);
-      gl.uniform1f(loc.pixelSize, pixelSize);
-      gl.uniform1f(loc.waveFrequency, waveFrequency);
-      gl.uniform1f(loc.waveAmplitude, waveAmplitude);
+      gl.uniform3fv(loc.baseColor, p.baseColor);
+      gl.uniform3fv(loc.waveColor, p.waveColor);
+      gl.uniform3fv(loc.accentColor, p.accentColor);
+      gl.uniform1i(loc.ditherMode, p.ditherMode === "bayer" ? 0 : 1);
+      gl.uniform1f(loc.colorNum, p.colorNum);
+      gl.uniform1f(loc.pixelSize, p.pixelSize);
+      gl.uniform1f(loc.waveFrequency, p.waveFrequency);
+      gl.uniform1f(loc.waveAmplitude, p.waveAmplitude);
       gl.uniform1i(
         loc.mouseEffect,
-        mouseEffect === "reveal" ? 1 : mouseEffect === "repel" ? 2 : 0
+        p.mouseEffect === "reveal" ? 1 : p.mouseEffect === "repel" ? 2 : 0
       );
       gl.uniform2f(loc.mouse, mousePos.x, mousePos.y);
-      gl.uniform1f(loc.mouseActive, enableMouseInteraction ? mousePos.active : 0);
-      gl.uniform1f(loc.mouseRadius, mouseRadius);
-      gl.uniform1f(loc.mouseStrength, mouseStrength);
+      gl.uniform1f(loc.mouseActive, p.enableMouseInteraction ? mousePos.active : 0);
+      gl.uniform1f(loc.mouseRadius, p.mouseRadius);
+      gl.uniform1f(loc.mouseStrength, p.mouseStrength);
+      gl.uniform2f(loc.ripplePos, ripple.x, ripple.y);
+      gl.uniform1f(loc.rippleAge, rippleAge);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
@@ -343,8 +443,12 @@ export const Dither: React.FC<DitherProps> = ({
       }
     };
 
+    resizeRef.current = resizeCanvas;
+    wakeRef.current = startOrRenderOnce;
+
     const handlePointerMove = (e: PointerEvent) => {
-      if (!enableMouseInteraction || !canvasRef.current) return;
+      const p = paramsRef.current;
+      if (!p.enableMouseInteraction || !canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       mousePos.x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
@@ -353,6 +457,18 @@ export const Dither: React.FC<DitherProps> = ({
       if (!shouldAnimate) {
         drawFrame(performance.now());
       }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const p = paramsRef.current;
+      if (!shouldAnimate || !p.clickRipple || !p.enableMouseInteraction || !canvasRef.current) {
+        return;
+      }
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      ripple.x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      ripple.y = Math.min(1, Math.max(0, 1 - (e.clientY - rect.top) / rect.height));
+      ripple.startTs = performance.now();
     };
 
     const handleVisibility = () => {
@@ -382,18 +498,20 @@ export const Dither: React.FC<DitherProps> = ({
     });
     io.observe(canvas);
 
-    if (enableMouseInteraction) {
-      window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    }
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerdown", handlePointerDown, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
 
     startOrRenderOnce();
 
     return () => {
+      wakeRef.current = null;
+      resizeRef.current = null;
       stopLoop();
       ro.disconnect();
       io.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("visibilitychange", handleVisibility);
       if (gl) {
         if (vao) gl.deleteVertexArray(vao);
@@ -403,23 +521,7 @@ export const Dither: React.FC<DitherProps> = ({
         gl.deleteShader(frag);
       }
     };
-  }, [
-    baseColor,
-    waveColor,
-    accentColor,
-    ditherMode,
-    colorNum,
-    pixelSize,
-    waveSpeed,
-    waveFrequency,
-    waveAmplitude,
-    mouseEffect,
-    mouseRadius,
-    mouseStrength,
-    enableMouseInteraction,
-    shouldAnimate,
-    intro,
-  ]);
+  }, [shouldAnimate]);
 
   if (!supported) {
     return null;
@@ -433,3 +535,6 @@ export const Dither: React.FC<DitherProps> = ({
     />
   );
 };
+
+export const Dither = React.memo(DitherInner);
+export default Dither;

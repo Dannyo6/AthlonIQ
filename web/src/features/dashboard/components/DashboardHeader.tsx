@@ -37,8 +37,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const demoEnabled = import.meta.env.VITE_ENABLE_DEMO === "true";
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
-      <div className="space-y-1">
+    <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 pt-0.5">
+      <div className="space-y-0.5">
         <div className="inline-flex items-center gap-2 text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-widest tabular-nums">
           <span
             className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0"
@@ -50,7 +50,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </span>
           <span className="text-emerald-400">Daily Overview</span>
         </div>
-        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-[0.015em] text-white leading-tight">
           {greeting}
         </h1>
       </div>

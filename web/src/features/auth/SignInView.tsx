@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "./AuthContext";
 import { BRAND_CONFIG } from "@/config/brand";
 import { BrandMark } from "@/components/ui/BrandMark";
@@ -13,10 +13,6 @@ import {
   KeyRound,
   RotateCcw,
 } from "lucide-react";
-
-const LazyDither = React.lazy(() =>
-  import("@/components/ui/Dither").then((m) => ({ default: m.Dither }))
-);
 
 type AuthMode = "signin" | "signup" | "reset";
 
@@ -134,35 +130,8 @@ export const SignInView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative overflow-x-hidden font-sans">
-      {/* Scoped Unauthenticated WebGL2 Dither Background (lazy-loaded & unmounted on sign-in) */}
-      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <Suspense fallback={null}>
-          <LazyDither
-            baseColor={[0.008, 0.01, 0.015]}
-            waveColor={[0.14, 0.36, 0.14]}
-            accentColor={[0.46, 0.68, 0.22]}
-            ditherMode="bayer"
-            colorNum={4}
-            pixelSize={2}
-            waveSpeed={0.035}
-            waveFrequency={2.6}
-            waveAmplitude={0.28}
-            mouseEffect="reveal"
-            mouseRadius={0.28}
-            mouseStrength={0.6}
-            intro={true}
-          />
-        </Suspense>
-      </div>
-
-      {/* Center Vignette Keeping Card Legibility High */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none auth-dither-vignette"
-        aria-hidden="true"
-      />
-
-      {/* Frosted Obsidian Auth Card */}
+    <div className="min-h-screen text-slate-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative z-10 overflow-x-clip font-sans">
+      {/* Frosted Carbon-Obsidian Auth Card floating above root <DitherBackdrop mode="hero" /> */}
       <main className="w-full max-w-md surface-card bg-athloniq-card/85 backdrop-blur-md border border-white/[0.10] rounded-2xl shadow-2xl p-6 sm:p-8 relative z-10 motion-enter">
         {/* Brand Hero */}
         <div className="flex flex-col items-center text-center mb-7">
@@ -170,7 +139,7 @@ export const SignInView: React.FC = () => {
           <h1
             id="page-heading"
             tabIndex={-1}
-            className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight leading-none mb-2 focus:outline-none"
+            className="font-display text-3xl sm:text-4xl font-bold text-white tracking-[0.02em] leading-none mb-2 focus:outline-none"
           >
             {BRAND_CONFIG.name}
           </h1>

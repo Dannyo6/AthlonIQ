@@ -233,13 +233,13 @@ Before delivering any UI code, verify:
 
 > **PRECEDENCE:** Where generic generator recommendations above conflict with AthlonIQ's production codebase rules, the overrides below **govern all AthlonIQ UI work**.
 
-### 1. Locked Brand Palette (Deep Obsidian + Lime Primary + Emerald Secondary)
+### 1. Locked Brand Palette (Carbon Obsidian + Lime Primary + Emerald Secondary)
 | Tier / Token Role | Canonical Hex / Value | CSS Variable (`web/src/styles/globals.css`) | Tailwind Utility |
 |---|---|---|---|
-| **Tier 1 — Canvas** | `#090a0f` + ambient radial depth | `--color-bg` / `--color-ambient-lime` / `--color-ambient-emerald` | `bg-athloniq-dark` / `.canvas-depth` |
-| **Tier 2 — Surface / Card** | `#12151e` + `1px` hairline + top inner sheen | `--color-card` / `--color-border-hairline` / `--color-surface-sheen` | `bg-athloniq-card` / `.surface-card` |
-| **Tier 3 — Elevated Interactive** | `#181d2a` -> `#1b2130` | `--color-surface` / `--color-elevated` / `--color-border-elevated` | `bg-athloniq-surface` / `.surface-elevated` |
-| **Tier 4 — Recessed Telemetry Well** | `#0d1017` + inset depth | `--color-well` / `--color-well-border` / `--color-well-shadow` | `.surface-well` |
+| **Tier 1 — Canvas** | `#070809` + carbon ambient depth | `--color-bg` / `--color-ambient-lime` / `--color-ambient-emerald` | `bg-athloniq-dark` / `.canvas-depth` |
+| **Tier 2 — Surface / Card** | `#0d0f11` + `1px` neutral hairline + top inner sheen | `--color-card` / `--color-border-hairline` / `--color-surface-sheen` | `bg-athloniq-card` / `.surface-card` |
+| **Tier 3 — Elevated Interactive** | `#14171a` -> `#181c20` | `--color-surface` / `--color-elevated` / `--color-border-elevated` | `bg-athloniq-surface` / `.surface-elevated` |
+| **Tier 4 — Recessed Telemetry Well** | `#0a0b0d` + inset depth | `--color-well` / `--color-well-border` / `--color-well-shadow` | `.surface-well` |
 | **Primary Accent (Electric Lime)** | `#bef264` (hover `#a3e635`) | `--color-lime` / `--color-lime-border` | `text-athloniq-lime` / `bg-athloniq-lime` |
 | **Secondary Accent (Emerald)** | `#10b981` | `--color-emerald` / `--color-emerald-border` | `text-emerald-400` / `bg-emerald-500/15` |
 | **Forbidden Accents** | Zero **orange (`#F97316`)**, zero **cyan**, zero **purple/violet**, zero default Tailwind `lime-\d{2,3}`, zero raw hex/rgba in `.tsx` or `.css` outside `:root` variable definitions in `globals.css`. | — | Enforce via `tailwind-tokens.test.ts` |
@@ -250,8 +250,8 @@ Before delivering any UI code, verify:
 - **Mandatory Tabular Numerals**: Apply `tabular-nums` (or `.font-mono` / `[data-numeric="true"]`) to every numeric metric, calorie/macro count, load, readiness score, countdown, and timestamp to prevent horizontal jitter.
 
 ### 3. Icons, Motion & Budget Gates
-- **Icons**: `lucide-react` ONLY (single consistent `strokeWidth={2}` via `<IconTile>`) plus small custom inline SVG sport glyphs (`badminton`, `running`, `pull-up`) in `web/src/components/ui/SportIcons.tsx` (`aria-hidden="true"` when decorative; mandatory `aria-label` on icon-only controls; **zero emojis** as UI icons).
-- **Motion, Dials & Scoped Auth WebGL2**: Dials **Variance 5 / Motion 5 / Density 6**. Pure CSS transitions/keyframes using explicit duration tokens (`120ms` press, `200ms` state/exit, `320ms` enter; `transform`/`opacity`-only, stagger capped at 6 items, `document.startViewTransition` with plain fallback) + `usePrefersReducedMotion`. Zero GSAP, zero Three.js, zero new packages (`budget-gate.test.ts` enforces exact `web/package.json` snapshot and total initial-load gzip ceiling from `dist/index.html`). **Scoped WebGL2 Exception:** Zero-dependency native `webgl2` (`<Dither />`) is permitted exclusively as a lazy-loaded, unauthenticated background on `/signin` (`SignInView`), never loaded after authentication and static when `prefers-reduced-motion: reduce`.
+- **Icons**: `lucide-react` ONLY (single consistent `strokeWidth={2}` via `<IconTile>`) plus `<BrandMark />` (AlphaWave geometric hardware-squircle inline SVG using CSS variables) and small custom inline SVG sport glyphs (`badminton`, `running`, `pull-up`) in `web/src/components/ui/SportIcons.tsx` (`aria-hidden="true"` when decorative; mandatory `aria-label` on icon-only controls; **zero emojis** as UI icons).
+- **Motion, Dials & Scoped WebGL2 Exception**: Dials **Variance 5 / Motion 5 / Density 6**. Pure CSS transitions/keyframes using explicit duration tokens (`120ms` press, `200ms` state/exit, `320ms` enter; `transform`/`opacity`-only, stagger capped at 6 items, `document.startViewTransition` with plain fallback) + `usePrefersReducedMotion`. Zero GSAP, zero Three.js, zero new packages (`budget-gate.test.ts` enforces exact `web/package.json` snapshot and total initial-load gzip ceiling from `dist/index.html`). **Scoped Native WebGL2 Exception:** Zero-dependency opaque `webgl2` (`<Dither />` mounted once via lazy `<DitherBackdrop />` at the root of `App.tsx`, `React.memo`, GPU-isolated fixed layer) is permitted exclusively for `hero` dither on `/signin` and calm low-opacity `ambient` carbon atmosphere when authenticated, freezing statically on `prefers-reduced-motion: reduce` and falling back cleanly to `null` when `webgl2` is unavailable.
 - **Reduced Motion**: Global `@media (prefers-reduced-motion: reduce)` rule in `web/src/styles/globals.css` neutralizes animations, `.animate-pulse`/`.animate-bounce`/`.animate-spin`, stagger/chart draw-in transitions, view transitions, and smooth scrolling.
 
 ### 4. Mobile-First Ergonomics & Truth-in-UI

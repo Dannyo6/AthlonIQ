@@ -70,10 +70,11 @@ export const TodayTrainingCard: React.FC<TodayTrainingCardProps> = ({
       icon={Dumbbell}
       tone="lime"
       provenance={equipmentConfirmed ? "user_confirmed" : "unconfirmed_equipment"}
+      compactProvenance
       primaryAction={primaryAction}
     >
       {!equipmentConfirmed ? (
-        <div className="surface-well p-4 rounded-xl border-amber-500/35 space-y-2.5">
+        <div className="surface-well p-3.5 rounded-xl border-amber-500/35 space-y-2">
           <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
             <span>Confirm your equipment</span>
@@ -85,14 +86,14 @@ export const TodayTrainingCard: React.FC<TodayTrainingCardProps> = ({
           </p>
         </div>
       ) : isCompleted ? (
-        <div className="surface-well p-4 rounded-xl border-athloniq-lime/35 space-y-2.5">
+        <div className="surface-well p-3.5 rounded-xl border-athloniq-lime/35 space-y-2">
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden="true" />
               <span>✓ Completed today</span>
             </span>
           </div>
-          <div className="font-display text-xl font-bold text-white tracking-wide">
+          <div className="font-display text-xl font-bold text-white tracking-[0.015em]">
             {completedSession?.title || "Workout Session"}
           </div>
           <div className="text-xs text-slate-300 font-mono tabular-nums">
@@ -100,7 +101,7 @@ export const TodayTrainingCard: React.FC<TodayTrainingCardProps> = ({
           </div>
         </div>
       ) : (
-        <div className="surface-well p-4 rounded-xl space-y-3">
+        <div className="surface-well p-3.5 rounded-xl space-y-2.5">
           <div className="flex justify-between items-center gap-2 text-xs">
             <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
               Up Next
@@ -109,13 +110,13 @@ export const TodayTrainingCard: React.FC<TodayTrainingCardProps> = ({
               ● Ready to train
             </span>
           </div>
-          <div className="font-display text-2xl font-bold text-white tracking-wide">
+          <div className="font-display text-2xl font-bold text-white tracking-[0.015em]">
             {trainingScope.length > 0
               ? `${trainingScope[0].toUpperCase()} Session`
               : "Strength & Hypertrophy Session"}
           </div>
           {trainingScope.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
+            <div className="flex flex-wrap gap-1.5">
               {trainingScope.map((scope, idx) => {
                 const lower = scope.toLowerCase();
                 return (
@@ -136,7 +137,7 @@ export const TodayTrainingCard: React.FC<TodayTrainingCardProps> = ({
             </div>
           )}
           {trainingDaysPerWeek != null && (
-            <div className="text-[11px] text-slate-400 font-mono tabular-nums pt-0.5">
+            <div className="text-[11px] text-slate-400 font-mono tabular-nums">
               Target: {trainingDaysPerWeek} training days/week
             </div>
           )}

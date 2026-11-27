@@ -12,6 +12,7 @@ export interface SectionCardProps {
   icon?: LucideIcon;
   tone?: IconTileProps["tone"];
   provenance?: Provenance | DisplayBadge;
+  compactProvenance?: boolean;
   headerRight?: React.ReactNode;
   primaryAction?: React.ReactNode;
   spotlight?: boolean;
@@ -25,6 +26,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   icon,
   tone = "lime",
   provenance,
+  compactProvenance = false,
   headerRight,
   primaryAction,
   spotlight = false,
@@ -34,14 +36,14 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   return (
     <Card
       spotlight={spotlight}
-      className={cn("h-full flex flex-col justify-between space-y-4", className)}
+      className={cn("h-full flex flex-col justify-between space-y-3", className)}
     >
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-athloniq-border pb-3">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-athloniq-border pb-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
             {icon && <IconTile icon={icon} tone={tone} size="sm" />}
             <div className="min-w-0">
-              <h3 className="font-display text-lg font-bold text-white tracking-wide leading-tight truncate">
+              <h3 className="font-display text-lg font-bold text-white tracking-[0.015em] leading-tight truncate">
                 {title}
               </h3>
               {subtitle && (
@@ -50,7 +52,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {provenance && <ProvenanceDot provenance={provenance} />}
+            {provenance && <ProvenanceDot provenance={provenance} compact={compactProvenance} />}
             {headerRight}
           </div>
         </div>

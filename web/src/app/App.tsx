@@ -20,6 +20,8 @@ import {
 } from "@/features/navigation/UnsavedWorkContext";
 import { GuardedNavLink } from "@/features/navigation/GuardedNavLink";
 import { Badge } from "@/components/ui/Badge";
+import { BrandMark } from "@/components/ui/BrandMark";
+import { DitherBackdrop } from "@/components/ui/DitherBackdrop";
 import { checkBackendHealth } from "@/services/api";
 import { usePwa } from "@/features/pwa/usePwa";
 import { PwaUpdateBanner, PwaOfflineBanner } from "@/features/pwa/PwaComponents";
@@ -34,8 +36,6 @@ import {
   Activity,
   Menu,
   X,
-  Radio,
-  Sparkles,
   CheckCircle2,
   AlertTriangle,
   Info,
@@ -47,6 +47,8 @@ import {
   UploadCloud,
   ShieldAlert,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // Lazy-loaded feature views (Code Splitting)
@@ -105,8 +107,20 @@ export const MOBILE_DOCK_ITEMS = [
   { id: "progress", path: "/progress", label: "Physique", icon: TrendingUp },
 ] as const;
 
+const NAV_GROUPS = [
+  { label: "Overview", itemIds: ["today"] },
+  { label: "Training & Fuel", itemIds: ["nutrition", "workouts", "activities"] },
+  { label: "Recovery & Insights", itemIds: ["recovery", "progress", "coach"] },
+  { label: "Account", itemIds: ["profile"] },
+] as const;
+
+const NAV_ITEM_MAP = Object.fromEntries(
+  NAV_ITEMS.map((item) => [item.id, item])
+) as Record<(typeof NAV_ITEMS)[number]["id"], (typeof NAV_ITEMS)[number]>;
+
 const AppShell: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const demoEnabled = import.meta.env.VITE_ENABLE_DEMO === "true";
 
@@ -165,7 +179,7 @@ const AppShell: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col md:flex-row font-sans relative antialiased selection:bg-athloniq-lime/30 selection:text-white">
+    <div className="min-h-screen text-slate-100 flex flex-col md:flex-row font-sans relative z-10 antialiased selection:bg-athloniq-lime/30 selection:text-white">
       {/* PWA Offline Persistent Banner */}
       <PwaOfflineBanner isOnline={isOnline} />
 
@@ -321,11 +335,9 @@ const AppShell: React.FC = () => {
       <header className="md:hidden flex flex-col border-b border-white/[0.07] bg-athloniq-dark-nav/95 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-athloniq-lime flex items-center justify-center text-slate-950 font-display font-bold text-sm shadow-glow-lime">
-              AQ
-            </div>
+            <BrandMark size="sm" />
             <div className="flex flex-col">
-              <span className="font-display font-bold text-white text-base tracking-wide leading-none">
+              <span className="font-display font-bold text-white text-base tracking-[0.015em] leading-none">
                 {BRAND_CONFIG.name}
               </span>
               <span className="text-[10px] text-athloniq-lime font-mono uppercase tracking-wider mt-0.5 truncate max-w-[120px]">
@@ -424,150 +436,214 @@ const AppShell: React.FC = () => {
         </div>
       </header>
 
-      {/* Sidebar Navigation (Desktop & Mobile Drawer) */}
+      {/* Sidebar Navigation (Desktop Sticky Rail & Mobile Drawer) */}
       <aside
+        data-testid="desktop-sidebar"
         className={`${
-          mobileMenuOpen ? "block" : "hidden"
-        } md:flex flex-col w-full md:w-64 bg-athloniq-dark-nav border-r border-white/[0.07] p-5 shrink-0 z-40 fixed md:sticky top-0 md:h-screen overflow-y-auto`}
+          mobileMenuOpen ? "flex" : "hidden"
+        } md:flex flex-col w-full ${
+          sidebarCollapsed ? "md:w-[72px] p-3" : "md:w-60 p-4"
+        } bg-athloniq-dark-nav/90 backdrop-blur-md border-r border-white/[0.07] shrink-0 z-40 fixed inset-y-0 left-0 md:sticky md:top-0 h-dvh md:h-dvh overflow-hidden transition-[width] duration-200`}
       >
-        {/* Brand Header */}
-        <div className="hidden md:flex items-center gap-3 mb-6 px-1">
-          <div className="h-9 w-9 rounded-xl bg-athloniq-lime flex items-center justify-center text-slate-950 font-display font-bold text-base shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(255,255,255,0.30)]">
-            AQ
-          </div>
-          <div>
-            <div className="font-display font-bold text-white text-xl tracking-wide leading-none">
-              {BRAND_CONFIG.name}
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium tracking-wide mt-1">
-              Performance Companion
-            </div>
-          </div>
-        </div>
-
-        {/* Sync Status Banner */}
-        <div className="mb-4 px-3 py-2 rounded-xl bg-athloniq-card border border-white/[0.07] flex items-center justify-between text-xs">
-          <span className="text-slate-400 flex items-center gap-2">
-            {syncStatus === "synced" && <CheckCircle2 className="h-3.5 w-3.5 text-athloniq-emerald" aria-hidden="true" />}
-            {syncStatus === "syncing" && <RefreshCw className="h-3.5 w-3.5 text-athloniq-lime animate-spin" aria-hidden="true" />}
-            {syncStatus === "failed" && <CloudOff className="h-3.5 w-3.5 text-rose-400" aria-hidden="true" />}
-            <span className="text-[11px] font-medium">
-              {syncStatus === "synced" ? "Cloud Synced" : syncStatus === "syncing" ? "Syncing..." : "Sync Failed"}
-            </span>
-          </span>
-          {syncStatus === "failed" && (
-            <div className="flex items-center gap-1.5">
-              {syncError && (
-                <span className="text-[10px] text-rose-400/80 truncate max-w-[80px]" title={syncError}>
-                  {syncError}
-                </span>
-              )}
-              <button
-                onClick={() => retrySync()}
-                className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline underline-offset-2 shrink-0"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Athlete Live Readiness Card (Desktop) */}
+        {/* Brand Header (Desktop) + Quiet Sync Status */}
         <div
-          data-testid="sidebar-readiness-widget"
-          className="hidden md:block mb-6 p-3 rounded-xl bg-athloniq-card border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
+          className={`flex items-center justify-between gap-2 pb-3 mb-3 border-b border-white/[0.06] shrink-0 ${
+            sidebarCollapsed ? "md:flex-col md:gap-2 md:px-0" : "px-1"
+          }`}
         >
-          {hasTodayCheckIn && readiness ? (
-            <>
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                <span>Readiness State</span>
-                <span className="text-athloniq-lime font-bold tabular-nums">{readiness.readinessScore}/100</span>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-athloniq-lime rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.max(10, readiness.readinessScore))}%` }}
-                  />
+          <div className="flex items-center gap-2.5 min-w-0">
+            <BrandMark size="md" />
+            {!sidebarCollapsed && (
+              <div className="min-w-0">
+                <div className="font-display font-bold text-white text-lg tracking-[0.015em] leading-none truncate">
+                  {BRAND_CONFIG.name}
                 </div>
-                <Badge variant="lime" className="text-[9px] py-0 px-1.5">
-                  {readiness.status.toUpperCase()}
-                </Badge>
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                      syncStatus === "synced"
+                        ? "bg-emerald-400"
+                        : syncStatus === "syncing"
+                        ? "bg-athloniq-lime animate-pulse"
+                        : "bg-rose-400"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">
+                    {syncStatus === "synced"
+                      ? "Cloud synced"
+                      : syncStatus === "syncing"
+                      ? "Syncing…"
+                      : "Sync failed"}
+                  </span>
+                  {syncStatus === "failed" && (
+                    <button
+                      type="button"
+                      onClick={() => retrySync()}
+                      className="text-rose-400 hover:text-rose-300 underline underline-offset-2 font-bold shrink-0"
+                      title={syncError || "Retry cloud sync"}
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 line-clamp-1">{readiness.guidance}</p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                <span>Readiness State</span>
-                <span className="text-slate-500 font-mono text-[11px]">Not set</span>
-              </div>
-              <p className="text-[11px] text-slate-400 mb-2">No check-in yet</p>
-              <Link
-                to="/recovery"
-                className="inline-flex items-center text-xs font-semibold text-athloniq-lime hover:underline"
-              >
-                Log check-in →
-              </Link>
-            </>
-          )}
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            aria-label={sidebarCollapsed ? "Expand navigation rail" : "Collapse navigation rail"}
+            aria-expanded={!sidebarCollapsed}
+            className="hidden md:inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors shrink-0 tactile-press"
+            title={sidebarCollapsed ? "Expand rail" : "Collapse rail"}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+            className="md:hidden inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.05] shrink-0"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <GuardedNavLink
-                key={item.id}
-                to={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all select-none ${
-                    isActive
-                      ? "bg-athloniq-lime/15 text-athloniq-lime border border-athloniq-lime/30 shadow-glow-lime shadow-[inset_0_1px_0_0_rgba(190,242,100,0.15)] font-bold"
-                      : "text-slate-400 hover:text-white hover:bg-athloniq-card-alt/60 border border-transparent"
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <Icon className={`h-4 w-4 ${isActive ? "text-athloniq-lime" : "text-slate-400"}`} />
-                      <span>{item.label}</span>
-                    </div>
+        {/* Compact Athlete Live Readiness Card (Desktop Expanded) */}
+        {!sidebarCollapsed && (
+          <div
+            data-testid="sidebar-readiness-widget"
+            className="hidden md:block surface-well mb-3 p-2.5 rounded-xl shrink-0"
+          >
+            {hasTodayCheckIn && readiness ? (
+              <>
+                <div className="flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <span>Readiness State</span>
+                  <span className="text-athloniq-lime font-bold tabular-nums">
+                    {readiness.readinessScore}/100
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full bg-athloniq-lime rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(10, readiness.readinessScore))}%` }}
+                    />
+                  </div>
+                  <Badge variant="lime" className="text-[9px] py-0 px-1.5">
+                    {readiness.status.toUpperCase()}
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-slate-400 line-clamp-1">{readiness.guidance}</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  <span>Readiness State</span>
+                  <span className="text-slate-500 font-mono text-[10px]">Not set</span>
+                </div>
+                <p className="text-[11px] text-slate-400">No check-in yet</p>
+                <Link
+                  to="/recovery"
+                  className="inline-flex items-center min-h-[44px] text-xs font-semibold text-athloniq-lime hover:underline -my-2"
+                >
+                  Log check-in →
+                </Link>
+              </>
+            )}
+          </div>
+        )}
 
-                    {item.id === "profile" && !profile.onboardingCompleted && (
-                      <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        {/* Grouped Scrollable Navigation Links */}
+        <nav aria-label="Primary navigation" className="flex-1 overflow-y-auto min-h-0 space-y-3 pr-0.5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className="space-y-1">
+              {!sidebarCollapsed && (
+                <div className="px-2.5 pt-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-slate-500 select-none">
+                  {group.label}
+                </div>
+              )}
+              {group.itemIds.map((id) => {
+                const item = NAV_ITEM_MAP[id];
+                const Icon = item.icon;
+                return (
+                  <GuardedNavLink
+                    key={item.id}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    title={sidebarCollapsed ? item.label : undefined}
+                    aria-label={sidebarCollapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      `relative w-full flex items-center ${
+                        sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
+                      } min-h-[44px] py-2 rounded-xl text-xs transition-all select-none tactile-press ${
+                        isActive
+                          ? "surface-elevated text-white font-semibold"
+                          : "text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium"
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span
+                            className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-athloniq-lime"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className={`flex items-center ${sidebarCollapsed ? "" : "gap-2.5 min-w-0"}`}>
+                          <Icon
+                            className={`h-4 w-4 shrink-0 ${
+                              isActive ? "text-athloniq-lime" : "text-slate-400"
+                            }`}
+                            aria-hidden="true"
+                          />
+                          {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                        </div>
+
+                        {item.id === "profile" && !profile.onboardingCompleted && (
+                          <span
+                            className={`h-2 w-2 rounded-full bg-amber-400 shrink-0 ${
+                              sidebarCollapsed ? "absolute top-2.5 right-2.5" : ""
+                            }`}
+                            title="Onboarding incomplete"
+                            aria-label="Onboarding incomplete"
+                          />
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </GuardedNavLink>
-            );
-          })}
+                  </GuardedNavLink>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* PWA Install Button (Desktop) */}
-        {canInstall && (
-          <div className="pt-3 pb-1 border-t border-white/[0.06]">
+        {/* Pinned Footer: Optional PWA/Demo + Coach Status + Compact Athlete Row */}
+        <div className="shrink-0 pt-2.5 mt-2 border-t border-white/[0.06] space-y-2">
+          {canInstall && !sidebarCollapsed && (
             <button
               onClick={() => installApp()}
-              className="w-full px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border border-athloniq-lime/40 bg-athloniq-lime/10 text-athloniq-lime hover:bg-athloniq-lime/20 shadow-glow-lime cursor-pointer"
+              className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border border-athloniq-lime/40 bg-athloniq-lime/10 text-athloniq-lime hover:bg-athloniq-lime/20 cursor-pointer tactile-press"
             >
-              <div className="flex items-center gap-2">
-                <Download className="h-3.5 w-3.5 text-athloniq-lime" />
-                <span>Install AthlonIQ</span>
-              </div>
+              <span className="flex items-center gap-2">
+                <Download className="h-3.5 w-3.5 text-athloniq-lime" aria-hidden="true" />
+                <span>Install App</span>
+              </span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-athloniq-lime/20 text-athloniq-lime">
                 PWA
               </span>
             </button>
-          </div>
-        )}
+          )}
 
-        {/* 14-Day Demo Fixture Fast Switcher (Desktop, gated by VITE_ENABLE_DEMO=true) */}
-        {demoEnabled && (
-          <div className="pt-3 pb-1 border-t border-white/[0.06]">
+          {demoEnabled && !sidebarCollapsed && (
             <button
               onClick={() => {
                 if (isDemoFixtureActive) {
@@ -576,74 +652,78 @@ const AppShell: React.FC = () => {
                   loadDemoFixture();
                 }
               }}
-              className={`w-full px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+              className={`w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border tactile-press ${
                 isDemoFixtureActive
                   ? "bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20"
                   : "bg-white/[0.03] border-white/[0.08] text-slate-300 hover:border-athloniq-lime/40 hover:text-athloniq-lime"
               }`}
             >
-              <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2">
                 {isDemoFixtureActive ? (
-                  <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
                 ) : (
-                  <Database className="h-3.5 w-3.5 text-athloniq-lime" />
+                  <Database className="h-3.5 w-3.5 text-athloniq-lime" aria-hidden="true" />
                 )}
-                <span>{isDemoFixtureActive ? "Reset to My State" : "Load 14d Demo Fixture"}</span>
+                <span>{isDemoFixtureActive ? "Reset Demo" : "Load 14d Demo"}</span>
+              </span>
+            </button>
+          )}
+
+          {!sidebarCollapsed && (
+            <div className="flex items-center justify-between px-1.5 py-1 text-[11px] font-mono text-slate-400">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                    apiOnline ? "bg-emerald-400" : "bg-amber-400"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span>Coach {apiOnline ? "ONLINE" : "STANDBY"}</span>
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {syncStatus === "synced" ? "Synced" : syncStatus === "syncing" ? "Syncing" : "Offline"}
+              </span>
+            </div>
+          )}
+
+          <div
+            className={`flex items-center ${
+              sidebarCollapsed ? "flex-col gap-1.5" : "justify-between gap-2 px-1"
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div
+                className="h-8 w-8 rounded-lg surface-elevated flex items-center justify-center text-[11px] font-mono font-bold text-athloniq-lime shrink-0"
+                aria-hidden="true"
+              >
+                {(profile.fullName || user?.email || "AQ").trim().slice(0, 2).toUpperCase()}
               </div>
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isDemoFixtureActive ? "bg-amber-400 animate-pulse" : "bg-slate-600"
-                }`}
-              />
+              {!sidebarCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold text-white truncate">
+                    {profile.fullName || "Athlete"}
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate font-mono">
+                    {user?.email || "Authenticated"}
+                  </span>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0 tactile-press"
+              title="Sign out of AthlonIQ"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-        )}
-
-        {/* Coach Service Status */}
-        <div className="pt-3 border-t border-white/[0.06] space-y-1.5">
-          <div className="flex items-center justify-between text-xs px-1">
-            <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-              <Radio
-                className={`h-3 w-3 ${
-                  apiOnline ? "text-emerald-400 animate-pulse" : "text-amber-400"
-                }`}
-                aria-hidden="true"
-              />
-              Coach Service
-            </span>
-            <Badge variant={apiOnline ? "emerald" : "amber"}>
-              {apiOnline ? "ONLINE" : "STANDBY"}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-1">
-            <Sparkles className="h-3 w-3 text-athloniq-lime" aria-hidden="true" />
-            <span>Personal Athlete Workspace</span>
-          </div>
-        </div>
-
-        {/* Authenticated User & Sign Out */}
-        <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between px-1">
-          <div className="flex flex-col min-w-0 pr-2">
-            <span className="text-[11px] font-bold text-white truncate">
-              {profile.fullName || "Athlete"}
-            </span>
-            <span className="text-[10px] text-slate-500 truncate font-mono">
-              {user?.email || "Authenticated"}
-            </span>
-          </div>
-          <button
-            onClick={() => signOut()}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Sign out of AthlonIQ"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto pb-28 md:pb-10">
+      <main className="flex-1 min-w-0 max-w-[1280px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 lg:py-6 pb-28 md:pb-10">
         {/* Prominent Demo Mode Banner */}
         {demoEnabled && isDemoFixtureActive && (
           <div className="mb-6 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-300 animate-in fade-in">
@@ -752,37 +832,33 @@ const EnsureRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 export const App: React.FC = () => {
   const { session, loading } = useAuth();
-
-  // Loading state while verifying Supabase session
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col items-center justify-center p-6">
-        <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-300">
-          <div className="h-14 w-14 rounded-2xl bg-athloniq-card border border-athloniq-lime/30 flex items-center justify-center text-athloniq-lime font-black text-xl shadow-glow-lime">
-            AQ
-          </div>
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 tracking-wider">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-athloniq-lime" />
-            <span>INITIALIZING ATHLONIQ OS...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Gate the entire application behind an active authenticated session
-  if (!session) {
-    return <SignInView />;
-  }
+  const backdropMode = session && !loading ? "ambient" : "hero";
 
   return (
-    <EnsureAthloniqProvider>
-      <EnsureRouter>
-        <UnsavedWorkProvider>
-          <AppShell />
-        </UnsavedWorkProvider>
-      </EnsureRouter>
-    </EnsureAthloniqProvider>
+    <>
+      <DitherBackdrop mode={backdropMode} />
+      {loading ? (
+        <div className="min-h-screen text-slate-100 flex flex-col items-center justify-center p-6 relative z-10">
+          <div className="flex flex-col items-center space-y-4 animate-in fade-in duration-300">
+            <BrandMark size="lg" />
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-400 tracking-wider">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-athloniq-lime" />
+              <span>INITIALIZING ATHLONIQ OS...</span>
+            </div>
+          </div>
+        </div>
+      ) : !session ? (
+        <SignInView />
+      ) : (
+        <EnsureAthloniqProvider>
+          <EnsureRouter>
+            <UnsavedWorkProvider>
+              <AppShell />
+            </UnsavedWorkProvider>
+          </EnsureRouter>
+        </EnsureAthloniqProvider>
+      )}
+    </>
   );
 };
 

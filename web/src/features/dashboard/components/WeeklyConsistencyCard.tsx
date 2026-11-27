@@ -73,13 +73,13 @@ export const WeeklyConsistencyCard: React.FC<WeeklyConsistencyCardProps> = ({
           emptyMessage="Set how many days per week you want to train in Profile to track consistency."
         />
       ) : (
-        <div className="surface-well p-4 rounded-xl space-y-3.5">
+        <div className="surface-well p-3.5 rounded-xl space-y-3">
           <div className="flex items-baseline justify-between gap-2">
             <div>
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono font-semibold">
                 Weekly Adherence (Mon–Sun)
               </span>
-              <div className="text-3xl font-bold tracking-tight text-white font-mono mt-0.5 tabular-nums">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono mt-0.5 tabular-nums">
                 {consistency.uniqueDaysLogged}{" "}
                 <span className="text-xs text-slate-400 font-mono font-medium">
                   / {consistency.trainingDaysTarget} days

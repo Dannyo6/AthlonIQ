@@ -56,8 +56,8 @@ describe("Application Session Gate", () => {
     expect(screen.queryByText(/ROW-LEVEL SECURITY GATEWAY/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/PostgreSQL Row-Level Security/i)).not.toBeInTheDocument();
 
-    const emailInput = screen.getByLabelText(/Email Address/i);
-    const passwordInput = screen.getByLabelText(/Password/i);
+    const emailInput = screen.getByLabelText(/Email Address/i) as HTMLInputElement;
+    const passwordInput = screen.getByLabelText(/Password/i) as HTMLInputElement;
     const signInTab = screen.getByRole("tab", { name: /^Sign In$/i });
     const createTab = screen.getByRole("tab", { name: /^Create Account$/i });
     const submitBtn = screen.getByRole("button", { name: /Sign In to AthlonIQ/i });
@@ -67,6 +67,15 @@ describe("Application Session Gate", () => {
     expect(signInTab.className).toContain("min-h-[44px]");
     expect(createTab.className).toContain("min-h-[44px]");
     expect(submitBtn.className).toContain("min-h-[44px]");
+
+    // Verify BrandMark AlphaWave SVG renders cleanly without raw hex attributes
+    expect(document.querySelector('svg[viewBox="0 0 48 48"]')).not.toBeNull();
+
+    // Typing into Email and Password fields updates input values cleanly without errors when webgl2 is unavailable
+    fireEvent.change(emailInput, { target: { value: "athlete@domain.com" } });
+    fireEvent.change(passwordInput, { target: { value: "strongpass123" } });
+    expect(emailInput.value).toBe("athlete@domain.com");
+    expect(passwordInput.value).toBe("strongpass123");
 
     // Switching to Create Account tab keeps SignInView interactive without errors
     fireEvent.click(createTab);

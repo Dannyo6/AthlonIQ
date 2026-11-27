@@ -22,35 +22,37 @@
 
 @layer base {
   :root {
-    --color-bg: #090a0f;
-    --color-card: #12151e;
-    --color-surface: #181d2a;
-    --color-elevated: #1b2130;
-    --color-well: #0d1017;
-    --color-border: #1e2330;
-    --color-border-hairline: rgba(255, 255, 255, 0.075);
+    --color-bg: #070809;
+    --color-card: #0d0f11;
+    --color-surface: #14171a;
+    --color-elevated: #181c20;
+    --color-well: #0a0b0d;
+    --color-border: #1e2226;
+    --color-border-hairline: rgba(255, 255, 255, 0.07);
     --color-border-elevated: rgba(255, 255, 255, 0.12);
-    --color-well-border: rgba(255, 255, 255, 0.05);
-    --color-surface-sheen: rgba(255, 255, 255, 0.05);
+    --color-well-border: rgba(255, 255, 255, 0.055);
+    --color-surface-sheen: rgba(255, 255, 255, 0.045);
     --color-text: #f1f5f9;
     --color-white: #ffffff;
     --color-lime: #bef264;
     --color-emerald: #10b981;
-    --color-scrollbar-hover: #334155;
+    --color-scrollbar-hover: #2e343b;
     --color-hover-border: rgba(190, 242, 100, 0.35);
     --color-lime-border: rgba(190, 242, 100, 0.32);
     --color-emerald-border: rgba(16, 185, 129, 0.32);
-    --color-hover-shadow: rgba(0, 0, 0, 0.6);
-    --color-shadow-deep: rgba(0, 0, 0, 0.55);
-    --color-well-shadow: rgba(0, 0, 0, 0.45);
+    --color-hover-shadow: rgba(0, 0, 0, 0.65);
+    --color-shadow-deep: rgba(0, 0, 0, 0.6);
+    --color-well-shadow: rgba(0, 0, 0, 0.5);
     --color-spotlight: rgba(190, 242, 100, 0.12);
     --color-ambient-lime: rgba(190, 242, 100, 0.055);
     --color-ambient-emerald: rgba(16, 185, 129, 0.045);
     --color-focus-ring: #bef264;
     --color-focus-glow: rgba(190, 242, 100, 0.28);
-    --color-auth-vignette: rgba(9, 10, 15, 0.86);
-    --color-auth-vignette-mid: rgba(9, 10, 15, 0.48);
-    --color-autofill-bg: #0d1017;
+    --color-auth-vignette: rgba(7, 8, 9, 0.88);
+    --color-auth-vignette-mid: rgba(7, 8, 9, 0.52);
+    --color-ambient-vignette: rgba(7, 8, 9, 0.72);
+    --color-ambient-vignette-edge: rgba(7, 8, 9, 0.44);
+    --color-autofill-bg: #0a0b0d;
     --color-autofill-border: rgba(255, 255, 255, 0.14);
     --bg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     --motion-press: 120ms;
@@ -73,8 +75,12 @@
     color: var(--color-text);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  .font-display {
+    letter-spacing: 0.015em;
   }
 
   /* High-contrast accessible focus ring */
@@ -239,22 +245,31 @@
   animation: athloniq-enter var(--motion-enter) var(--motion-ease) both;
 }
 
-/* Calm obsidian center vignette over auth WebGL2 dither canvas */
+/* Calm carbon-obsidian radial vignettes over root WebGL2 dither canvas */
 .auth-dither-vignette {
   background: radial-gradient(
     ellipse 62% 58% at 50% 48%,
     var(--color-auth-vignette) 0%,
-    var(--color-auth-vignette-mid) 54%,
+    var(--color-auth-vignette-mid) 56%,
     transparent 100%
   );
 }
 
-/* Prevent browser autofill wash-out on dark obsidian inputs */
+.ambient-dither-vignette {
+  background: radial-gradient(
+    ellipse 76% 68% at 50% 44%,
+    var(--color-ambient-vignette) 0%,
+    var(--color-ambient-vignette-edge) 72%,
+    transparent 100%
+  );
+}
+
+/* Prevent browser autofill wash-out on dark carbon-obsidian inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-autofill-bg) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-well) inset !important;
   -webkit-text-fill-color: var(--color-text) !important;
   border-color: var(--color-autofill-border) !important;
   caret-color: var(--color-lime);

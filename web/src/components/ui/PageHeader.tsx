@@ -41,7 +41,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           <h1
             id={id}
             tabIndex={-1}
-            className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight focus:outline-none"
+            className="font-display text-3xl sm:text-4xl font-bold tracking-[0.015em] text-white leading-tight focus:outline-none"
           >
             {title}
           </h1>

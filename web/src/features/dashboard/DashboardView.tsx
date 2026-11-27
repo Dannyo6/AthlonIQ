@@ -126,29 +126,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   }, [goals.calorieTargetKcal, foodEntries, bodyMetrics]);
 
   // Phase 5: Multi-Sport Fatigue Advisory
-  const fatigueAdvisory = useMemo(() => {
+  const { fatigueAdvisory, hasWeeklyActivity } = useMemo(() => {
     const now = new Date();
     const cutoff7d = new Date(now);
     cutoff7d.setDate(cutoff7d.getDate() - 7);
 
     const gymSessions7d = workoutSessions.filter((s) => new Date(s.loggedDate) >= cutoff7d).length;
-    const badmintonMinutes7d = activitySessions
-      .filter((s) => s.activityType === "badminton" && new Date(s.loggedDate) >= cutoff7d)
+    const recentActivities7d = activitySessions.filter((s) => new Date(s.loggedDate) >= cutoff7d);
+    const badmintonMinutes7d = recentActivities7d
+      .filter((s) => s.activityType === "badminton")
       .reduce((sum, s) => sum + s.durationMinutes, 0);
-    const runningKm7d = activitySessions
-      .filter(
-        (s) => s.activityType === "running" && new Date(s.loggedDate) >= cutoff7d && s.distanceKm
-      )
+    const runningKm7d = recentActivities7d
+      .filter((s) => s.activityType === "running" && s.distanceKm)
       .reduce((sum, s) => sum + (s.distanceKm || 0), 0);
 
-    return evaluateMultisportFatigue(
-      gymSessions7d,
-      badmintonMinutes7d,
-      runningKm7d,
-      hasTodayCheckIn && todayCheckIn ? todayCheckIn.sleepHours : null,
-      hasTodayCheckIn && todayCheckIn ? todayCheckIn.soreness : null,
-      hasTodayCheckIn && todayCheckIn ? todayCheckIn.fatigue : null
-    );
+    return {
+      fatigueAdvisory: evaluateMultisportFatigue(
+        gymSessions7d,
+        badmintonMinutes7d,
+        runningKm7d,
+        hasTodayCheckIn && todayCheckIn ? todayCheckIn.sleepHours : null,
+        hasTodayCheckIn && todayCheckIn ? todayCheckIn.soreness : null,
+        hasTodayCheckIn && todayCheckIn ? todayCheckIn.fatigue : null
+      ),
+      hasWeeklyActivity: gymSessions7d > 0 || recentActivities7d.length > 0,
+    };
   }, [workoutSessions, activitySessions, todayCheckIn, hasTodayCheckIn]);
 
   const handleApplyCalibratedTarget = () => {
@@ -165,28 +167,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="space-y-3.5 sm:space-y-5 pb-24 sm:pb-16 max-w-xl lg:max-w-6xl mx-auto">
-      {/* Onboarding & Equipment Action Notice (if incomplete) */}
+    <div className="space-y-3.5 sm:space-y-4 max-w-[1280px] w-full mx-auto">
+      {/* Onboarding & Equipment Action Notice (single-row bar on md+) */}
       {(!profile.onboardingCompleted || !profile.equipmentConfirmed) && (
-        <div className="surface-elevated relative overflow-hidden rounded-2xl border-athloniq-lime/45 p-4 shadow-glow-lime animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-athloniq-lime text-slate-950 shrink-0 mt-0.5">
-                <AlertCircle className="h-5 w-5" aria-hidden="true" />
+        <div className="surface-elevated relative overflow-hidden rounded-2xl border-athloniq-lime/45 px-4 py-3 shadow-glow-lime animate-in fade-in">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-athloniq-lime text-slate-950 shrink-0">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5">
-                  {!profile.onboardingCompleted ? (
-                    <Badge variant="amber">
-                      ONBOARDING INCOMPLETE ({profile.onboardingStep || 1}/5)
-                    </Badge>
-                  ) : (
-                    <Badge variant="amber">
-                      EQUIPMENT UNCONFIRMED ({unconfirmedEquipmentCount} ITEMS)
-                    </Badge>
-                  )}
-                </div>
-                <h2 className="font-display text-base font-bold text-white tracking-wide">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
+                {!profile.onboardingCompleted ? (
+                  <Badge variant="amber">
+                    ONBOARDING INCOMPLETE ({profile.onboardingStep || 1}/5)
+                  </Badge>
+                ) : (
+                  <Badge variant="amber">
+                    EQUIPMENT UNCONFIRMED ({unconfirmedEquipmentCount} ITEMS)
+                  </Badge>
+                )}
+                <h2 className="font-display text-base font-bold text-white tracking-[0.015em] truncate">
                   {!profile.onboardingCompleted
                     ? "Finish setup to personalize calorie and training targets"
                     : "Confirm your gym equipment to unlock weight suggestions"}
@@ -197,7 +197,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <Button
               variant="primary"
               size="sm"
-              className="shrink-0 min-h-[44px] text-xs tactile-press"
+              className="shrink-0 min-h-[44px] text-xs tactile-press self-start md:self-auto"
               onClick={() =>
                 onNavigate(
                   !profile.onboardingCompleted
@@ -227,27 +227,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* 1. Header: Date and greeting (use profile name only if set) */}
-      <DashboardHeader
-        fullName={profile.fullName}
-        isDemoFixtureActive={isDemoFixtureActive}
-        onLoadDemoFixture={loadDemoFixture}
-        onResetDemoFixture={resetDemoFixture}
-      />
+      {/* 1. Compact Header + Quick Actions */}
+      <div className="space-y-3">
+        <DashboardHeader
+          fullName={profile.fullName}
+          isDemoFixtureActive={isDemoFixtureActive}
+          onLoadDemoFixture={loadDemoFixture}
+          onResetDemoFixture={resetDemoFixture}
+        />
+        <QuickActionsRow />
+      </div>
 
-      {/* 2. Hero Readiness telemetry strip */}
-      <ReadinessStrip
-        hasTodayCheckIn={hasTodayCheckIn}
-        readiness={readiness}
-        todayCheckIn={todayCheckIn}
-        onSubmitCheckIn={submitCheckIn}
-      />
+      {/* 2. Row 1 Bento (5/7 Desktop Split): Readiness Hero + Horizontal Energy & Nutrition */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="lg:col-span-5 flex flex-col">
+          <ReadinessStrip
+            hasTodayCheckIn={hasTodayCheckIn}
+            readiness={readiness}
+            todayCheckIn={todayCheckIn}
+            onSubmitCheckIn={submitCheckIn}
+          />
+        </div>
 
-      {/* 3. Tactile Quick actions row (min-h-[44px]): Log meal, Start workout, Log weight, Check-in */}
-      <QuickActionsRow />
-
-      {/* Asymmetric Telemetry Bento Grid: 1 column on 390px mobile, 12-col bento on desktop */}
-      <div className="stagger-enter grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
         <div className="lg:col-span-7 flex flex-col">
           <NutritionCard
             calorieTargetKcal={goals.calorieTargetKcal}
@@ -264,8 +265,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             weightKg={latestWeight ? latestWeight.weightKg : profile.weightKg}
           />
         </div>
+      </div>
 
-        <div className="lg:col-span-5 flex flex-col">
+      {/* 3. Row 2 Bento (3 Balanced Peer Cards on xl+, 2+1 on md) */}
+      <div className="stagger-enter grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+        <div className="flex flex-col">
           <TodayTrainingCard
             equipmentConfirmed={profile.equipmentConfirmed}
             unconfirmedEquipmentCount={unconfirmedEquipmentCount}
@@ -276,16 +280,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           />
         </div>
 
-        <div className="lg:col-span-7 flex flex-col">
-          <WeightTrendCard
-            bodyMetrics={bodyMetrics}
-            weightTrend={weightTrend}
-            latestWeight={latestWeight}
-            onNavigate={onNavigate}
-          />
-        </div>
-
-        <div className="lg:col-span-5 flex flex-col">
+        <div className="flex flex-col">
           <WeeklyConsistencyCard
             trainingDaysPerWeek={profile.trainingDaysPerWeek}
             workoutSessions={workoutSessions}
@@ -293,12 +288,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             onNavigate={onNavigate}
           />
         </div>
+
+        <div className="flex flex-col md:col-span-2 xl:col-span-1">
+          <WeightTrendCard
+            bodyMetrics={bodyMetrics}
+            weightTrend={weightTrend}
+            latestWeight={latestWeight}
+            onNavigate={onNavigate}
+          />
+        </div>
       </div>
 
-      {/* 8. "More" accordion */}
+      {/* 4. Row 3: Training & Body Insights */}
       <MoreAccordion
         leanBulkCalibration={leanBulkCalibration}
         fatigueAdvisory={fatigueAdvisory}
+        hasWeeklyActivity={hasWeeklyActivity}
         bmi={bmi}
         latestWeight={latestWeight}
         heightCm={profile.heightCm}

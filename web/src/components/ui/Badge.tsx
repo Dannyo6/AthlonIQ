@@ -99,6 +99,7 @@ export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({
 
 interface ProvenanceDotProps {
   provenance: Provenance | DisplayBadge;
+  compact?: boolean;
   className?: string;
 }
 
@@ -114,11 +115,31 @@ const PROVENANCE_COPY: Record<string, { label: string; dotClass: string }> = {
   ai_estimated: { label: "AI estimate (needs review)", dotClass: "bg-amber-400" },
 };
 
-export const ProvenanceDot: React.FC<ProvenanceDotProps> = ({ provenance, className }) => {
+export const ProvenanceDot: React.FC<ProvenanceDotProps> = ({
+  provenance,
+  compact = false,
+  className,
+}) => {
   const entry = PROVENANCE_COPY[provenance] || {
     label: provenance.replace(/_/g, " "),
     dotClass: "bg-slate-400",
   };
+
+  if (compact) {
+    return (
+      <span
+        title={entry.label}
+        aria-label={entry.label}
+        className={cn(
+          "inline-flex items-center justify-center h-5 w-5 rounded-full hover:bg-white/[0.06] shrink-0",
+          className
+        )}
+      >
+        <span className={cn("h-2 w-2 rounded-full shrink-0", entry.dotClass)} aria-hidden="true" />
+        <span className="sr-only">{entry.label}</span>
+      </span>
+    );
+  }
 
   return (
     <span

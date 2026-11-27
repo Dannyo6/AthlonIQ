@@ -6,14 +6,14 @@ export default {
     extend: {
       colors: {
         athloniq: {
-          dark: "#090A0F",
-          "dark-nav": "#0C0E15",
-          card: "#12151E",
-          "card-alt": "#141824",
-          surface: "#181D2A",
-          "surface-alt": "#1E2433",
-          border: "#1E2330",
-          "border-alt": "#232A3B",
+          dark: "#070809",
+          "dark-nav": "#0A0B0D",
+          card: "#0D0F11",
+          "card-alt": "#111316",
+          surface: "#14171A",
+          "surface-alt": "#1A1E22",
+          border: "#1E2226",
+          "border-alt": "#262B30",
           lime: {
             DEFAULT: "#BEF264",
             hover: "#A3E635",

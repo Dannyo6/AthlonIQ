@@ -20,6 +20,7 @@ import type { BmiResult } from "@/lib/calculations";
 interface MoreAccordionProps {
   leanBulkCalibration: LeanBulkCalibrationResult;
   fatigueAdvisory: FatigueAdvisoryResult;
+  hasWeeklyActivity?: boolean;
   bmi: BmiResult;
   latestWeight: BodyMetric | null;
   heightCm?: number | null;
@@ -33,6 +34,7 @@ interface MoreAccordionProps {
 export const MoreAccordion: React.FC<MoreAccordionProps> = ({
   leanBulkCalibration,
   fatigueAdvisory,
+  hasWeeklyActivity,
   bmi,
   latestWeight,
   heightCm,
@@ -53,6 +55,12 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const hasWorkloadSessions =
+    hasWeeklyActivity ??
+    (fatigueAdvisory.gym_sessions_7d > 0 ||
+      fatigueAdvisory.badminton_minutes_7d > 0 ||
+      fatigueAdvisory.running_km_7d > 0);
+
   return (
     <section aria-label="Training and body insights" className="space-y-3 pt-1">
       <div className="flex items-center justify-between pt-1">
@@ -62,7 +70,7 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
         <span className="text-[11px] text-slate-500 font-mono tabular-nums">4 insights</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Accordion 1: 14-Day Lean-Bulk Calibrator */}
         <Card className="p-0 overflow-hidden">
           <button
@@ -179,17 +187,21 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Badge
-                variant={
-                  fatigueAdvisory.status === "optimal"
-                    ? "lime"
-                    : fatigueAdvisory.status === "moderate_strain"
-                    ? "emerald"
-                    : "rose"
-                }
-              >
-                {fatigueAdvisory.status.toUpperCase().replace("_", " ")}
-              </Badge>
+              {hasWorkloadSessions ? (
+                <Badge
+                  variant={
+                    fatigueAdvisory.status === "optimal"
+                      ? "lime"
+                      : fatigueAdvisory.status === "moderate_strain"
+                      ? "emerald"
+                      : "rose"
+                  }
+                >
+                  {fatigueAdvisory.status.toUpperCase().replace("_", " ")}
+                </Badge>
+              ) : (
+                <Badge variant="neutral">No sessions</Badge>
+              )}
               {openSections.fatigue ? (
                 <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
@@ -229,7 +241,9 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed">
-                {fatigueAdvisory.explanation}
+                {hasWorkloadSessions
+                  ? fatigueAdvisory.explanation
+                  : "No workouts or activities logged in the last 7 days. Log a gym session, run, or badminton match to calculate workload balance."}
               </p>
 
               <div className="surface-well p-2.5 rounded-lg text-[10px] text-slate-400 flex items-center gap-1.5">

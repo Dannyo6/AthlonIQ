@@ -52,7 +52,7 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
     });
   });
 
-  it("renders /today view with Today Dashboard heading", async () => {
+  it("renders /today view with sticky viewport-locked desktop sidebar and collapsible rail", async () => {
     render(
       <MemoryRouter initialEntries={["/today"]}>
         <App />
@@ -63,6 +63,24 @@ describe("AthlonIQ Routing, Code Splitting & Unsaved Guard", () => {
       expect(screen.getByText(/Today Dashboard/i)).toBeInTheDocument();
       expect(screen.getByText(/Readiness State/i)).toBeInTheDocument();
     });
+
+    const aside = screen.getByTestId("desktop-sidebar");
+    expect(aside.className).toContain("md:sticky");
+    expect(aside.className).toContain("md:top-0");
+    expect(aside.className).toContain("md:h-dvh");
+    expect(aside.className).toContain("overflow-hidden");
+
+    const nav = screen.getByRole("navigation", { name: "Primary navigation" });
+    expect(nav.className).toContain("overflow-y-auto");
+    expect(nav.className).toContain("min-h-0");
+
+    const collapseBtn = screen.getByRole("button", { name: /Collapse navigation rail/i });
+    expect(collapseBtn).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(collapseBtn);
+    expect(screen.getByRole("button", { name: /Expand navigation rail/i })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
   });
 
   it("redirects '/' root path to '/today'", async () => {
