@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
-import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
   Flame,
@@ -54,12 +54,12 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
   };
 
   return (
-    <section aria-label="Detailed Analytics and Tools" className="space-y-3 pt-1">
+    <section aria-label="Training and body insights" className="space-y-3 pt-1">
       <div className="flex items-center justify-between pt-1">
         <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-          In-Depth Tools & Advisory
+          Training &amp; Body Insights
         </h3>
-        <span className="text-[11px] text-slate-500 font-mono tabular-nums">4 Modules</span>
+        <span className="text-[11px] text-slate-500 font-mono tabular-nums">4 insights</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -126,7 +126,7 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
                   <span className="text-[10px] text-slate-400 font-mono uppercase">
                     Weekly Delta:
                   </span>
-                  <div className="text-xs font-mono font-bold text-athloniq-lime mt-0.5 tabular-nums">
+                  <div className="text-xs font-mono font-bold text-white mt-0.5 tabular-nums">
                     {leanBulkCalibration.weekly_delta_kg != null
                       ? `${leanBulkCalibration.weekly_delta_kg > 0 ? "+" : ""}${leanBulkCalibration.weekly_delta_kg.toFixed(2)} kg/wk`
                       : "Calibrating..."}
@@ -171,10 +171,10 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               </div>
               <div className="min-w-0">
                 <h4 className="text-sm font-bold text-white truncate">
-                  Multi-Sport Workload Advisory
+                  Weekly Workload Balance
                 </h4>
                 <p className="text-[11px] text-slate-400 truncate">
-                  Gym + Badminton + Running Strain Triangulation
+                  Gym, badminton &amp; running load
                 </p>
               </div>
             </div>
@@ -255,17 +255,17 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               </div>
               <div className="min-w-0">
                 <h4 className="text-sm font-bold text-white truncate">
-                  Biometrics & Screening
+                  Body Measurements
                 </h4>
                 <p className="text-[11px] text-slate-400 truncate">
-                  Weight, Height & Scientific BMI Screening
+                  Weight, height &amp; BMI overview
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <ProvenanceBadge
-                provenance={latestWeight ? "user_confirmed" : "calculated_estimate"}
-              />
+              <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+                {latestWeight ? `${latestWeight.weightKg.toFixed(1)} kg` : "Estimated"}
+              </span>
               {openSections.biometrics ? (
                 <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (
@@ -338,17 +338,21 @@ export const MoreAccordion: React.FC<MoreAccordionProps> = ({
               </div>
               <div className="min-w-0">
                 <h4 className="text-sm font-bold text-white truncate">
-                  Training & Equipment
+                  Training &amp; Equipment
                 </h4>
                 <p className="text-[11px] text-slate-400 truncate">
-                  Home Gym Hardware Availability
+                  Available home gym setup
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <ProvenanceBadge
-                provenance={equipmentConfirmed ? "user_confirmed" : "unconfirmed_equipment"}
-              />
+              <span
+                className={`text-[11px] font-mono font-semibold ${
+                  equipmentConfirmed ? "text-emerald-400" : "text-amber-300"
+                }`}
+              >
+                {equipmentConfirmed ? "Confirmed" : "Needs confirmation"}
+              </span>
               {openSections.equipment ? (
                 <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
               ) : (

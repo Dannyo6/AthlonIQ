@@ -21,6 +21,21 @@ let mockTodayCheckIn: RecoveryCheckIn = {
 };
 let mockReadiness: ReadinessResult | null = null;
 
+function fillRequiredCheckInFields() {
+  fireEvent.change(screen.getByLabelText(/Sleep Duration \(Hours\)/i), {
+    target: { value: "7.5" },
+  });
+  fireEvent.change(screen.getByLabelText(/Subjective Sleep Quality/i), {
+    target: { value: "4" },
+  });
+  fireEvent.change(screen.getByLabelText(/Muscle Soreness/i), {
+    target: { value: "2" },
+  });
+  fireEvent.change(screen.getByLabelText(/Systemic Fatigue/i), {
+    target: { value: "2" },
+  });
+}
+
 vi.mock("@/hooks/useAthloniqState", () => ({
   useAthloniqState: () => ({
     todayCheckIn: mockTodayCheckIn,
@@ -56,7 +71,7 @@ describe("RecoveryView & Split Components (UI-8B)", () => {
     mockReadiness = null;
   });
 
-  it("renders honest Not set states and empty history when unlogged, and submits stress: null when slider untouched", () => {
+  it("initializes empty with Submit disabled until all 4 required fields are selected, and submits stress: null when slider untouched", () => {
     render(<RecoveryView />);
 
     expect(screen.getByText("NO CHECK-IN YET")).toBeInTheDocument();
@@ -64,12 +79,35 @@ describe("RecoveryView & Split Components (UI-8B)", () => {
     expect(screen.getByText("No triggers evaluated yet.")).toBeInTheDocument();
     expect(screen.getByText("No recovery check-ins logged yet.")).toBeInTheDocument();
 
+    const sleepInput = screen.getByLabelText(/Sleep Duration \(Hours\)/i) as HTMLInputElement;
+    const qualitySelect = screen.getByLabelText(/Subjective Sleep Quality/i) as HTMLSelectElement;
+    const sorenessSelect = screen.getByLabelText(/Muscle Soreness/i) as HTMLSelectElement;
+    const fatigueSelect = screen.getByLabelText(/Systemic Fatigue/i) as HTMLSelectElement;
+
+    expect(sleepInput.value).toBe("");
+    expect(qualitySelect.value).toBe("");
+    expect(sorenessSelect.value).toBe("");
+    expect(fatigueSelect.value).toBe("");
+
+    const submitBtn = screen.getByRole("button", { name: /Submit Today's Check-in/i });
+    expect(submitBtn).toBeDisabled();
+
     const slider = screen.getByLabelText(/External Life \/ Mental Stress/i) as HTMLInputElement;
     expect(slider.type).toBe("range");
     expect(slider).toHaveAttribute("min", "1");
     expect(slider).toHaveAttribute("max", "5");
 
-    fireEvent.click(screen.getByRole("button", { name: /Submit Today's Check-in/i }));
+    // Partial fill keeps Submit disabled
+    fireEvent.change(sleepInput, { target: { value: "7.5" } });
+    fireEvent.change(qualitySelect, { target: { value: "4" } });
+    fireEvent.change(sorenessSelect, { target: { value: "2" } });
+    expect(submitBtn).toBeDisabled();
+
+    // Selecting 4th required field enables Submit
+    fireEvent.change(fatigueSelect, { target: { value: "2" } });
+    expect(submitBtn).not.toBeDisabled();
+
+    fireEvent.click(submitBtn);
     expect(mockSubmitCheckIn).toHaveBeenCalledWith({
       sleepHours: 7.5,
       sleepQuality: 4,
@@ -81,6 +119,7 @@ describe("RecoveryView & Split Components (UI-8B)", () => {
 
   it("allows setting optional stress via native range slider and clearing back to Not set", () => {
     render(<RecoveryView />);
+    fillRequiredCheckInFields();
 
     const slider = screen.getByLabelText(/External Life \/ Mental Stress/i);
     fireEvent.change(slider, { target: { value: "5" } });
@@ -133,6 +172,10 @@ describe("RecoveryView & Split Components (UI-8B)", () => {
     fireEvent.click(screen.getByText("Leave Recovery"));
     expect(screen.getByText(/Unsaved Work in Progress/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Stay & Keep Editing/i }));
+
+    fireEvent.change(screen.getByLabelText(/Subjective Sleep Quality/i), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText(/Muscle Soreness/i), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/Systemic Fatigue/i), { target: { value: "2" } });
 
     fireEvent.click(screen.getByRole("button", { name: /Submit Today's Check-in/i }));
     expect(screen.getByTestId("recovery-dirty")).toHaveTextContent("CLEAN");

@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/barlow-condensed-700.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("/fonts/inter-var-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @layer base {
   :root {
     --color-bg: #090a0f;
@@ -26,19 +44,32 @@
     --color-shadow-deep: rgba(0, 0, 0, 0.55);
     --color-well-shadow: rgba(0, 0, 0, 0.45);
     --color-spotlight: rgba(190, 242, 100, 0.12);
-    --color-ambient-lime: rgba(190, 242, 100, 0.045);
-    --color-ambient-emerald: rgba(16, 185, 129, 0.035);
+    --color-ambient-lime: rgba(190, 242, 100, 0.055);
+    --color-ambient-emerald: rgba(16, 185, 129, 0.045);
     --color-focus-ring: #bef264;
     --color-focus-glow: rgba(190, 242, 100, 0.28);
+    --color-auth-vignette: rgba(9, 10, 15, 0.86);
+    --color-auth-vignette-mid: rgba(9, 10, 15, 0.48);
+    --color-autofill-bg: #0d1017;
+    --color-autofill-border: rgba(255, 255, 255, 0.14);
+    --bg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    --motion-press: 120ms;
+    --motion-state: 200ms;
+    --motion-enter: 320ms;
+    --motion-exit: 200ms;
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
   }
 
   html,
   body {
     background-color: var(--color-bg);
     background-image:
-      radial-gradient(ellipse 80% 45% at 50% -10%, var(--color-ambient-lime), transparent 65%),
-      radial-gradient(ellipse 60% 40% at 90% 10%, var(--color-ambient-emerald), transparent 60%);
-    background-attachment: fixed;
+      var(--bg-grain),
+      radial-gradient(ellipse 65% 45% at 10% 0%, var(--color-ambient-lime), transparent 70%),
+      radial-gradient(ellipse 55% 42% at 92% 95%, var(--color-ambient-emerald), transparent 70%);
+    background-repeat: repeat, no-repeat, no-repeat;
+    background-size: 120px 120px, 100% 100%, 100% 100%;
     color: var(--color-text);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -94,34 +125,140 @@
   box-shadow: inset 0 2px 6px 0 var(--color-well-shadow);
 }
 
+/* GPU-composited hover lift using transform & opacity only */
 .surface-hover {
   transition:
-    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform var(--motion-state) var(--motion-ease),
+    opacity var(--motion-state) var(--motion-ease);
 }
 
 .surface-hover:hover {
-  border-color: var(--color-hover-border);
   transform: translateY(-1px);
+  border-color: var(--color-hover-border);
   box-shadow:
     inset 0 1px 0 0 var(--color-surface-sheen),
     0 10px 24px -8px var(--color-hover-shadow);
 }
 
-/* Tactile button & action feedback */
+/* Tactile button & action feedback (transform & opacity only) */
 .tactile-press {
   cursor: pointer;
   transition:
-    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
+    transform var(--motion-press) var(--motion-ease),
+    opacity var(--motion-press) var(--motion-ease);
 }
 
 .tactile-press:active {
   transform: translateY(1px) scale(0.99);
+  opacity: 0.96;
+}
+
+/* First-paint enter / exit motion & bounded stagger (max 6 items) */
+@keyframes athloniq-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes athloniq-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.motion-enter {
+  animation: athloniq-enter var(--motion-enter) var(--motion-ease) both;
+}
+
+.motion-exit {
+  animation: athloniq-exit var(--motion-exit) var(--motion-ease-exit) both;
+}
+
+.stagger-enter > *:nth-child(-n+6) {
+  animation: athloniq-enter var(--motion-enter) var(--motion-ease) both;
+}
+
+.stagger-enter > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-enter > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.stagger-enter > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.stagger-enter > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.stagger-enter > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.stagger-enter > *:nth-child(6) {
+  animation-delay: 200ms;
+}
+
+/* One-shot SVG chart draw-in utility */
+@keyframes athloniq-chart-draw {
+  from {
+    stroke-dashoffset: var(--chart-length, 400);
+    opacity: 0.25;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.chart-draw {
+  stroke-dasharray: var(--chart-length, 400);
+  stroke-dashoffset: 0;
+  animation: athloniq-chart-draw var(--motion-enter) var(--motion-ease) 1 both;
+}
+
+/* View Transitions API route transitions (progressive enhancement) */
+::view-transition-old(root) {
+  animation: athloniq-exit var(--motion-exit) var(--motion-ease-exit) both;
+}
+
+::view-transition-new(root) {
+  animation: athloniq-enter var(--motion-enter) var(--motion-ease) both;
+}
+
+/* Calm obsidian center vignette over auth WebGL2 dither canvas */
+.auth-dither-vignette {
+  background: radial-gradient(
+    ellipse 62% 58% at 50% 48%,
+    var(--color-auth-vignette) 0%,
+    var(--color-auth-vignette-mid) 54%,
+    transparent 100%
+  );
+}
+
+/* Prevent browser autofill wash-out on dark obsidian inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-autofill-bg) inset !important;
+  -webkit-text-fill-color: var(--color-text) !important;
+  border-color: var(--color-autofill-border) !important;
+  caret-color: var(--color-lime);
+  transition: background-color 9999s ease-out 0s;
 }
 
 /* Safe-area spacing for fixed bottom navigation on mobile PWA */
@@ -155,7 +292,7 @@
     border-radius: inherit;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--motion-state) ease;
     background: radial-gradient(
       280px circle at var(--card-spot-x, 50%) var(--card-spot-y, 50%),
       var(--color-spotlight),
@@ -188,7 +325,7 @@
   background-color: var(--color-lime);
   pointer-events: none;
   z-index: 60;
-  animation: athloniq-spark-fly 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: athloniq-spark-fly 350ms var(--motion-ease) forwards;
 }
 
 /* Clean dark scrollbar */
@@ -228,14 +365,24 @@
     transform: none !important;
   }
 
+  .motion-enter,
+  .motion-exit,
+  .stagger-enter > *,
+  .chart-draw,
   .animate-pulse,
   .animate-bounce,
   .animate-spin {
     animation: none !important;
+    transform: none !important;
   }
 
   .card-spotlight::before,
   .athloniq-spark-particle {
     display: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }

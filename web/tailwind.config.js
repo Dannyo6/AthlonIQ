@@ -41,8 +41,9 @@ export default {
         },
       },
       fontFamily: {
+        display: ["'Barlow Condensed'", "Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
         sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       boxShadow: {
         "glow-lime": "0 0 24px -4px rgba(190, 242, 100, 0.28)",

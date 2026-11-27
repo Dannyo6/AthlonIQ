@@ -297,9 +297,9 @@ describe("ProgressView & Split Components (UI-8C)", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button", { name: /Load 14d Demo Fixture/i }).className).toMatch(
-      /min-h-\[44px\]/
-    );
+    expect(
+      screen.queryByRole("button", { name: /Load 14d Demo Fixture/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Add Photo/i }).className).toMatch(/min-h-\[44px\]/);
     expect(screen.getByRole("button", { name: /Log Weigh-In/i }).className).toMatch(
       /min-h-\[44px\]/

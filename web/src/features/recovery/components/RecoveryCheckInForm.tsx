@@ -5,17 +5,18 @@ import { Button } from "@/components/ui/Button";
 import { CheckCircle2 } from "lucide-react";
 
 interface RecoveryCheckInFormProps {
-  sleepHours: number;
-  sleepQuality: number;
-  soreness: number;
-  fatigue: number;
+  sleepHours: number | null;
+  sleepQuality: number | null;
+  soreness: number | null;
+  fatigue: number | null;
   stress: number | null;
   stressTouched: boolean;
+  canSubmit: boolean;
   savedSuccess: boolean;
-  onSleepHoursChange: (value: number) => void;
-  onSleepQualityChange: (value: number) => void;
-  onSorenessChange: (value: number) => void;
-  onFatigueChange: (value: number) => void;
+  onSleepHoursChange: (value: number | null) => void;
+  onSleepQualityChange: (value: number | null) => void;
+  onSorenessChange: (value: number | null) => void;
+  onFatigueChange: (value: number | null) => void;
   onStressChange: (value: number) => void;
   onClearStress: () => void;
   onSubmit: () => void;
@@ -36,6 +37,7 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
   fatigue,
   stress,
   stressTouched,
+  canSubmit,
   savedSuccess,
   onSleepHoursChange,
   onSleepQualityChange,
@@ -51,12 +53,12 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
         <div>
           <h3 className="font-bold text-white text-lg">Daily Subjective Check-in</h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Update your physical recovery metrics to immediately re-calculate your training readiness score.
+            Select your sleep, soreness, and fatigue ratings to compute today&apos;s readiness score.
           </p>
         </div>
         {savedSuccess && (
           <Badge variant="emerald">
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> SAVED & RE-SCORED
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" /> SAVED &amp; RE-SCORED
           </Badge>
         )}
       </div>
@@ -72,9 +74,15 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
             step="0.5"
             min="0"
             max="18"
-            value={sleepHours}
+            placeholder="e.g. 7.5"
+            value={sleepHours ?? ""}
             onChange={(e) => {
-              const parsed = Number(e.target.value);
+              const raw = e.target.value.trim();
+              if (raw === "") {
+                onSleepHoursChange(null);
+                return;
+              }
+              const parsed = Number(raw);
               if (Number.isFinite(parsed)) {
                 onSleepHoursChange(Math.min(18, Math.max(0, parsed)));
               }
@@ -92,10 +100,16 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
           </label>
           <select
             id="recovery-sleep-quality"
-            value={sleepQuality}
-            onChange={(e) => onSleepQualityChange(Number(e.target.value))}
+            value={sleepQuality ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              onSleepQualityChange(raw === "" ? null : Number(raw));
+            }}
             className="w-full min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
           >
+            <option value="" disabled>
+              Select sleep quality…
+            </option>
             <option value={5}>5 - Restorative &amp; Deep (+10 pts)</option>
             <option value={4}>4 - Good Rest (+5 pts)</option>
             <option value={3}>3 - Average (0 pts)</option>
@@ -110,10 +124,16 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
           </label>
           <select
             id="recovery-soreness"
-            value={soreness}
-            onChange={(e) => onSorenessChange(Number(e.target.value))}
+            value={soreness ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              onSorenessChange(raw === "" ? null : Number(raw));
+            }}
             className="w-full min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
           >
+            <option value="" disabled>
+              Select soreness level…
+            </option>
             <option value={1}>1 - Zero Soreness (+5 pts)</option>
             <option value={2}>2 - Minimal Soreness (0 pts)</option>
             <option value={3}>3 - Moderate Soreness (-5 pts)</option>
@@ -128,10 +148,16 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
           </label>
           <select
             id="recovery-fatigue"
-            value={fatigue}
-            onChange={(e) => onFatigueChange(Number(e.target.value))}
+            value={fatigue ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              onFatigueChange(raw === "" ? null : Number(raw));
+            }}
             className="w-full min-h-[44px] bg-athloniq-surface border border-athloniq-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-athloniq-lime focus:outline-none"
           >
+            <option value="" disabled>
+              Select fatigue level…
+            </option>
             <option value={1}>1 - Fully Energized (+5 pts)</option>
             <option value={2}>2 - Normal Baseline (0 pts)</option>
             <option value={3}>3 - Mild Fatigue (-5 pts)</option>
@@ -190,8 +216,8 @@ export const RecoveryCheckInForm: React.FC<RecoveryCheckInFormProps> = ({
       </div>
 
       <div className="flex justify-end pt-3">
-        <Button variant="primary" size="lg" onClick={onSubmit}>
-          <CheckCircle2 className="h-5 w-5" /> Submit Today&apos;s Check-in
+        <Button variant="primary" size="lg" disabled={!canSubmit} onClick={onSubmit}>
+          <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> Submit Today&apos;s Check-in
         </Button>
       </div>
     </Card>

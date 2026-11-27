@@ -23,6 +23,43 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const SIGNIN_INTENT_KEY = "athloniq_explicit_signin_intent";
+
+export function markExplicitSignInIntent(): void {
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      window.sessionStorage.setItem(SIGNIN_INTENT_KEY, "1");
+    }
+  } catch {
+    // Ignore storage access errors in restricted sandboxes
+  }
+}
+
+function consumeExplicitSignInIntent(): boolean {
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      const present = window.sessionStorage.getItem(SIGNIN_INTENT_KEY) === "1";
+      if (present) {
+        window.sessionStorage.removeItem(SIGNIN_INTENT_KEY);
+      }
+      return present;
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+  return false;
+}
+
+function clearExplicitSignInIntent(): void {
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      window.sessionStorage.removeItem(SIGNIN_INTENT_KEY);
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -68,8 +105,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setReAuthRequired(false);
-        setAuthToast({ message: "Successfully authenticated with AthlonIQ OS.", type: "success" });
+        if (consumeExplicitSignInIntent()) {
+          setAuthToast({ message: "Successfully authenticated with AthlonIQ OS.", type: "success" });
+        }
       } else if (event === "SIGNED_OUT") {
+        clearExplicitSignInIntent();
         queryClient.clear();
         setSession(null);
         setUser(null);
@@ -91,11 +131,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    markExplicitSignInIntent();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     if (error) {
+      clearExplicitSignInIntent();
       return { error };
     }
     setSession(data.session);
@@ -105,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
+    markExplicitSignInIntent();
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -116,15 +159,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
+      clearExplicitSignInIntent();
       return { error, needsEmailConfirmation: false };
     }
 
     // If email confirmation is required by hosted project, session is null
     const needsEmailConfirmation = !data.session;
+    if (needsEmailConfirmation) {
+      clearExplicitSignInIntent();
+    }
     return { error: null, needsEmailConfirmation };
   }, []);
 
   const signOut = useCallback(async () => {
+    clearExplicitSignInIntent();
     queryClient.clear();
     const { error } = await supabase.auth.signOut();
     setSession(null);

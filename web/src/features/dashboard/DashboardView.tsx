@@ -145,11 +145,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       gymSessions7d,
       badmintonMinutes7d,
       runningKm7d,
-      todayCheckIn.sleepHours,
-      todayCheckIn.soreness,
-      todayCheckIn.fatigue
+      hasTodayCheckIn && todayCheckIn ? todayCheckIn.sleepHours : null,
+      hasTodayCheckIn && todayCheckIn ? todayCheckIn.soreness : null,
+      hasTodayCheckIn && todayCheckIn ? todayCheckIn.fatigue : null
     );
-  }, [workoutSessions, activitySessions, todayCheckIn]);
+  }, [workoutSessions, activitySessions, todayCheckIn, hasTodayCheckIn]);
 
   const handleApplyCalibratedTarget = () => {
     if (leanBulkCalibration.new_calorie_target_kcal) {
@@ -186,10 +186,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     </Badge>
                   )}
                 </div>
-                <h2 className="text-sm font-bold text-white tracking-tight">
+                <h2 className="font-display text-base font-bold text-white tracking-wide">
                   {!profile.onboardingCompleted
-                    ? "Complete Onboarding to Activate Caloric & Training Engines"
-                    : "Confirm Home Gym Equipment to Unlock Full Overload Protocols"}
+                    ? "Finish setup to personalize calorie and training targets"
+                    : "Confirm your gym equipment to unlock weight suggestions"}
                 </h2>
               </div>
             </div>
@@ -247,7 +247,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <QuickActionsRow />
 
       {/* Asymmetric Telemetry Bento Grid: 1 column on 390px mobile, 12-col bento on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
+      <div className="stagger-enter grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
         <div className="lg:col-span-7 flex flex-col">
           <NutritionCard
             calorieTargetKcal={goals.calorieTargetKcal}

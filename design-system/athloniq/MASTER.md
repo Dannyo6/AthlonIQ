@@ -40,15 +40,10 @@
 
 ### Typography
 
-- **Heading Font:** Barlow Condensed
-- **Body Font:** Barlow
+- **Heading Font:** Barlow Condensed (`700`, self-hosted offline WOFF2)
+- **Body Font:** Inter Variable (`300..800`, self-hosted offline WOFF2 with crisp `tabular-nums`) — `ui-monospace` fallback for telemetry tags
 - **Mood:** sports, fitness, athletic, energetic, condensed, action
-- **Google Fonts:** [Barlow Condensed + Barlow](https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap)
-
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap');
-```
+- **Offline Assets:** Self-hosted latin `.woff2` files in `web/public/fonts/` (`total <= 80 kB`), preloaded locally without external Google Fonts requests.
 
 ### Spacing Variables
 
@@ -250,13 +245,14 @@ Before delivering any UI code, verify:
 | **Forbidden Accents** | Zero **orange (`#F97316`)**, zero **cyan**, zero **purple/violet**, zero default Tailwind `lime-\d{2,3}`, zero raw hex/rgba in `.tsx` or `.css` outside `:root` variable definitions in `globals.css`. | — | Enforce via `tailwind-tokens.test.ts` |
 
 ### 2. Typography & Numerical Precision
-- **Font Stack**: `Inter` (UI & display headings with tight `-0.025em` / `tracking-tight`) + `JetBrains Mono` (telemetry labels, units, badges, tabular stats) — loaded cleanly without external generator fonts (`Barlow` is **not** used).
+- **Reconciled Font Pair (Offline Self-Hosted `<= 80 kB`)**: `Barlow Condensed` (`700`, `font-display`, uppercase/condensed athletic punch for hero & section headings) + `Inter` (variable `300..800`, `font-sans`, crisp body copy & `tabular-nums` numerals) + system `ui-monospace` fallback (`.font-mono`).
+- **Offline PWA Self-Hosting**: Latin-subset `.woff2` files hosted in `web/public/fonts/` (`barlow-condensed-700.woff2` + `inter-var-latin.woff2`, total `<= 80 kB`), declared with `@font-face { font-display: swap; }` in `web/src/styles/globals.css`, single font preload in `web/index.html`, zero external Google Fonts `<link>` or `preconnect` requests, and precached by Workbox (`**/*.{js,css,html,ico,png,svg,woff2}`).
 - **Mandatory Tabular Numerals**: Apply `tabular-nums` (or `.font-mono` / `[data-numeric="true"]`) to every numeric metric, calorie/macro count, load, readiness score, countdown, and timestamp to prevent horizontal jitter.
 
 ### 3. Icons, Motion & Budget Gates
-- **Icons**: `lucide-react` ONLY (`aria-hidden="true"` on decorative icons beside text; mandatory `aria-label` on icon-only controls; **zero emojis** as UI icons).
-- **Motion & Zero WebGL**: Pure CSS transitions/keyframes + `usePrefersReducedMotion` (`CountUp`, `ClickSpark`, `Card spotlight` gated behind `@media (hover: hover) and (pointer: fine)`). **Zero GSAP, zero Three.js/WebGL, zero new packages** (`budget-gate.test.ts` enforces exact `web/package.json` snapshot and `dist/assets/index-*.js <= 210 KiB`).
-- **Reduced Motion**: Global `@media (prefers-reduced-motion: reduce)` rule in `web/src/styles/globals.css` neutralizes animations, `.animate-pulse`/`.animate-bounce`/`.animate-spin`, transitions, and smooth scrolling.
+- **Icons**: `lucide-react` ONLY (single consistent `strokeWidth={2}` via `<IconTile>`) plus small custom inline SVG sport glyphs (`badminton`, `running`, `pull-up`) in `web/src/components/ui/SportIcons.tsx` (`aria-hidden="true"` when decorative; mandatory `aria-label` on icon-only controls; **zero emojis** as UI icons).
+- **Motion, Dials & Scoped Auth WebGL2**: Dials **Variance 5 / Motion 5 / Density 6**. Pure CSS transitions/keyframes using explicit duration tokens (`120ms` press, `200ms` state/exit, `320ms` enter; `transform`/`opacity`-only, stagger capped at 6 items, `document.startViewTransition` with plain fallback) + `usePrefersReducedMotion`. Zero GSAP, zero Three.js, zero new packages (`budget-gate.test.ts` enforces exact `web/package.json` snapshot and total initial-load gzip ceiling from `dist/index.html`). **Scoped WebGL2 Exception:** Zero-dependency native `webgl2` (`<Dither />`) is permitted exclusively as a lazy-loaded, unauthenticated background on `/signin` (`SignInView`), never loaded after authentication and static when `prefers-reduced-motion: reduce`.
+- **Reduced Motion**: Global `@media (prefers-reduced-motion: reduce)` rule in `web/src/styles/globals.css` neutralizes animations, `.animate-pulse`/`.animate-bounce`/`.animate-spin`, stagger/chart draw-in transitions, view transitions, and smooth scrolling.
 
 ### 4. Mobile-First Ergonomics & Truth-in-UI
 - **Breakpoints & Viewport**: `390px` mobile-first zero-overflow single column expanding into balanced telemetry bento grids at `md`/`lg`/`xl`, plus `env(safe-area-inset-bottom)` safe-area compensation for fixed mobile navigation.

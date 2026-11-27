@@ -150,6 +150,16 @@ export interface RecoveryCheckIn {
   notes?: string;
 }
 
+export interface RecoveryCheckInDraft {
+  date: string;
+  sleepHours: number | null;
+  sleepQuality: number | null;
+  soreness: number | null;
+  fatigue: number | null;
+  stress: number | null;
+  notes?: string;
+}
+
 export interface ReadinessResult {
   readinessScore: number; // 0 - 100
   status: "Prime" | "Moderate" | "Recover";

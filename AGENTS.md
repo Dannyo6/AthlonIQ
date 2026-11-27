@@ -158,3 +158,9 @@ To coordinate work effectively across multi-agent sessions, all agents must adhe
   - South Korean **Resident Registration Numbers (RRN)** (6-7 digit citizen registration)
   - Japanese **My Number** (12-digit Individual Number)
 - Athletic profiles require only minimal biometric variables (age, height, weight, sex, training preferences). Sensitive national IDs have no place in AthlonIQ.
+
+## UI rules
+- UI work follows design-system/athloniq/MASTER.md (page overrides win); never regenerate it with --force.
+- Run the ui-ux-pro-max pre-delivery checklist and report the result with each UI task.
+- No new npm dependencies for UI; lucide-react is the only icon library; no emoji as icons.
+- Every drag interaction needs a single-tap alternative; every motion respects prefers-reduced-motion.

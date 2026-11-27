@@ -34,6 +34,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return timeGreeting;
   }, [fullName]);
 
+  const demoEnabled = import.meta.env.VITE_ENABLE_DEMO === "true";
+
   return (
     <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
       <div className="space-y-1">
@@ -46,38 +48,40 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <span className="text-slate-600" aria-hidden="true">
             •
           </span>
-          <span className="text-emerald-400">Daily Telemetry</span>
+          <span className="text-emerald-400">Daily Overview</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
           {greeting}
         </h1>
       </div>
 
-      <div className="flex items-center gap-2 self-start sm:self-auto">
-        <Button
-          variant={isDemoFixtureActive ? "danger" : "outline"}
-          size="sm"
-          onClick={isDemoFixtureActive ? onResetDemoFixture : onLoadDemoFixture}
-          title={
-            isDemoFixtureActive
-              ? "Reset back to personal state"
-              : "Load 14-day populated demo data"
-          }
-          className="min-h-[44px] text-xs tactile-press"
-        >
-          {isDemoFixtureActive ? (
-            <>
-              <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Reset Demo</span>
-            </>
-          ) : (
-            <>
-              <Database className="h-3.5 w-3.5 text-athloniq-lime shrink-0" aria-hidden="true" />
-              <span>14d Demo Fixture</span>
-            </>
-          )}
-        </Button>
-      </div>
+      {demoEnabled && (
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant={isDemoFixtureActive ? "danger" : "outline"}
+            size="sm"
+            onClick={isDemoFixtureActive ? onResetDemoFixture : onLoadDemoFixture}
+            title={
+              isDemoFixtureActive
+                ? "Reset back to personal state"
+                : "Load 14-day populated demo data"
+            }
+            className="min-h-[44px] text-xs tactile-press"
+          >
+            {isDemoFixtureActive ? (
+              <>
+                <RotateCcw className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>Reset Demo</span>
+              </>
+            ) : (
+              <>
+                <Database className="h-3.5 w-3.5 text-athloniq-lime shrink-0" aria-hidden="true" />
+                <span>14d Demo Fixture</span>
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </header>
   );
 };

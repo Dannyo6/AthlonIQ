@@ -17,6 +17,8 @@ export default defineConfig({
         "pwa-192x192.png",
         "pwa-512x512.png",
         "pwa-maskable-512x512.png",
+        "fonts/barlow-condensed-700.woff2",
+        "fonts/inter-var-latin.woff2",
       ],
       manifest: PWA_MANIFEST,
       workbox: PWA_WORKBOX_CONFIG,

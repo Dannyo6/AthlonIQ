@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { DashboardView } from "@/features/dashboard/DashboardView";
 import * as useAthloniqStateModule from "@/hooks/useAthloniqState";
@@ -231,5 +231,59 @@ describe("UI-2: Today Dashboard Screen & Components (390px spec)", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       /Good (morning|afternoon|evening)/i
     );
+  });
+
+  it("ReadinessStrip quick check-in drawer initializes empty and keeps Submit disabled until all 4 required fields are selected", () => {
+    const submitSpy = vi.fn();
+    setupStateMock({
+      hasTodayCheckIn: false,
+      readiness: null,
+      todayCheckIn: {
+        date: "2026-11-27",
+        sleepHours: null,
+        sleepQuality: null,
+        soreness: null,
+        fatigue: null,
+        stress: null,
+      },
+      submitCheckIn: submitSpy,
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardView onNavigate={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Quick Check-in/i }));
+
+    const sleepInput = screen.getByLabelText(/Sleep Hours/i) as HTMLInputElement;
+    const qualitySelect = screen.getByLabelText(/Quality \(1-5\)/i) as HTMLSelectElement;
+    const sorenessSelect = screen.getByLabelText(/Soreness \(1-5\)/i) as HTMLSelectElement;
+    const fatigueSelect = screen.getByLabelText(/Fatigue \(1-5\)/i) as HTMLSelectElement;
+
+    expect(sleepInput.value).toBe("");
+    expect(qualitySelect.value).toBe("");
+    expect(sorenessSelect.value).toBe("");
+    expect(fatigueSelect.value).toBe("");
+
+    const saveBtn = screen.getByRole("button", { name: /Save Check-in/i });
+    expect(saveBtn).toBeDisabled();
+
+    fireEvent.change(sleepInput, { target: { value: "8" } });
+    fireEvent.change(qualitySelect, { target: { value: "5" } });
+    fireEvent.change(sorenessSelect, { target: { value: "1" } });
+    expect(saveBtn).toBeDisabled();
+
+    fireEvent.change(fatigueSelect, { target: { value: "2" } });
+    expect(saveBtn).not.toBeDisabled();
+
+    fireEvent.click(saveBtn);
+    expect(submitSpy).toHaveBeenCalledWith({
+      sleepHours: 8,
+      sleepQuality: 5,
+      soreness: 1,
+      fatigue: 2,
+    });
   });
 });

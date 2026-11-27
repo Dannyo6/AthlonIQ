@@ -17,6 +17,8 @@ export const ProgressHeaderActions: React.FC<ProgressHeaderActionsProps> = ({
   onTogglePhotoForm,
   onToggleWeightForm,
 }) => {
+  const demoEnabled = import.meta.env.VITE_ENABLE_DEMO === "true";
+
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-athloniq-border pb-5">
@@ -30,23 +32,25 @@ export const ProgressHeaderActions: React.FC<ProgressHeaderActionsProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant={isDemoFixtureActive ? "danger" : "outline"}
-            className="min-h-[44px]"
-            onClick={onToggleDemo}
-            title={isDemoFixtureActive ? "Reset back to personal state" : "Load 14-day populated demo data"}
-          >
-            {isDemoFixtureActive ? (
-              <>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" /> Reset Demo
-              </>
-            ) : (
-              <>
-                <Database className="h-4 w-4 text-athloniq-lime" aria-hidden="true" /> Load 14d Demo Fixture
-              </>
-            )}
-          </Button>
+          {demoEnabled && (
+            <Button
+              type="button"
+              variant={isDemoFixtureActive ? "danger" : "outline"}
+              className="min-h-[44px]"
+              onClick={onToggleDemo}
+              title={isDemoFixtureActive ? "Reset back to personal state" : "Load 14-day populated demo data"}
+            >
+              {isDemoFixtureActive ? (
+                <>
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" /> Reset Demo
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4 text-athloniq-lime" aria-hidden="true" /> Load 14d Demo Fixture
+                </>
+              )}
+            </Button>
+          )}
           <Button
             id="progress-photo-trigger"
             type="button"

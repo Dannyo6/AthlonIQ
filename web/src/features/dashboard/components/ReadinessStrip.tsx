@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
-import { Badge, ProvenanceBadge } from "@/components/ui/Badge";
+import { Badge, ProvenanceDot } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle2, ChevronDown, ChevronUp, Moon, Sliders } from "lucide-react";
 import type { ReadinessResult } from "@/types";
@@ -10,12 +10,12 @@ import { CountUp } from "@/components/ui/CountUp";
 interface ReadinessStripProps {
   hasTodayCheckIn: boolean;
   readiness: ReadinessResult | null;
-  todayCheckIn: {
-    sleepHours: number;
-    sleepQuality: number;
-    soreness: number;
-    fatigue: number;
-  };
+  todayCheckIn?: {
+    sleepHours?: number | null;
+    sleepQuality?: number | null;
+    soreness?: number | null;
+    fatigue?: number | null;
+  } | null;
   onSubmitCheckIn: (data: {
     sleepHours: number;
     sleepQuality: number;
@@ -31,12 +31,42 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
   onSubmitCheckIn,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sleepInput, setSleepInput] = useState(todayCheckIn.sleepHours);
-  const [qualityInput, setQualityInput] = useState(todayCheckIn.sleepQuality);
-  const [sorenessInput, setSorenessInput] = useState(todayCheckIn.soreness);
-  const [fatigueInput, setFatigueInput] = useState(todayCheckIn.fatigue);
+  const [sleepInput, setSleepInput] = useState<number | null>(() =>
+    hasTodayCheckIn && todayCheckIn?.sleepHours != null ? todayCheckIn.sleepHours : null
+  );
+  const [qualityInput, setQualityInput] = useState<number | null>(() =>
+    hasTodayCheckIn && todayCheckIn?.sleepQuality != null ? todayCheckIn.sleepQuality : null
+  );
+  const [sorenessInput, setSorenessInput] = useState<number | null>(() =>
+    hasTodayCheckIn && todayCheckIn?.soreness != null ? todayCheckIn.soreness : null
+  );
+  const [fatigueInput, setFatigueInput] = useState<number | null>(() =>
+    hasTodayCheckIn && todayCheckIn?.fatigue != null ? todayCheckIn.fatigue : null
+  );
+
+  useEffect(() => {
+    if (hasTodayCheckIn && todayCheckIn) {
+      setSleepInput(todayCheckIn.sleepHours ?? null);
+      setQualityInput(todayCheckIn.sleepQuality ?? null);
+      setSorenessInput(todayCheckIn.soreness ?? null);
+      setFatigueInput(todayCheckIn.fatigue ?? null);
+    } else {
+      setSleepInput(null);
+      setQualityInput(null);
+      setSorenessInput(null);
+      setFatigueInput(null);
+    }
+  }, [hasTodayCheckIn, todayCheckIn]);
+
+  const canSave =
+    sleepInput !== null &&
+    Number.isFinite(sleepInput) &&
+    qualityInput !== null &&
+    sorenessInput !== null &&
+    fatigueInput !== null;
 
   const handleSave = () => {
+    if (!canSave) return;
     onSubmitCheckIn({
       sleepHours: Number(sleepInput),
       sleepQuality: Number(qualityInput),
@@ -54,11 +84,11 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-2.5 flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={hasTodayCheckIn && readiness ? "lime" : "neutral"}>
-              DETERMINISTIC READINESS
-            </Badge>
-            <ProvenanceBadge
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-300">
+              Recovery Check-In
+            </span>
+            <ProvenanceDot
               provenance={
                 hasTodayCheckIn && readiness
                   ? readiness.provenance
@@ -67,31 +97,33 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
             />
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Daily Readiness:{" "}
             {hasTodayCheckIn && readiness ? (
-              <span className="text-athloniq-lime font-mono tabular-nums">
+              <span className="text-white font-mono tabular-nums">
                 <CountUp
                   value={readiness.readinessScore}
                   suffix={`% (${readiness.status})`}
                 />
               </span>
             ) : (
-              <span className="text-slate-400 font-semibold">No check-in yet</span>
+              <span className="text-slate-400 font-sans text-xl font-semibold">
+                No check-in yet
+              </span>
             )}
           </h2>
 
           <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
             {hasTodayCheckIn && readiness
               ? readiness.guidance
-              : "No recovery check-in recorded for today. Log sleep, soreness, and fatigue to calculate your deterministic readiness score."}
+              : "No check-in logged yet today. Share your sleep, soreness, and fatigue to see today's readiness score."}
           </p>
 
           {hasTodayCheckIn && readiness ? (
             readiness.triggers.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider mr-0.5">
-                  Triggers:
+                  Signals:
                 </span>
                 {readiness.triggers.slice(0, 3).map((trigger, idx) => (
                   <span
@@ -142,14 +174,14 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
       {drawerOpen && (
         <div
           id="readiness-quick-drawer"
-          className="surface-well mt-4 rounded-xl p-4 space-y-3 animate-in fade-in"
+          className="surface-well mt-4 rounded-xl p-4 space-y-3 motion-enter"
         >
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
               <Moon className="h-3.5 w-3.5 text-athloniq-lime shrink-0" aria-hidden="true" />
-              <span>Subjective Recovery Parameters</span>
+              <span>Morning Check-in</span>
             </h4>
-            <Badge variant="lime">AUDITABLE</Badge>
+            <Badge variant="lime">TODAY</Badge>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -166,8 +198,19 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
                 step="0.5"
                 min="0"
                 max="16"
-                value={sleepInput}
-                onChange={(e) => setSleepInput(Number(e.target.value))}
+                placeholder="e.g. 7.5"
+                value={sleepInput ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+                  if (raw === "") {
+                    setSleepInput(null);
+                    return;
+                  }
+                  const parsed = Number(raw);
+                  if (Number.isFinite(parsed)) {
+                    setSleepInput(Math.min(16, Math.max(0, parsed)));
+                  }
+                }}
                 className="min-h-[44px] w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2.5 py-2 text-xs text-white font-mono tabular-nums focus:border-athloniq-lime focus:outline-none"
               />
             </div>
@@ -181,10 +224,15 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
               </label>
               <select
                 id="readiness-quality"
-                value={qualityInput}
-                onChange={(e) => setQualityInput(Number(e.target.value))}
+                value={qualityInput ?? ""}
+                onChange={(e) =>
+                  setQualityInput(e.target.value === "" ? null : Number(e.target.value))
+                }
                 className="min-h-[44px] w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2 py-2 text-xs text-white tabular-nums focus:border-athloniq-lime focus:outline-none"
               >
+                <option value="" disabled>
+                  Select…
+                </option>
                 <option value={5}>5 - Deep Rest</option>
                 <option value={4}>4 - Good</option>
                 <option value={3}>3 - Average</option>
@@ -202,10 +250,15 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
               </label>
               <select
                 id="readiness-soreness"
-                value={sorenessInput}
-                onChange={(e) => setSorenessInput(Number(e.target.value))}
+                value={sorenessInput ?? ""}
+                onChange={(e) =>
+                  setSorenessInput(e.target.value === "" ? null : Number(e.target.value))
+                }
                 className="min-h-[44px] w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2 py-2 text-xs text-white tabular-nums focus:border-athloniq-lime focus:outline-none"
               >
+                <option value="" disabled>
+                  Select…
+                </option>
                 <option value={1}>1 - Fresh</option>
                 <option value={2}>2 - Mild</option>
                 <option value={3}>3 - Moderate</option>
@@ -223,10 +276,15 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
               </label>
               <select
                 id="readiness-fatigue"
-                value={fatigueInput}
-                onChange={(e) => setFatigueInput(Number(e.target.value))}
+                value={fatigueInput ?? ""}
+                onChange={(e) =>
+                  setFatigueInput(e.target.value === "" ? null : Number(e.target.value))
+                }
                 className="min-h-[44px] w-full bg-athloniq-card border border-athloniq-border rounded-lg px-2 py-2 text-xs text-white tabular-nums focus:border-athloniq-lime focus:outline-none"
               >
+                <option value="" disabled>
+                  Select…
+                </option>
                 <option value={1}>1 - Energized</option>
                 <option value={2}>2 - Normal</option>
                 <option value={3}>3 - Mild</option>
@@ -241,11 +299,12 @@ export const ReadinessStrip: React.FC<ReadinessStripProps> = ({
               type="button"
               variant="primary"
               size="sm"
+              disabled={!canSave}
               onClick={handleSave}
               className="min-h-[44px] text-xs tactile-press"
             >
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Save & Compute Score</span>
+              <span>Save Check-in</span>
             </Button>
           </div>
         </div>

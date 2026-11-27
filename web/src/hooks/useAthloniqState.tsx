@@ -5,6 +5,7 @@ import {
   UserGoals,
   UserPreferences,
   RecoveryCheckIn,
+  RecoveryCheckInDraft,
   ReadinessResult,
   FoodEntry,
   WorkoutSession,
@@ -25,23 +26,22 @@ import { generate14DayDemoFixture } from "@/lib/demoFixture";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/features/auth/AuthContext";
 import {
-  profilesRepo,
-  equipmentRepo,
-  goalsRepo,
-  preferencesRepo,
-  recoveryRepo,
-  foodEntriesRepo,
-  workoutSessionsRepo,
-  workoutTemplatesRepo,
-  activitySessionsRepo,
-  bodyMetricsRepo,
-  coachRepo,
-  progressPhotosRepo,
-} from "@/services/repo";
-import {
   cloneStarterTemplates,
   mergeWithStarterTemplates,
 } from "@/features/workouts/constants";
+
+const loadProfilesRepo = () => import("@/services/repo/profilesRepo").then((m) => m.profilesRepo);
+const loadEquipmentRepo = () => import("@/services/repo/equipmentRepo").then((m) => m.equipmentRepo);
+const loadGoalsRepo = () => import("@/services/repo/goalsRepo").then((m) => m.goalsRepo);
+const loadPreferencesRepo = () => import("@/services/repo/preferencesRepo").then((m) => m.preferencesRepo);
+const loadRecoveryRepo = () => import("@/services/repo/recoveryRepo").then((m) => m.recoveryRepo);
+const loadFoodEntriesRepo = () => import("@/services/repo/foodEntriesRepo").then((m) => m.foodEntriesRepo);
+const loadWorkoutSessionsRepo = () => import("@/services/repo/workoutSessionsRepo").then((m) => m.workoutSessionsRepo);
+const loadWorkoutTemplatesRepo = () => import("@/services/repo/workoutTemplatesRepo").then((m) => m.workoutTemplatesRepo);
+const loadActivitySessionsRepo = () => import("@/services/repo/activitySessionsRepo").then((m) => m.activitySessionsRepo);
+const loadBodyMetricsRepo = () => import("@/services/repo/bodyMetricsRepo").then((m) => m.bodyMetricsRepo);
+const loadCoachRepo = () => import("@/services/repo/coachRepo").then((m) => m.coachRepo);
+const loadProgressPhotosRepo = () => import("@/services/repo/progressPhotosRepo").then((m) => m.progressPhotosRepo);
 
 export interface AthlonToast {
   id: string;
@@ -171,12 +171,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   quietHoursEnd: "07:00",
 };
 
-const DEFAULT_CHECKIN: RecoveryCheckIn = {
+const DEFAULT_CHECKIN: RecoveryCheckInDraft = {
   date: todayISO(),
-  sleepHours: 7.5,
-  sleepQuality: 4,
-  soreness: 2,
-  fatigue: 2,
+  sleepHours: null,
+  sleepQuality: null,
+  soreness: null,
+  fatigue: null,
   stress: null,
 };
 
@@ -207,7 +207,7 @@ export interface AthloniqContextType {
   equipment: EquipmentItem[];
   goals: UserGoals;
   preferences: UserPreferences;
-  todayCheckIn: RecoveryCheckIn;
+  todayCheckIn: RecoveryCheckIn | RecoveryCheckInDraft;
   hasTodayCheckIn: boolean;
   readiness: ReadinessResult | null;
   updateProfile: (updates: Partial<UserProfile>) => void;
@@ -296,7 +296,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [equipment, setEquipment] = useState<EquipmentItem[]>(DEFAULT_EQUIPMENT);
   const [goals, setGoals] = useState<UserGoals>(DEFAULT_GOALS);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
-  const [todayCheckIn, setTodayCheckIn] = useState<RecoveryCheckIn>(DEFAULT_CHECKIN);
+  const [todayCheckIn, setTodayCheckIn] = useState<RecoveryCheckIn | RecoveryCheckInDraft>(DEFAULT_CHECKIN);
   const [hasTodayCheckIn, setHasTodayCheckIn] = useState<boolean>(false);
 
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
@@ -339,15 +339,20 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   // Readiness engine: calculated strictly from self-reported check-in metrics when present
-  const readiness: ReadinessResult | null = hasTodayCheckIn
-    ? calculateRulesReadiness(
-        todayCheckIn.sleepHours,
-        todayCheckIn.sleepQuality,
-        todayCheckIn.soreness,
-        todayCheckIn.fatigue,
-        todayCheckIn.stress
-      )
-    : null;
+  const readiness: ReadinessResult | null =
+    hasTodayCheckIn &&
+    todayCheckIn.sleepHours !== null &&
+    todayCheckIn.sleepQuality !== null &&
+    todayCheckIn.soreness !== null &&
+    todayCheckIn.fatigue !== null
+      ? calculateRulesReadiness(
+          todayCheckIn.sleepHours,
+          todayCheckIn.sleepQuality,
+          todayCheckIn.soreness,
+          todayCheckIn.fatigue,
+          todayCheckIn.stress
+        )
+      : null;
 
   // ---------------------------------------------------------------------------
   // ---------------------------------------------------------------------------
@@ -386,7 +391,14 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSyncError(null);
 
     try {
-      // 1. Fetch Profile
+      // 1. Fetch Profile (lazy repo imports)
+      const [profilesRepo, equipmentRepo, goalsRepo, preferencesRepo] = await Promise.all([
+        loadProfilesRepo(),
+        loadEquipmentRepo(),
+        loadGoalsRepo(),
+        loadPreferencesRepo(),
+      ]);
+
       let cloudProfile = await profilesRepo.fetchProfile(userId);
       if (!cloudProfile) {
         // First sign in: initialize profile
@@ -430,14 +442,14 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         equipmentRepo.fetchEquipment(userId),
         goalsRepo.fetchGoals(userId),
         preferencesRepo.fetchPreferences(userId),
-        foodEntriesRepo.fetchEntries(userId),
-        workoutSessionsRepo.fetchSessions(userId),
-        workoutTemplatesRepo.fetchTemplates(userId),
-        activitySessionsRepo.fetchActivities(userId),
-        bodyMetricsRepo.fetchMetrics(userId),
-        recoveryRepo.fetchHistory(userId, 1),
-        coachRepo.fetchMessages(userId),
-        progressPhotosRepo.fetchPhotos(userId),
+        loadFoodEntriesRepo().then((r) => r.fetchEntries(userId)),
+        loadWorkoutSessionsRepo().then((r) => r.fetchSessions(userId)),
+        loadWorkoutTemplatesRepo().then((r) => r.fetchTemplates(userId)),
+        loadActivitySessionsRepo().then((r) => r.fetchActivities(userId)),
+        loadBodyMetricsRepo().then((r) => r.fetchMetrics(userId)),
+        loadRecoveryRepo().then((r) => r.fetchHistory(userId, 1)),
+        loadCoachRepo().then((r) => r.fetchMessages(userId)),
+        loadProgressPhotosRepo().then((r) => r.fetchPhotos(userId)),
       ]);
 
       // Guard: discard if user signed out or changed during fetch
@@ -470,6 +482,12 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [user, showToast]);
 
   // Synchronize authentication lifecycle with state isolation
+  useEffect(() => {
+    return () => {
+      currentUserIdRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     const nextUserId = user?.id ?? null;
     if (currentUserIdRef.current !== nextUserId) {
@@ -543,6 +561,14 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const validWorkouts = parsedWorkouts.filter((w) => !w.notes?.includes("Alex Mercer") && !w.id?.startsWith("demo-"));
       const validActivities = parsedActivities.filter((a) => !a.routeOrNotes?.includes("Alex Mercer") && !a.id?.startsWith("demo-"));
       const validMetrics = parsedMetrics.filter((m) => !m.notes?.includes("Alex Mercer") && !m.id?.startsWith("demo-"));
+
+      const [foodEntriesRepo, workoutSessionsRepo, activitySessionsRepo, bodyMetricsRepo] =
+        await Promise.all([
+          loadFoodEntriesRepo(),
+          loadWorkoutSessionsRepo(),
+          loadActivitySessionsRepo(),
+          loadBodyMetricsRepo(),
+        ]);
 
       for (const f of validFoods) {
         await foodEntriesRepo.createEntry(user.id, f);
@@ -651,6 +677,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setProfile(prev),
         async () => {
           if (!user?.id) return;
+          const profilesRepo = await loadProfilesRepo();
           await profilesRepo.upsertProfile({ ...updates, id: user.id });
         }
       );
@@ -676,6 +703,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (!user?.id) return;
           const target = equipment.find((e) => e.id === id);
           if (target) {
+            const equipmentRepo = await loadEquipmentRepo();
             await equipmentRepo.updateItem(user.id, { ...target, ...updates });
           }
         }
@@ -698,6 +726,10 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setEquipment(prev),
         async () => {
           if (!user?.id) return;
+          const [equipmentRepo, profilesRepo] = await Promise.all([
+            loadEquipmentRepo(),
+            loadProfilesRepo(),
+          ]);
           await equipmentRepo.upsertEquipment(user.id, confirmedItems);
           await profilesRepo.upsertProfile({ id: user.id, equipmentConfirmed: true });
         }
@@ -717,6 +749,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setGoals(prev),
         async () => {
           if (!user?.id) return;
+          const goalsRepo = await loadGoalsRepo();
           await goalsRepo.upsertGoals(user.id, { ...goals, ...updates });
         }
       );
@@ -735,6 +768,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setPreferences(prev),
         async () => {
           if (!user?.id) return;
+          const preferencesRepo = await loadPreferencesRepo();
           await preferencesRepo.upsertPreferences(user.id, { ...preferences, ...updates });
         }
       );
@@ -744,10 +778,27 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const submitCheckIn = useCallback(
     (checkIn: Partial<RecoveryCheckIn>) => {
+      const sleepHours = checkIn.sleepHours ?? todayCheckIn.sleepHours;
+      const sleepQuality = checkIn.sleepQuality ?? todayCheckIn.sleepQuality;
+      const soreness = checkIn.soreness ?? todayCheckIn.soreness;
+      const fatigue = checkIn.fatigue ?? todayCheckIn.fatigue;
+      if (
+        sleepHours === null ||
+        sleepQuality === null ||
+        soreness === null ||
+        fatigue === null
+      ) {
+        return;
+      }
+
       const merged: RecoveryCheckIn = {
-        ...todayCheckIn,
-        ...checkIn,
         date: todayISO(),
+        sleepHours,
+        sleepQuality,
+        soreness,
+        fatigue,
+        stress: checkIn.stress !== undefined ? checkIn.stress : todayCheckIn.stress,
+        notes: checkIn.notes ?? todayCheckIn.notes,
       };
       const calculatedReadiness = calculateRulesReadiness(
         merged.sleepHours,
@@ -772,6 +823,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         async () => {
           if (!user?.id) return;
+          const recoveryRepo = await loadRecoveryRepo();
           await recoveryRepo.upsertLog(user.id, merged, {
             score: calculatedReadiness.readinessScore,
             status: calculatedReadiness.status,
@@ -780,7 +832,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       );
     },
-    [todayCheckIn, executeOptimisticMutation, user?.id, showToast]
+    [todayCheckIn, hasTodayCheckIn, executeOptimisticMutation, user?.id, showToast]
   );
 
   const completeOnboarding = useCallback(
@@ -821,8 +873,10 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         async () => {
           if (!user?.id) return;
+          const profilesRepo = await loadProfilesRepo();
           await profilesRepo.upsertProfile({ ...mergedProfile, id: user.id });
           if (Object.keys(calculatedGoals).length > 0) {
+            const goalsRepo = await loadGoalsRepo();
             await goalsRepo.upsertGoals(user.id, { ...goals, ...calculatedGoals });
           }
         }
@@ -904,6 +958,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setFoodEntries(prev),
         async () => {
           if (!user?.id) return;
+          const foodEntriesRepo = await loadFoodEntriesRepo();
           const created = await foodEntriesRepo.createEntry(user.id, newEntry);
           // Replace temp ID with Supabase UUID
           setFoodEntries((curr) => curr.map((f) => (f.id === newEntry.id ? created : f)));
@@ -924,6 +979,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setFoodEntries(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const foodEntriesRepo = await loadFoodEntriesRepo();
           await foodEntriesRepo.updateEntry(user.id, id, updates);
         }
       );
@@ -943,6 +999,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setFoodEntries(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const foodEntriesRepo = await loadFoodEntriesRepo();
           await foodEntriesRepo.deleteEntry(user.id, id);
         }
       );
@@ -978,6 +1035,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setWorkoutSessions(prev),
         async () => {
           if (!user?.id) return;
+          const workoutSessionsRepo = await loadWorkoutSessionsRepo();
           const created = await workoutSessionsRepo.saveSession(user.id, newSession);
           setWorkoutSessions((curr) => curr.map((w) => (w.id === newSession.id ? created : w)));
         }
@@ -999,6 +1057,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (!user?.id) return;
           const target = workoutSessions.find((s) => s.id === id);
           if (target) {
+            const workoutSessionsRepo = await loadWorkoutSessionsRepo();
             await workoutSessionsRepo.saveSession(user.id, { ...target, ...updates });
           }
         }
@@ -1019,6 +1078,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setWorkoutSessions(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const workoutSessionsRepo = await loadWorkoutSessionsRepo();
           await workoutSessionsRepo.deleteSession(user.id, id);
         }
       );
@@ -1067,6 +1127,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setWorkoutTemplates(prev),
         async () => {
           if (!user?.id) return;
+          const workoutTemplatesRepo = await loadWorkoutTemplatesRepo();
           const savedTarget = await workoutTemplatesRepo.saveTemplate(
             user.id,
             updated
@@ -1131,6 +1192,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setActivitySessions(prev),
         async () => {
           if (!user?.id) return;
+          const activitySessionsRepo = await loadActivitySessionsRepo();
           const created = await activitySessionsRepo.createActivity(user.id, newSession);
           setActivitySessions((curr) => curr.map((a) => (a.id === newSession.id ? created : a)));
         }
@@ -1168,6 +1230,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setActivitySessions(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const activitySessionsRepo = await loadActivitySessionsRepo();
           await activitySessionsRepo.deleteActivity(user.id, id);
         }
       );
@@ -1204,6 +1267,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setBodyMetrics(prev),
         async () => {
           if (!user?.id) return;
+          const bodyMetricsRepo = await loadBodyMetricsRepo();
           const created = await bodyMetricsRepo.createMetric(user.id, newMetric);
           setBodyMetrics((curr) => curr.map((b) => (b.id === newMetric.id ? created : b)));
         }
@@ -1241,6 +1305,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setBodyMetrics(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const bodyMetricsRepo = await loadBodyMetricsRepo();
           await bodyMetricsRepo.deleteMetric(user.id, id);
         }
       );
@@ -1267,6 +1332,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setCoachMessages(prev),
         async () => {
           if (!user?.id) return;
+          const coachRepo = await loadCoachRepo();
           const convId = await coachRepo.fetchOrCreateActiveConversation(user.id);
           await coachRepo.saveMessage(user.id, convId, msg);
         }
@@ -1349,6 +1415,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setProgressPhotos(prev),
         async () => {
           if (!user?.id) return;
+          const progressPhotosRepo = await loadProgressPhotosRepo();
           const created = await progressPhotosRepo.createPhoto(user.id, newPhoto);
           setProgressPhotos((curr) => curr.map((p) => (p.id === newPhoto.id ? created : p)));
         }
@@ -1369,6 +1436,7 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (prev) => setProgressPhotos(prev),
         async () => {
           if (!user?.id || id.includes("-")) return;
+          const progressPhotosRepo = await loadProgressPhotosRepo();
           await progressPhotosRepo.deletePhoto(user.id, id);
         }
       );
@@ -1412,13 +1480,21 @@ export const AthloniqProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         quietHoursStart: preferences.quietHoursStart,
         quietHoursEnd: preferences.quietHoursEnd,
       },
-      today_check_in: {
-        sleepHours: todayCheckIn.sleepHours,
-        sleepQuality: todayCheckIn.sleepQuality,
-        soreness: todayCheckIn.soreness,
-        fatigue: todayCheckIn.fatigue,
-        stress: todayCheckIn.stress,
-      },
+      today_check_in: hasTodayCheckIn
+        ? {
+            sleepHours: todayCheckIn.sleepHours,
+            sleepQuality: todayCheckIn.sleepQuality,
+            soreness: todayCheckIn.soreness,
+            fatigue: todayCheckIn.fatigue,
+            stress: todayCheckIn.stress,
+          }
+        : {
+            sleepHours: null,
+            sleepQuality: null,
+            soreness: null,
+            fatigue: null,
+            stress: null,
+          },
       food_entries: foodEntries.map((f) => ({
         loggedDate: f.loggedDate,
         mealSlot: f.mealSlot,

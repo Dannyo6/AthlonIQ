@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
+import { navigateWithTransition } from "@/lib/viewTransition";
 
 interface FormDirtyState {
   isDirty: boolean;
@@ -59,7 +60,7 @@ export const UnsavedWorkProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const guardedNavigate = useCallback(
     (to: string) => {
       confirmNavigation(() => {
-        navigate(to);
+        navigateWithTransition(() => navigate(to));
       });
     },
     [confirmNavigation, navigate]

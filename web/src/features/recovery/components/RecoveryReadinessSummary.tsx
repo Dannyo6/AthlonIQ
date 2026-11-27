@@ -28,8 +28,12 @@ export const RecoveryReadinessSummary: React.FC<RecoveryReadinessSummaryProps> =
       />
       <StatCard
         title="Sleep Duration"
-        value={hasLogged && todayCheckIn ? todayCheckIn.sleepHours.toFixed(1) : "Not set"}
-        unit={hasLogged ? "hrs" : ""}
+        value={
+          hasLogged && todayCheckIn && todayCheckIn.sleepHours !== null
+            ? todayCheckIn.sleepHours.toFixed(1)
+            : "Not set"
+        }
+        unit={hasLogged && todayCheckIn?.sleepHours !== null ? "hrs" : ""}
         subtitle={hasLogged ? "Self-reported duration" : "No check-in yet"}
         icon={<Moon className="h-6 w-6 text-purple-400" />}
         glow={hasLogged ? "violet" : undefined}

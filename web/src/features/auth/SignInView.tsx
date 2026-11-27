@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { BRAND_CONFIG } from "@/config/brand";
+import { BrandMark } from "@/components/ui/BrandMark";
 import {
-  ShieldCheck,
   Mail,
   Lock,
   User,
@@ -13,6 +13,10 @@ import {
   KeyRound,
   RotateCcw,
 } from "lucide-react";
+
+const LazyDither = React.lazy(() =>
+  import("@/components/ui/Dither").then((m) => ({ default: m.Dither }))
+);
 
 type AuthMode = "signin" | "signup" | "reset";
 
@@ -130,42 +134,69 @@ export const SignInView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden font-sans select-none">
-      {/* Dynamic Background Atmosphere */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-athloniq-lime/5 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-athloniq-dark text-slate-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative overflow-x-hidden font-sans">
+      {/* Scoped Unauthenticated WebGL2 Dither Background (lazy-loaded & unmounted on sign-in) */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <Suspense fallback={null}>
+          <LazyDither
+            baseColor={[0.008, 0.01, 0.015]}
+            waveColor={[0.14, 0.36, 0.14]}
+            accentColor={[0.46, 0.68, 0.22]}
+            ditherMode="bayer"
+            colorNum={4}
+            pixelSize={2}
+            waveSpeed={0.035}
+            waveFrequency={2.6}
+            waveAmplitude={0.28}
+            mouseEffect="reveal"
+            mouseRadius={0.28}
+            mouseStrength={0.6}
+            intro={true}
+          />
+        </Suspense>
+      </div>
 
-      {/* Main Authentication Card */}
-      <div className="w-full max-w-md bg-athloniq-card border border-white/[0.08] rounded-2xl shadow-2xl p-6 sm:p-8 relative z-10 backdrop-blur-xl">
-        {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-athloniq-lime text-slate-950 font-black text-xl flex items-center justify-center shadow-glow-lime mb-3">
-            AQ
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight leading-none mb-1">
+      {/* Center Vignette Keeping Card Legibility High */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none auth-dither-vignette"
+        aria-hidden="true"
+      />
+
+      {/* Frosted Obsidian Auth Card */}
+      <main className="w-full max-w-md surface-card bg-athloniq-card/85 backdrop-blur-md border border-white/[0.10] rounded-2xl shadow-2xl p-6 sm:p-8 relative z-10 motion-enter">
+        {/* Brand Hero */}
+        <div className="flex flex-col items-center text-center mb-7">
+          <BrandMark size="lg" className="mb-3.5" />
+          <h1
+            id="page-heading"
+            tabIndex={-1}
+            className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight leading-none mb-2 focus:outline-none"
+          >
             {BRAND_CONFIG.name}
           </h1>
-          <p className="text-xs text-slate-400 font-medium">
-            Personal AI Performance & Physique OS
+          <p className="text-sm text-slate-300 font-medium">
+            Train with precision. Recover with clarity.
           </p>
-          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-athloniq-lime/10 border border-athloniq-lime/30 text-athloniq-lime text-[10px] font-mono tracking-wider">
-            <ShieldCheck className="h-3 w-3" />
-            <span>ROW-LEVEL SECURITY GATEWAY</span>
-          </div>
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="grid grid-cols-2 bg-athloniq-dark p-1 rounded-xl border border-white/[0.06] mb-6">
+        <div
+          role="tablist"
+          aria-label="Account mode"
+          className="grid grid-cols-2 bg-athloniq-well p-1 rounded-xl border border-white/[0.08] mb-6"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === "signin"}
             onClick={() => {
               setMode("signin");
               setErrorMessage(null);
               setCheckEmailMessage(null);
             }}
-            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-opacity cursor-pointer ${
               mode === "signin"
-                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-white/[0.06]"
+                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-athloniq-lime/30"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -173,14 +204,16 @@ export const SignInView: React.FC = () => {
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === "signup"}
             onClick={() => {
               setMode("signup");
               setErrorMessage(null);
               setCheckEmailMessage(null);
             }}
-            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`min-h-[44px] py-2 text-xs font-bold rounded-lg transition-opacity cursor-pointer ${
               mode === "signup"
-                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-white/[0.06]"
+                ? "bg-athloniq-card text-athloniq-lime shadow-sm border border-athloniq-lime/30"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -190,20 +223,21 @@ export const SignInView: React.FC = () => {
 
         {/* "Check Your Email" State Screen */}
         {checkEmailMessage ? (
-          <div className="text-center py-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="text-center py-6 motion-enter">
             <div className="h-12 w-12 rounded-full bg-athloniq-lime/10 border border-athloniq-lime/30 text-athloniq-lime flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="h-6 w-6" />
+              <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">Check Your Email</h2>
+            <h2 className="font-display text-xl font-bold text-white mb-2">Check Your Email</h2>
             <p className="text-xs text-slate-300 leading-relaxed mb-6">
               {checkEmailMessage}
             </p>
             <button
+              type="button"
               onClick={() => {
                 setCheckEmailMessage(null);
                 setMode("signin");
               }}
-              className="w-full py-2.5 px-4 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all"
+              className="w-full min-h-[44px] py-2.5 px-4 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-opacity cursor-pointer"
             >
               Back to Sign In
             </button>
@@ -214,7 +248,8 @@ export const SignInView: React.FC = () => {
             {/* Error Alert Banner */}
             {errorMessage && (
               <div
-                className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 animate-in fade-in duration-150 ${
+                role="alert"
+                className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 motion-enter ${
                   errorType === "rate_limit"
                     ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
                     : errorType === "network"
@@ -222,7 +257,7 @@ export const SignInView: React.FC = () => {
                     : "bg-rose-500/10 border-rose-500/30 text-rose-300"
                 }`}
               >
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <span className="leading-snug">{errorMessage}</span>
               </div>
             )}
@@ -230,18 +265,26 @@ export const SignInView: React.FC = () => {
             {/* Full Name Field (Sign Up Only) */}
             {mode === "signup" && (
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block">
+                <label
+                  htmlFor="signin-fullname"
+                  className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block"
+                >
                   Athlete Name
                 </label>
                 <div className="relative">
-                  <User className="h-4 w-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User
+                    className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <input
+                    id="signin-fullname"
                     type="text"
+                    autoComplete="name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Alex Mercer"
                     disabled={loading}
-                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
+                    className="w-full min-h-[44px] bg-athloniq-well border border-white/[0.12] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime focus:ring-1 focus:ring-athloniq-lime/40"
                   />
                 </div>
               </div>
@@ -249,19 +292,28 @@ export const SignInView: React.FC = () => {
 
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block">
+              <label
+                htmlFor="signin-email"
+                className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block"
+              >
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="h-4 w-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail
+                  className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  aria-hidden="true"
+                />
                 <input
+                  id="signin-email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="athlete@domain.com"
                   disabled={loading}
                   required
-                  className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white tabular-nums placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
+                  aria-invalid={errorType === "validation" && !email.trim() ? true : undefined}
+                  className="w-full min-h-[44px] bg-athloniq-well border border-white/[0.12] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white tabular-nums placeholder-slate-500 focus:outline-none focus:border-athloniq-lime focus:ring-1 focus:ring-athloniq-lime/40"
                 />
               </div>
             </div>
@@ -269,8 +321,11 @@ export const SignInView: React.FC = () => {
             {/* Password Field (Sign In & Sign Up) */}
             {mode !== "reset" && (
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block">
+                <div className="flex items-center justify-between gap-2">
+                  <label
+                    htmlFor="signin-password"
+                    className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block"
+                  >
                     Password
                   </label>
                   {mode === "signin" && (
@@ -280,23 +335,31 @@ export const SignInView: React.FC = () => {
                         setMode("reset");
                         setErrorMessage(null);
                       }}
-                      className="text-[10px] text-athloniq-lime/90 hover:text-athloniq-lime-hover transition-colors"
+                      className="min-h-[44px] px-2 inline-flex items-center text-xs font-medium text-athloniq-lime hover:text-athloniq-lime-hover cursor-pointer"
                     >
                       Forgot password?
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="h-4 w-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock
+                    className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    aria-hidden="true"
+                  />
                   <input
+                    id="signin-password"
                     type="password"
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
                     disabled={loading}
                     required
                     minLength={6}
-                    className="w-full bg-athloniq-dark border border-white/[0.1] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-athloniq-lime/60 focus:ring-1 focus:ring-athloniq-lime/40 transition-all"
+                    aria-invalid={
+                      errorType === "validation" && password.length < 6 ? true : undefined
+                    }
+                    className="w-full min-h-[44px] bg-athloniq-well border border-white/[0.12] rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-athloniq-lime focus:ring-1 focus:ring-athloniq-lime/40"
                   />
                 </div>
               </div>
@@ -306,26 +369,26 @@ export const SignInView: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full min-h-[44px] mt-2 py-3 px-4 bg-athloniq-lime hover:bg-athloniq-lime-hover active:scale-[0.99] text-slate-950 font-bold text-xs rounded-xl shadow-glow-lime flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="tactile-press w-full min-h-[44px] mt-2 py-3 px-4 bg-athloniq-lime hover:bg-athloniq-lime-hover text-slate-950 font-bold text-sm rounded-xl shadow-glow-lime flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   <span>Processing...</span>
                 </>
               ) : mode === "signin" ? (
                 <>
                   <span>Sign In to AthlonIQ</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </>
               ) : mode === "signup" ? (
                 <>
                   <span>Create Athlete Profile</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </>
               ) : (
                 <>
-                  <KeyRound className="h-3.5 w-3.5" />
+                  <KeyRound className="h-4 w-4" aria-hidden="true" />
                   <span>Send Password Reset Link</span>
                 </>
               )}
@@ -333,31 +396,23 @@ export const SignInView: React.FC = () => {
 
             {/* Mode Return Link for Password Reset */}
             {mode === "reset" && (
-              <div className="text-center pt-2">
+              <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setMode("signin");
                     setErrorMessage(null);
                   }}
-                  className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto"
+                  className="min-h-[44px] px-3 text-xs text-slate-300 hover:text-white inline-flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Return to Sign In</span>
                 </button>
               </div>
             )}
           </form>
         )}
-
-        {/* Security & Isolation Disclaimer */}
-        <div className="mt-8 pt-4 border-t border-white/[0.06] text-center">
-          <p className="text-[10px] text-slate-400 leading-normal">
-            Directly authenticated via Supabase Auth with PostgreSQL Row-Level Security.
-            Zero public access granted to unauthenticated parties.
-          </p>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

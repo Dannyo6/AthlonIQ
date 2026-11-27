@@ -331,17 +331,25 @@ describe("UI-5: 390px Ergonomics & Truth in UI Regression Suite", () => {
   // 4. RecoveryView Ergonomics & Null States
   // =========================================================================
   describe("RecoveryView", () => {
-    it("enforces 44px ergonomics on submit button and displays 'Not set' without check-in", () => {
+    it("enforces 44px ergonomics on submit button, disables Submit until all 4 required fields are selected, and displays 'Not set' without check-in", () => {
       currentTodayCheckIn = null;
       render(<RecoveryView />);
 
-      // Submit button has min-h-[48px] (size lg >= 44px)
+      // Submit button has min-h-[48px] (size lg >= 44px) and starts disabled
       const submitBtn = screen.getByRole("button", { name: /Submit Today's Check-in/i });
       expect(submitBtn.className).toMatch(/min-h-\[48px\]/);
+      expect(submitBtn).toBeDisabled();
 
       // Stat cards display "Not set"
       const notSetElements = screen.getAllByText("Not set");
       expect(notSetElements.length).toBeGreaterThanOrEqual(2);
+
+      // Select all 4 required fields while leaving Stress slider at "Not set"
+      fireEvent.change(screen.getByLabelText(/Sleep Duration \(Hours\)/i), { target: { value: "8" } });
+      fireEvent.change(screen.getByLabelText(/Subjective Sleep Quality/i), { target: { value: "4" } });
+      fireEvent.change(screen.getByLabelText(/Muscle Soreness/i), { target: { value: "2" } });
+      fireEvent.change(screen.getByLabelText(/Systemic Fatigue/i), { target: { value: "2" } });
+      expect(submitBtn).not.toBeDisabled();
 
       // Stress slider starts at "Not set" and submits stress: null
       expect(screen.queryByRole("button", { name: /^Clear$/i })).not.toBeInTheDocument();
@@ -373,11 +381,12 @@ describe("UI-5: 390px Ergonomics & Truth in UI Regression Suite", () => {
         </MemoryRouter>
       );
 
-      const demoBtn = screen.getByRole("button", { name: /Load 14d Demo Fixture/i });
+      expect(
+        screen.queryByRole("button", { name: /Load 14d Demo Fixture/i })
+      ).not.toBeInTheDocument();
       const addPhotoBtn = screen.getByRole("button", { name: /Add Photo/i });
       const logWeightBtn = screen.getByRole("button", { name: /Log Weigh-In/i });
 
-      expect(demoBtn.className).toMatch(/min-h-\[44px\]/);
       expect(addPhotoBtn.className).toMatch(/min-h-\[44px\]/);
       expect(logWeightBtn.className).toMatch(/min-h-\[44px\]/);
 

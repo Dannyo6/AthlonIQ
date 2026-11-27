@@ -96,3 +96,37 @@ export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({
     </span>
   );
 };
+
+interface ProvenanceDotProps {
+  provenance: Provenance | DisplayBadge;
+  className?: string;
+}
+
+const PROVENANCE_COPY: Record<string, { label: string; dotClass: string }> = {
+  user_confirmed: { label: "Confirmed by you", dotClass: "bg-emerald-400" },
+  manual_entry: { label: "Manual entry", dotClass: "bg-emerald-400" },
+  user_corrected: { label: "Corrected by you", dotClass: "bg-emerald-400" },
+  verified_reference: { label: "Verified reference", dotClass: "bg-emerald-400" },
+  calculated_estimate: { label: "Calculated from your logs", dotClass: "bg-athloniq-lime" },
+  provisional_default: { label: "Initial baseline estimate", dotClass: "bg-amber-400" },
+  awaiting_onboarding: { label: "Setup incomplete", dotClass: "bg-slate-400" },
+  unconfirmed_equipment: { label: "Equipment unconfirmed", dotClass: "bg-amber-400" },
+  ai_estimated: { label: "AI estimate (needs review)", dotClass: "bg-amber-400" },
+};
+
+export const ProvenanceDot: React.FC<ProvenanceDotProps> = ({ provenance, className }) => {
+  const entry = PROVENANCE_COPY[provenance] || {
+    label: provenance.replace(/_/g, " "),
+    dotClass: "bg-slate-400",
+  };
+
+  return (
+    <span
+      title={entry.label}
+      className={cn("inline-flex items-center gap-1.5 text-[11px] text-slate-400", className)}
+    >
+      <span className={cn("h-2 w-2 rounded-full shrink-0", entry.dotClass)} aria-hidden="true" />
+      <span className="truncate">{entry.label}</span>
+    </span>
+  );
+};

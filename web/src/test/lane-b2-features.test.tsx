@@ -38,13 +38,14 @@ const mockProfile = {
 
 const mockTodayCheckIn = {
   date: "2026-10-26",
-  sleepHours: 7.5,
-  sleepQuality: 4,
-  soreness: 2,
-  fatigue: 2,
+  sleepHours: null,
+  sleepQuality: null,
+  soreness: null,
+  fatigue: null,
   stress: null, // Stress initially null in DB/state
 };
 
+let mockHasTodayCheckIn = false;
 const mockReadiness = {
   readinessScore: 80,
   status: "Prime" as const,
@@ -60,8 +61,8 @@ vi.mock("@/hooks/useAthloniqState", () => ({
     goals: { proteinMinG: 88, proteinMaxG: 121, proteinTargetG: 110 },
     preferences: { weightUnit: "kg", distanceUnit: "km" },
     todayCheckIn: mockTodayCheckIn,
-    hasTodayCheckIn: true,
-    readiness: mockReadiness,
+    hasTodayCheckIn: mockHasTodayCheckIn,
+    readiness: mockHasTodayCheckIn ? mockReadiness : null,
     submitCheckIn: mockSubmitCheckIn,
     completeOnboarding: mockCompleteOnboarding,
     updateProfile: mockUpdateProfile,
@@ -79,23 +80,37 @@ vi.mock("@/hooks/useAthloniqState", () => ({
 describe("RecoveryView Stress Slider & Null State", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHasTodayCheckIn = false;
   });
 
-  it("initializes stress state to null, displays 'Not set', and submits stress: null when untouched", () => {
+  it("initializes empty with Submit disabled until all 4 required fields are selected, displays 'Not set', and submits stress: null when untouched", () => {
     render(<RecoveryView />);
 
     // Check "Not set" badge is visible
-    expect(screen.getByText("Not set")).toBeInTheDocument();
+    expect(screen.getAllByText("Not set").length).toBeGreaterThanOrEqual(1);
 
     // Check "Clear" button is not visible initially
     expect(screen.queryByRole("button", { name: /^Clear$/i })).not.toBeInTheDocument();
 
-    // Submit check-in without touching slider
     const submitBtn = screen.getByRole("button", { name: /Submit Today's Check-in/i });
+    expect(submitBtn).toBeDisabled();
+
+    // Explicitly fill the 4 required fields
+    fireEvent.change(screen.getByLabelText(/Sleep Duration \(Hours\)/i), { target: { value: "7.5" } });
+    fireEvent.change(screen.getByLabelText(/Subjective Sleep Quality/i), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText(/Muscle Soreness/i), { target: { value: "2" } });
+    expect(submitBtn).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/Systemic Fatigue/i), { target: { value: "2" } });
+    expect(submitBtn).not.toBeDisabled();
+
     fireEvent.click(submitBtn);
 
     expect(mockSubmitCheckIn).toHaveBeenCalledWith(
       expect.objectContaining({
+        sleepHours: 7.5,
+        sleepQuality: 4,
+        soreness: 2,
+        fatigue: 2,
         stress: null,
       })
     );
@@ -104,14 +119,18 @@ describe("RecoveryView Stress Slider & Null State", () => {
   it("sends stress value when user touches slider and supports clearing back to 'Not set'", async () => {
     render(<RecoveryView />);
 
+    fireEvent.change(screen.getByLabelText(/Sleep Duration \(Hours\)/i), { target: { value: "8" } });
+    fireEvent.change(screen.getByLabelText(/Subjective Sleep Quality/i), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText(/Muscle Soreness/i), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/Systemic Fatigue/i), { target: { value: "2" } });
+
     const slider = screen.getByLabelText(/External Life \/ Mental Stress/i);
     expect(slider).toBeInTheDocument();
 
     // User touches slider and moves to 4
     fireEvent.change(slider, { target: { value: "4" } });
 
-    // "Not set" should be gone, "Level 4 / 5" and "Clear" button visible
-    expect(screen.queryByText("Not set")).not.toBeInTheDocument();
+    // "Level 4 / 5" and "Clear" button visible
     expect(screen.getByText("Level 4 / 5")).toBeInTheDocument();
     const clearBtn = screen.getByRole("button", { name: /^Clear$/i });
     expect(clearBtn).toBeInTheDocument();
@@ -130,7 +149,7 @@ describe("RecoveryView Stress Slider & Null State", () => {
     fireEvent.click(clearBtn);
 
     // Stress should reset to "Not set"
-    expect(screen.getByText("Not set")).toBeInTheDocument();
+    expect(screen.getAllByText("Not set").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole("button", { name: /^Clear$/i })).not.toBeInTheDocument();
 
     // Re-submit, stress should now be null again

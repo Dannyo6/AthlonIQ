@@ -6,7 +6,7 @@ function getInitialMatch(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return false;
   }
-  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+  return Boolean(window.matchMedia(REDUCED_MOTION_QUERY)?.matches);
 }
 
 export function usePrefersReducedMotion(): boolean {
@@ -19,7 +19,8 @@ export function usePrefersReducedMotion(): boolean {
     }
 
     const mql = window.matchMedia(REDUCED_MOTION_QUERY);
-    setPrefersReducedMotion(mql.matches);
+    if (!mql) return;
+    setPrefersReducedMotion(Boolean(mql.matches));
 
     const handleChange = (event: MediaQueryListEvent) => {
       setPrefersReducedMotion(event.matches);
